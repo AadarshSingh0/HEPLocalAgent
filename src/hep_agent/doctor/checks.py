@@ -27,7 +27,7 @@ DEFAULT_PROFILE = "qwen_primary"
 
 
 def default_project_root() -> Path:
-    """Return the local_hep_agent repository root."""
+    """Return the HEPLocalAgent repository root."""
 
     return Path(__file__).resolve().parents[3]
 

@@ -398,7 +398,7 @@ Unit and regression tests for production behavior.
 
 ## Common commands
 
-Run these commands from the `local_hep_agent/` repository root.
+Run these commands from the `HEPLocalAgent/` repository root.
 
 ### Install
 

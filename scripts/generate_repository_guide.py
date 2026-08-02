@@ -653,7 +653,7 @@ def build_guide(manifest: dict[str, Any]) -> str:
         [
             "## Common commands",
             "",
-            "Run these commands from the `local_hep_agent/` repository root.",
+            "Run these commands from the `HEPLocalAgent/` repository root.",
             "",
             "### Install",
             "",

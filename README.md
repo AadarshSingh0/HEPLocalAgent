@@ -58,3 +58,13 @@ This software was developed with extensive assistance from large language models
 The project author defined the scientific goals, evaluated the workflows, ran the tests, inspected the generated artifacts, and remains responsible for the software and its scientific claims.
 
 See [`AI_ASSISTED_DEVELOPMENT.md`](AI_ASSISTED_DEVELOPMENT.md) for the full disclosure.
+
+## Internal compatibility names
+
+The public project and command are named `HEPLocalAgent` and
+`hep-local-agent`. A small number of internal maintenance-script filenames
+still contain `local_hep_agent`, including
+`scripts/bootstrap_local_hep_agent.sh` and
+`scripts/uninstall_local_hep_agent.sh`. These filenames are retained in the
+initial release to preserve the already validated Linux and macOS installation
+paths. They do not change the public package name or Python module name.

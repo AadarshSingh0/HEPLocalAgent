@@ -1,6 +1,6 @@
 {
   "generated_at_utc": "2026-07-26T08:03:08.136049+00:00",
-  "repository_root": "/workspace/scratch/e68c68b53a35/HEPToolBench/local_hep_agent",
+  "repository_root": ".",
   "git_branch": "agent/macos-core-agent-support",
   "git_commit": "363a9d14a9383da6654a36772bdbf1e81682f249",
   "file_count": 173,
