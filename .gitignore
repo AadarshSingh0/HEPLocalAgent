@@ -1,0 +1,23 @@
+# Python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local environments
+.venv/
+venv/
+env/
+
+# Generated runtime output
+/results/
+/logs/
+
+# Operating systems and editors
+.DS_Store
+.idea/
+.vscode/
+*~

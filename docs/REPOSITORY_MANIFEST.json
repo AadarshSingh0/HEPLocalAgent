@@ -1,0 +1,1220 @@
+{
+  "generated_at_utc": "2026-07-26T08:03:08.136049+00:00",
+  "repository_root": "/workspace/scratch/e68c68b53a35/HEPToolBench/local_hep_agent",
+  "git_branch": "agent/macos-core-agent-support",
+  "git_commit": "363a9d14a9383da6654a36772bdbf1e81682f249",
+  "file_count": 173,
+  "files": [
+    {
+      "path": ".streamlit/config.toml",
+      "directory": ".streamlit",
+      "category": "project support",
+      "description": "TOML project or tool configuration.",
+      "size_bytes": 217
+    },
+    {
+      "path": "AI_ASSISTED_DEVELOPMENT.md",
+      "directory": ".",
+      "category": "project support",
+      "description": "Markdown documentation: AI-Assisted Development Disclosure.",
+      "size_bytes": 780
+    },
+    {
+      "path": "configs/agent_profiles.json",
+      "directory": "configs",
+      "category": "configuration",
+      "description": "JSON object with top-level keys: legacy_llama3, qwen_primary, qwen_cascade.",
+      "size_bytes": 680
+    },
+    {
+      "path": "configs/local_paths.example.json",
+      "directory": "configs",
+      "category": "configuration",
+      "description": "JSON object with top-level keys: mg5_executable, madanalysis5_executable.",
+      "size_bytes": 117
+    },
+    {
+      "path": "docs/INSTALL_FOR_EVERYONE.md",
+      "directory": "docs",
+      "category": "documentation",
+      "description": "Markdown documentation: Beginner installation.",
+      "size_bytes": 8078
+    },
+    {
+      "path": "evaluation/preexecution_scenarios_v1.json",
+      "directory": "evaluation",
+      "category": "evaluation",
+      "description": "Evaluation scenario definition containing 10 scenarios.",
+      "size_bytes": 10777
+    },
+    {
+      "path": "evaluation/process_generalization_v1.json",
+      "directory": "evaluation",
+      "category": "evaluation",
+      "description": "Evaluation scenario definition containing 24 scenarios.",
+      "size_bytes": 10724
+    },
+    {
+      "path": "evaluation/run_model_structure_comparison.py",
+      "directory": "evaluation",
+      "category": "evaluation",
+      "description": "Compare raw planner ability with final structured-agent output.",
+      "size_bytes": 14684
+    },
+    {
+      "path": "evaluation/run_preexecution_eval.py",
+      "directory": "evaluation",
+      "category": "evaluation",
+      "description": "Run the frozen pre-execution generalization evaluation.",
+      "size_bytes": 19352
+    },
+    {
+      "path": "evaluation/run_process_generalization_v1.py",
+      "directory": "evaluation",
+      "category": "evaluation",
+      "description": "Run the frozen process-generalization suite without HEP execution.",
+      "size_bytes": 17071
+    },
+    {
+      "path": "evaluation/run_process_semantic_comparison.py",
+      "directory": "evaluation",
+      "category": "evaluation",
+      "description": "Test pure natural-language-to-MadGraph process interpretation.",
+      "size_bytes": 7872
+    },
+    {
+      "path": "evaluation/run_semantic_agent_eval.py",
+      "directory": "evaluation",
+      "category": "evaluation",
+      "description": "Evaluate the thin semantic planner plus deterministic compiler.",
+      "size_bytes": 6739
+    },
+    {
+      "path": "FOLDER_GUIDE.md",
+      "directory": ".",
+      "category": "project support",
+      "description": "Markdown documentation: Local HEP Agent \u2014 Practical Folder Guide.",
+      "size_bytes": 2099
+    },
+    {
+      "path": "install.sh",
+      "directory": ".",
+      "category": "project support",
+      "description": "Shell utility script.",
+      "size_bytes": 116
+    },
+    {
+      "path": "legacy_baseline/app.py",
+      "directory": "legacy_baseline",
+      "category": "project support",
+      "description": "Python package or support module.",
+      "size_bytes": 9273
+    },
+    {
+      "path": "legacy_baseline/config.py",
+      "directory": "legacy_baseline",
+      "category": "project support",
+      "description": "Python package or support module.",
+      "size_bytes": 259
+    },
+    {
+      "path": "legacy_baseline/core/__init__.py",
+      "directory": "legacy_baseline/core",
+      "category": "project support",
+      "description": "Python package or support module.",
+      "size_bytes": 0
+    },
+    {
+      "path": "legacy_baseline/core/agents/confirmation.py",
+      "directory": "legacy_baseline/core/agents",
+      "category": "project support",
+      "description": "Python module exposing: get_confirmation_summary.",
+      "size_bytes": 1708
+    },
+    {
+      "path": "legacy_baseline/core/analyser.py",
+      "directory": "legacy_baseline/core",
+      "category": "project support",
+      "description": "Python module exposing: run_post_analysis.",
+      "size_bytes": 2212
+    },
+    {
+      "path": "legacy_baseline/core/bootstrap.py",
+      "directory": "legacy_baseline/core",
+      "category": "project support",
+      "description": "Python module exposing: heal_environment.",
+      "size_bytes": 1481
+    },
+    {
+      "path": "legacy_baseline/core/constants.py",
+      "directory": "legacy_baseline/core",
+      "category": "project support",
+      "description": "Python package or support module.",
+      "size_bytes": 1069
+    },
+    {
+      "path": "legacy_baseline/core/extractor.py",
+      "directory": "legacy_baseline/core",
+      "category": "project support",
+      "description": "Parameter Extractor =================== Sends user input to a local Llama3 8B (via Ollama) or any OpenAI-compatible endpoint and extracts ONLY structured JSON \u2014 never MadGraph syntax.",
+      "size_bytes": 12482
+    },
+    {
+      "path": "legacy_baseline/core/result_parser.py",
+      "directory": "legacy_baseline/core",
+      "category": "project support",
+      "description": "Python module exposing: parse_cross_section.",
+      "size_bytes": 1192
+    },
+    {
+      "path": "legacy_baseline/core/runner.py",
+      "directory": "legacy_baseline/core",
+      "category": "project support",
+      "description": "Python module exposing: run_mg5_script.",
+      "size_bytes": 966
+    },
+    {
+      "path": "legacy_baseline/core/tree_builder.py",
+      "directory": "legacy_baseline/core",
+      "category": "project support",
+      "description": "MadGraph5 Tree Builder ====================== Deterministic syntax assembler. Takes structured JSON from the LLM and walks a decision tree to produce correct MadGraph5 files.",
+      "size_bytes": 9509
+    },
+    {
+      "path": "legacy_baseline/core/validator.py",
+      "directory": "legacy_baseline/core",
+      "category": "project support",
+      "description": "Python module exposing: normalize_particle, normalize_model, safe_name, make_unique_name, validate_and_normalize.",
+      "size_bytes": 2244
+    },
+    {
+      "path": "legacy_baseline/main.py",
+      "directory": "legacy_baseline",
+      "category": "project support",
+      "description": "MadGraph5 File Generator ======================== Usage: python main.py \"p p > e- e+\" python main.py \"p p > t t~ at 14 TeV with 50000 events, run pythia8\" python main.py --backend openai --base-url http://localhost:8000/v1 \"p p > h at 13 TeV\"",
+      "size_bytes": 6488
+    },
+    {
+      "path": "legacy_baseline/README_legacy.md",
+      "directory": "legacy_baseline",
+      "category": "project support",
+      "description": "Markdown documentation: MadGraph5 File Generator.",
+      "size_bytes": 5200
+    },
+    {
+      "path": "legacy_baseline/requirements.txt",
+      "directory": "legacy_baseline",
+      "category": "project support",
+      "description": "requests",
+      "size_bytes": 19
+    },
+    {
+      "path": "legacy_baseline/test_plots.py",
+      "directory": "legacy_baseline",
+      "category": "project support",
+      "description": "Python package or support module.",
+      "size_bytes": 492
+    },
+    {
+      "path": "legacy_baseline/tests.py",
+      "directory": "legacy_baseline",
+      "category": "project support",
+      "description": "Tests for the MadGraph tree builder. Run with: python -m pytest tests.py -v",
+      "size_bytes": 3434
+    },
+    {
+      "path": "prompts/FOLDER_GUIDE.md",
+      "directory": "prompts",
+      "category": "prompt",
+      "description": "Markdown documentation: Prompts \u2014 Practical Guide.",
+      "size_bytes": 879
+    },
+    {
+      "path": "prompts/planner_system.txt",
+      "directory": "prompts",
+      "category": "prompt",
+      "description": "You are the structured planning component of a local collider-physics agent.",
+      "size_bytes": 7605
+    },
+    {
+      "path": "prompts/repair_system.txt",
+      "directory": "prompts",
+      "category": "prompt",
+      "description": "You repair a structured collider workflow that failed deterministic validation.",
+      "size_bytes": 3310
+    },
+    {
+      "path": "pyproject.toml",
+      "directory": ".",
+      "category": "package metadata",
+      "description": "TOML project or tool configuration.",
+      "size_bytes": 554
+    },
+    {
+      "path": "README.md",
+      "directory": ".",
+      "category": "project support",
+      "description": "Markdown documentation: Local HEP Agent.",
+      "size_bytes": 2041
+    },
+    {
+      "path": "requirements-web.txt",
+      "directory": ".",
+      "category": "project support",
+      "description": "-r requirements.txt",
+      "size_bytes": 39
+    },
+    {
+      "path": "requirements.txt",
+      "directory": ".",
+      "category": "package metadata",
+      "description": "pydantic>=2.7,<3",
+      "size_bytes": 17
+    },
+    {
+      "path": "run_agent.sh",
+      "directory": ".",
+      "category": "project support",
+      "description": "Shell utility script.",
+      "size_bytes": 2414
+    },
+    {
+      "path": "scripts/bootstrap_local_hep_agent.sh",
+      "directory": "scripts",
+      "category": "maintenance",
+      "description": "Shell utility script.",
+      "size_bytes": 61826
+    },
+    {
+      "path": "scripts/generate_repository_guide.py",
+      "directory": "scripts",
+      "category": "maintenance",
+      "description": "Generate an accurate repository guide and machine-readable manifest.",
+      "size_bytes": 22462
+    },
+    {
+      "path": "scripts/uninstall_local_hep_agent.sh",
+      "directory": "scripts",
+      "category": "maintenance",
+      "description": "Shell utility script.",
+      "size_bytes": 10264
+    },
+    {
+      "path": "scripts/validate_full_stack.py",
+      "directory": "scripts",
+      "category": "maintenance",
+      "description": "Validate MadGraph, Pythia8, Delphes, and MadAnalysis without Ollama.",
+      "size_bytes": 11442
+    },
+    {
+      "path": "src/hep_agent/__init__.py",
+      "directory": "src/hep_agent",
+      "category": "production",
+      "description": "Local HEP agent package.",
+      "size_bytes": 54
+    },
+    {
+      "path": "src/hep_agent/analysis/__init__.py",
+      "directory": "src/hep_agent/analysis",
+      "category": "production",
+      "description": "Deterministic post-processing analysis tools.",
+      "size_bytes": 981
+    },
+    {
+      "path": "src/hep_agent/analysis/FOLDER_GUIDE.md",
+      "directory": "src/hep_agent/analysis",
+      "category": "production",
+      "description": "Markdown documentation: Analysis \u2014 Practical Guide.",
+      "size_bytes": 1901
+    },
+    {
+      "path": "src/hep_agent/analysis/madanalysis.py",
+      "directory": "src/hep_agent/analysis",
+      "category": "production",
+      "description": "Deterministic MadAnalysis 5 script construction.",
+      "size_bytes": 15917
+    },
+    {
+      "path": "src/hep_agent/analysis/runner.py",
+      "directory": "src/hep_agent/analysis",
+      "category": "production",
+      "description": "Safe subprocess execution for deterministic MadAnalysis artifacts.",
+      "size_bytes": 10950
+    },
+    {
+      "path": "src/hep_agent/builders/__init__.py",
+      "directory": "src/hep_agent/builders",
+      "category": "production",
+      "description": "Public imports for deterministic artifact builders.",
+      "size_bytes": 607
+    },
+    {
+      "path": "src/hep_agent/builders/FOLDER_GUIDE.md",
+      "directory": "src/hep_agent/builders",
+      "category": "production",
+      "description": "Markdown documentation: Builders \u2014 Practical Guide.",
+      "size_bytes": 1671
+    },
+    {
+      "path": "src/hep_agent/builders/madgraph.py",
+      "directory": "src/hep_agent/builders",
+      "category": "production",
+      "description": "Deterministic MadGraph process builder.",
+      "size_bytes": 5457
+    },
+    {
+      "path": "src/hep_agent/builders/madgraph_workflow.py",
+      "directory": "src/hep_agent/builders",
+      "category": "production",
+      "description": "Deterministic MadGraph launch-workflow builder.",
+      "size_bytes": 3573
+    },
+    {
+      "path": "src/hep_agent/conversation.py",
+      "directory": "src/hep_agent",
+      "category": "production",
+      "description": "Conversational routing for the local HEP agent.",
+      "size_bytes": 7903
+    },
+    {
+      "path": "src/hep_agent/doctor/__init__.py",
+      "directory": "src/hep_agent/doctor",
+      "category": "production",
+      "description": "HEP-agent environment doctor.",
+      "size_bytes": 464
+    },
+    {
+      "path": "src/hep_agent/doctor/checks.py",
+      "directory": "src/hep_agent/doctor",
+      "category": "production",
+      "description": "Environment and installation checks for the HEP agent.",
+      "size_bytes": 34795
+    },
+    {
+      "path": "src/hep_agent/doctor/cli.py",
+      "directory": "src/hep_agent/doctor",
+      "category": "production",
+      "description": "Command-line interface for the HEP-agent doctor.",
+      "size_bytes": 3483
+    },
+    {
+      "path": "src/hep_agent/doctor/models.py",
+      "directory": "src/hep_agent/doctor",
+      "category": "production",
+      "description": "Data models for HEP-agent environment diagnostics.",
+      "size_bytes": 2835
+    },
+    {
+      "path": "src/hep_agent/doctor/render.py",
+      "directory": "src/hep_agent/doctor",
+      "category": "production",
+      "description": "Text rendering for doctor reports.",
+      "size_bytes": 1877
+    },
+    {
+      "path": "src/hep_agent/evaluation/__init__.py",
+      "directory": "src/hep_agent/evaluation",
+      "category": "production",
+      "description": "Evaluation helpers for the local HEP agent.",
+      "size_bytes": 256
+    },
+    {
+      "path": "src/hep_agent/evaluation/preexecution.py",
+      "directory": "src/hep_agent/evaluation",
+      "category": "production",
+      "description": "Deterministic checks for frozen pre-execution evaluation scenarios.",
+      "size_bytes": 10470
+    },
+    {
+      "path": "src/hep_agent/execution/__init__.py",
+      "directory": "src/hep_agent/execution",
+      "category": "production",
+      "description": "Public imports for external execution and result parsing.",
+      "size_bytes": 612
+    },
+    {
+      "path": "src/hep_agent/execution/FOLDER_GUIDE.md",
+      "directory": "src/hep_agent/execution",
+      "category": "production",
+      "description": "Markdown documentation: Execution \u2014 Practical Guide.",
+      "size_bytes": 1338
+    },
+    {
+      "path": "src/hep_agent/execution/madgraph_runner.py",
+      "directory": "src/hep_agent/execution",
+      "category": "production",
+      "description": "Safe subprocess runner for validated MadGraph workflows.",
+      "size_bytes": 5586
+    },
+    {
+      "path": "src/hep_agent/execution/outcome.py",
+      "directory": "src/hep_agent/execution",
+      "category": "production",
+      "description": "Validation of externally executed HEP workflow outcomes.",
+      "size_bytes": 795
+    },
+    {
+      "path": "src/hep_agent/execution/result_parser.py",
+      "directory": "src/hep_agent/execution",
+      "category": "production",
+      "description": "Deterministic parsing of completed MadGraph executions.",
+      "size_bytes": 5030
+    },
+    {
+      "path": "src/hep_agent/models/__init__.py",
+      "directory": "src/hep_agent/models",
+      "category": "production",
+      "description": "Public imports for model clients, planners, repair, and routing.",
+      "size_bytes": 999
+    },
+    {
+      "path": "src/hep_agent/models/FOLDER_GUIDE.md",
+      "directory": "src/hep_agent/models",
+      "category": "production",
+      "description": "Markdown documentation: Models \u2014 Practical Guide.",
+      "size_bytes": 892
+    },
+    {
+      "path": "src/hep_agent/models/ollama.py",
+      "directory": "src/hep_agent/models",
+      "category": "production",
+      "description": "Small Ollama client used by the local HEP agent.",
+      "size_bytes": 4674
+    },
+    {
+      "path": "src/hep_agent/models/planner.py",
+      "directory": "src/hep_agent/models",
+      "category": "production",
+      "description": "Structured local-LLM planner for collider workflows.",
+      "size_bytes": 6039
+    },
+    {
+      "path": "src/hep_agent/models/repair.py",
+      "directory": "src/hep_agent/models",
+      "category": "production",
+      "description": "Validator-guided repair of structured collider workflows.",
+      "size_bytes": 3010
+    },
+    {
+      "path": "src/hep_agent/models/routing.py",
+      "directory": "src/hep_agent/models",
+      "category": "production",
+      "description": "Configuration models for local-agent routing profiles.",
+      "size_bytes": 1242
+    },
+    {
+      "path": "src/hep_agent/models/semantic_process.py",
+      "directory": "src/hep_agent/models",
+      "category": "production",
+      "description": "Thin semantic planning for collider-process requests.",
+      "size_bytes": 16309
+    },
+    {
+      "path": "src/hep_agent/models/workflow_payload.py",
+      "directory": "src/hep_agent/models",
+      "category": "production",
+      "description": "Safe structural normalization of model-produced workflow JSON.",
+      "size_bytes": 3867
+    },
+    {
+      "path": "src/hep_agent/orchestration/__init__.py",
+      "directory": "src/hep_agent/orchestration",
+      "category": "production",
+      "description": "Public imports for agent orchestration.",
+      "size_bytes": 2328
+    },
+    {
+      "path": "src/hep_agent/orchestration/analysis_stage.py",
+      "directory": "src/hep_agent/orchestration",
+      "category": "production",
+      "description": "Orchestration for separate MadAnalysis post-processing.",
+      "size_bytes": 6079
+    },
+    {
+      "path": "src/hep_agent/orchestration/approval.py",
+      "directory": "src/hep_agent/orchestration",
+      "category": "production",
+      "description": "Approval policy for validated collider workflows.",
+      "size_bytes": 3770
+    },
+    {
+      "path": "src/hep_agent/orchestration/end_to_end.py",
+      "directory": "src/hep_agent/orchestration",
+      "category": "production",
+      "description": "Complete local-agent preparation and external execution.",
+      "size_bytes": 10439
+    },
+    {
+      "path": "src/hep_agent/orchestration/FOLDER_GUIDE.md",
+      "directory": "src/hep_agent/orchestration",
+      "category": "production",
+      "description": "Markdown documentation: Orchestration \u2014 Practical Guide.",
+      "size_bytes": 2709
+    },
+    {
+      "path": "src/hep_agent/orchestration/grounding_repair.py",
+      "directory": "src/hep_agent/orchestration",
+      "category": "production",
+      "description": "Safe deterministic corrections based on explicit user statements.",
+      "size_bytes": 12367
+    },
+    {
+      "path": "src/hep_agent/orchestration/preexecution.py",
+      "directory": "src/hep_agent/orchestration",
+      "category": "production",
+      "description": "Central pre-execution loop for the local collider agent.",
+      "size_bytes": 35260
+    },
+    {
+      "path": "src/hep_agent/orchestration/process_reconciliation.py",
+      "directory": "src/hep_agent/orchestration",
+      "category": "production",
+      "description": "Deterministic reconciliation of inclusive and partonic processes.",
+      "size_bytes": 3753
+    },
+    {
+      "path": "src/hep_agent/orchestration/run_record.py",
+      "directory": "src/hep_agent/orchestration",
+      "category": "production",
+      "description": "Save reproducible records of local-agent pre-execution runs.",
+      "size_bytes": 19697
+    },
+    {
+      "path": "src/hep_agent/orchestration/terminal_approval.py",
+      "directory": "src/hep_agent/orchestration",
+      "category": "production",
+      "description": "Terminal approval interface for collider-agent execution.",
+      "size_bytes": 3544
+    },
+    {
+      "path": "src/hep_agent/scans/__init__.py",
+      "directory": "src/hep_agent/scans",
+      "category": "production",
+      "description": "Deterministic multi-run scan planning and execution.",
+      "size_bytes": 1686
+    },
+    {
+      "path": "src/hep_agent/scans/energy_scan.py",
+      "directory": "src/hep_agent/scans",
+      "category": "production",
+      "description": "Deterministic collider-energy scan planning.",
+      "size_bytes": 10573
+    },
+    {
+      "path": "src/hep_agent/scans/execution.py",
+      "directory": "src/hep_agent/scans",
+      "category": "production",
+      "description": "Sequential execution and deterministic analysis of energy scans.",
+      "size_bytes": 24471
+    },
+    {
+      "path": "src/hep_agent/scans/FOLDER_GUIDE.md",
+      "directory": "src/hep_agent/scans",
+      "category": "production",
+      "description": "Markdown documentation: Scans \u2014 Practical Guide.",
+      "size_bytes": 5337
+    },
+    {
+      "path": "src/hep_agent/scans/point_adapter.py",
+      "directory": "src/hep_agent/scans",
+      "category": "production",
+      "description": "Adapter from deterministic scan points to the existing HEP pipeline.",
+      "size_bytes": 9882
+    },
+    {
+      "path": "src/hep_agent/scans/preparation.py",
+      "directory": "src/hep_agent/scans",
+      "category": "production",
+      "description": "Prepare natural-language energy scans without executing HEP tools.",
+      "size_bytes": 3773
+    },
+    {
+      "path": "src/hep_agent/scans/text_parser.py",
+      "directory": "src/hep_agent/scans",
+      "category": "production",
+      "description": "Deterministic natural-language parsing for energy-scan ranges.",
+      "size_bytes": 7703
+    },
+    {
+      "path": "src/hep_agent/schemas/__init__.py",
+      "directory": "src/hep_agent/schemas",
+      "category": "production",
+      "description": "Public imports for the collider-workflow schema.",
+      "size_bytes": 1330
+    },
+    {
+      "path": "src/hep_agent/schemas/analysis.py",
+      "directory": "src/hep_agent/schemas",
+      "category": "production",
+      "description": "Restricted structured language for MadAnalysis 5 requests.",
+      "size_bytes": 8616
+    },
+    {
+      "path": "src/hep_agent/schemas/FOLDER_GUIDE.md",
+      "directory": "src/hep_agent/schemas",
+      "category": "production",
+      "description": "Markdown documentation: Schemas \u2014 Practical Guide.",
+      "size_bytes": 1281
+    },
+    {
+      "path": "src/hep_agent/schemas/PROCESS_SCHEMA_V1.md",
+      "directory": "src/hep_agent/schemas",
+      "category": "production",
+      "description": "Markdown documentation: Process Schema Version 1.",
+      "size_bytes": 5206
+    },
+    {
+      "path": "src/hep_agent/schemas/SCHEMA_DESIGN.md",
+      "directory": "src/hep_agent/schemas",
+      "category": "production",
+      "description": "Markdown documentation: General Collider-Workflow Schema Design.",
+      "size_bytes": 3510
+    },
+    {
+      "path": "src/hep_agent/schemas/workflow.py",
+      "directory": "src/hep_agent/schemas",
+      "category": "production",
+      "description": "Structured collider-workflow schema.",
+      "size_bytes": 6597
+    },
+    {
+      "path": "src/hep_agent/ui/__init__.py",
+      "directory": "src/hep_agent/ui",
+      "category": "production",
+      "description": "User interfaces for the local HEP agent.",
+      "size_bytes": 47
+    },
+    {
+      "path": "src/hep_agent/ui/cli.py",
+      "directory": "src/hep_agent/ui",
+      "category": "production",
+      "description": "Command-line interface for the local HEP agent.",
+      "size_bytes": 12626
+    },
+    {
+      "path": "src/hep_agent/ui/FOLDER_GUIDE.md",
+      "directory": "src/hep_agent/ui",
+      "category": "production",
+      "description": "Markdown documentation: User Interfaces \u2014 Practical Guide.",
+      "size_bytes": 2348
+    },
+    {
+      "path": "src/hep_agent/ui/web_app.py",
+      "directory": "src/hep_agent/ui",
+      "category": "production",
+      "description": "Streamlit research console for the local HEP agent.",
+      "size_bytes": 97310
+    },
+    {
+      "path": "src/hep_agent/ui/web_launcher.py",
+      "directory": "src/hep_agent/ui",
+      "category": "production",
+      "description": "Console launcher for the Streamlit HEP-agent interface.",
+      "size_bytes": 533
+    },
+    {
+      "path": "src/hep_agent/ui/web_support.py",
+      "directory": "src/hep_agent/ui",
+      "category": "production",
+      "description": "Non-visual support functions for the local Streamlit interface.",
+      "size_bytes": 11803
+    },
+    {
+      "path": "src/hep_agent/validation/__init__.py",
+      "directory": "src/hep_agent/validation",
+      "category": "production",
+      "description": "Public imports for deterministic validation.",
+      "size_bytes": 721
+    },
+    {
+      "path": "src/hep_agent/validation/analysis_request.py",
+      "directory": "src/hep_agent/validation",
+      "category": "production",
+      "description": "Ground MadAnalysis intent in explicit user instructions.",
+      "size_bytes": 11666
+    },
+    {
+      "path": "src/hep_agent/validation/core.py",
+      "directory": "src/hep_agent/validation",
+      "category": "production",
+      "description": "Deterministic validation for collider workflows and artifacts.",
+      "size_bytes": 11525
+    },
+    {
+      "path": "src/hep_agent/validation/FOLDER_GUIDE.md",
+      "directory": "src/hep_agent/validation",
+      "category": "production",
+      "description": "Markdown documentation: Validation \u2014 Practical Guide.",
+      "size_bytes": 792
+    },
+    {
+      "path": "src/hep_agent/validation/grounding.py",
+      "directory": "src/hep_agent/validation",
+      "category": "production",
+      "description": "Ground structured workflows in explicit facts from the user request.",
+      "size_bytes": 15999
+    },
+    {
+      "path": "src/hep_agent/validation/madgraph_workflow.py",
+      "directory": "src/hep_agent/validation",
+      "category": "production",
+      "description": "Validation of complete deterministic MG5 workflows.",
+      "size_bytes": 3600
+    },
+    {
+      "path": "src/hep_agent/validation/process_request.py",
+      "directory": "src/hep_agent/validation",
+      "category": "production",
+      "description": "Parse explicit MadGraph-style process syntax from user requests.",
+      "size_bytes": 3768
+    },
+    {
+      "path": "src/hep_agent/validation/workflow_request.py",
+      "directory": "src/hep_agent/validation",
+      "category": "production",
+      "description": "Conservative validation of user-supplied workflow requirements.",
+      "size_bytes": 4973
+    },
+    {
+      "path": "tests/FOLDER_GUIDE.md",
+      "directory": "tests",
+      "category": "test",
+      "description": "Markdown documentation: Tests \u2014 Practical Guide.",
+      "size_bytes": 710
+    },
+    {
+      "path": "tests/test_agentic_repair_loop.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for bounded repair retries and larger-model escalation.",
+      "size_bytes": 7841
+    },
+    {
+      "path": "tests/test_analysis_request_grounding.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for deterministic analysis-request grounding.",
+      "size_bytes": 7355
+    },
+    {
+      "path": "tests/test_analysis_stage.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for separate MadAnalysis post-processing orchestration.",
+      "size_bytes": 7360
+    },
+    {
+      "path": "tests/test_approval.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for the approval and five-second auto-confirm policy.",
+      "size_bytes": 3540
+    },
+    {
+      "path": "tests/test_bootstrap_scripts.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Static tests for beginner installation shell scripts.",
+      "size_bytes": 24918
+    },
+    {
+      "path": "tests/test_cli.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for the local HEP-agent command parser.",
+      "size_bytes": 1949
+    },
+    {
+      "path": "tests/test_conversation.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for conversational versus workflow routing.",
+      "size_bytes": 2540
+    },
+    {
+      "path": "tests/test_doctor.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for doctor report models and rendering.",
+      "size_bytes": 2923
+    },
+    {
+      "path": "tests/test_doctor_integrated_tools.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Doctor checks for integrated HEP-tool installations.",
+      "size_bytes": 5540
+    },
+    {
+      "path": "tests/test_end_to_end.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for the full agent through external execution.",
+      "size_bytes": 6493
+    },
+    {
+      "path": "tests/test_end_to_end_madanalysis.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "End-to-end tests including separate MA5 post-processing.",
+      "size_bytes": 7035
+    },
+    {
+      "path": "tests/test_energy_scan.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for deterministic collider-energy scan planning.",
+      "size_bytes": 6252
+    },
+    {
+      "path": "tests/test_energy_scan_execution.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for sequential scan execution and aggregation.",
+      "size_bytes": 8225
+    },
+    {
+      "path": "tests/test_energy_scan_point_adapter.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for the existing-pipeline scan-point adapter.",
+      "size_bytes": 8271
+    },
+    {
+      "path": "tests/test_energy_scan_preparation.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for energy-scan preparation through the existing planner.",
+      "size_bytes": 5994
+    },
+    {
+      "path": "tests/test_energy_scan_progress.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for energy-scan progress callbacks.",
+      "size_bytes": 1492
+    },
+    {
+      "path": "tests/test_energy_scan_range.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for unit-safe deterministic energy-scan ranges.",
+      "size_bytes": 5739
+    },
+    {
+      "path": "tests/test_energy_scan_text_parser.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for deterministic natural-language energy-scan parsing.",
+      "size_bytes": 4826
+    },
+    {
+      "path": "tests/test_event_output_levels.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for LHE, HepMC, and Delphes ROOT discovery.",
+      "size_bytes": 2834
+    },
+    {
+      "path": "tests/test_execution_outcome.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for validated external-execution outcomes.",
+      "size_bytes": 1738
+    },
+    {
+      "path": "tests/test_explicit_process_authority.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Explicit MadGraph-style syntax must be authoritative.",
+      "size_bytes": 8583
+    },
+    {
+      "path": "tests/test_full_stack_validation_script.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for the model-free installed-tool validation utility.",
+      "size_bytes": 2873
+    },
+    {
+      "path": "tests/test_grounding.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for grounding planner output in explicit user facts.",
+      "size_bytes": 9906
+    },
+    {
+      "path": "tests/test_grounding_repair.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for safe deterministic grounding corrections.",
+      "size_bytes": 3706
+    },
+    {
+      "path": "tests/test_madanalysis_builder.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for deterministic MadAnalysis script construction.",
+      "size_bytes": 6588
+    },
+    {
+      "path": "tests/test_madanalysis_negation.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Regression tests for explicit MadAnalysis negation.",
+      "size_bytes": 5114
+    },
+    {
+      "path": "tests/test_madanalysis_pipeline_separation.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests that MA5 runs separately from the MG5 launch interface.",
+      "size_bytes": 2834
+    },
+    {
+      "path": "tests/test_madanalysis_preview.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for deterministic MA5 command previews.",
+      "size_bytes": 1583
+    },
+    {
+      "path": "tests/test_madanalysis_runner.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for the safe MadAnalysis subprocess runner.",
+      "size_bytes": 8989
+    },
+    {
+      "path": "tests/test_madgraph_builder.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for deterministic MadGraph process construction.",
+      "size_bytes": 6852
+    },
+    {
+      "path": "tests/test_madgraph_runner.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for the safe MadGraph subprocess runner.",
+      "size_bytes": 4641
+    },
+    {
+      "path": "tests/test_madgraph_workflow.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for full deterministic MG5 launch workflows.",
+      "size_bytes": 4156
+    },
+    {
+      "path": "tests/test_models.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for Ollama communication and model profiles.",
+      "size_bytes": 3661
+    },
+    {
+      "path": "tests/test_noninteractive_madgraph.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for noninteractive MadGraph execution settings.",
+      "size_bytes": 2095
+    },
+    {
+      "path": "tests/test_planner.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for the structured collider planner.",
+      "size_bytes": 4955
+    },
+    {
+      "path": "tests/test_planner_analysis.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for structured-analysis planner integration.",
+      "size_bytes": 7595
+    },
+    {
+      "path": "tests/test_planner_builtin_models.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Regression tests for recognised built-in model normalisation.",
+      "size_bytes": 2484
+    },
+    {
+      "path": "tests/test_planner_payload_sanitization.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Regression tests for planner payload sanitization.",
+      "size_bytes": 4177
+    },
+    {
+      "path": "tests/test_planner_retry_loop.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for initial planner retries and accounting.",
+      "size_bytes": 5688
+    },
+    {
+      "path": "tests/test_preexecution.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for the complete pre-execution agent loop.",
+      "size_bytes": 6445
+    },
+    {
+      "path": "tests/test_preexecution_evaluation.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for deterministic pre-execution evaluation checks.",
+      "size_bytes": 5893
+    },
+    {
+      "path": "tests/test_prepared_end_to_end.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for separately preparing and executing one workflow.",
+      "size_bytes": 6157
+    },
+    {
+      "path": "tests/test_process_constraint_grounding.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for inclusive process grounding.",
+      "size_bytes": 4014
+    },
+    {
+      "path": "tests/test_process_reconciliation.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for inclusive-process reconciliation.",
+      "size_bytes": 5161
+    },
+    {
+      "path": "tests/test_repair.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for validator-guided structured repair.",
+      "size_bytes": 5019
+    },
+    {
+      "path": "tests/test_repair_prompt_contract.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for the structured repair-prompt contract.",
+      "size_bytes": 944
+    },
+    {
+      "path": "tests/test_request_normalization.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for harmless user-request whitespace normalization.",
+      "size_bytes": 916
+    },
+    {
+      "path": "tests/test_result_parser.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for deterministic MadGraph result parsing.",
+      "size_bytes": 3637
+    },
+    {
+      "path": "tests/test_run_record.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for reproducible pre-execution run records.",
+      "size_bytes": 6071
+    },
+    {
+      "path": "tests/test_semantic_process.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for the thin semantic process compiler.",
+      "size_bytes": 4418
+    },
+    {
+      "path": "tests/test_semantic_process_routing.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for explicit-versus-semantic production routing.",
+      "size_bytes": 2707
+    },
+    {
+      "path": "tests/test_structured_madanalysis.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for structured deterministic MA5 compilation.",
+      "size_bytes": 10900
+    },
+    {
+      "path": "tests/test_terminal_approval.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for the terminal approval interface.",
+      "size_bytes": 2449
+    },
+    {
+      "path": "tests/test_validation.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for deterministic workflow and artifact validation.",
+      "size_bytes": 4589
+    },
+    {
+      "path": "tests/test_web_approval_countdown.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for automatic web-approval countdown calculations.",
+      "size_bytes": 1009
+    },
+    {
+      "path": "tests/test_web_request_state.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for Streamlit request-input state decisions.",
+      "size_bytes": 1146
+    },
+    {
+      "path": "tests/test_web_support.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for persistent web-interface history helpers.",
+      "size_bytes": 5764
+    },
+    {
+      "path": "tests/test_web_tool_status.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for web-interface HEP tool health detection.",
+      "size_bytes": 4757
+    },
+    {
+      "path": "tests/test_workflow_payload_normalization.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for safe pre-validation workflow JSON normalization.",
+      "size_bytes": 3575
+    },
+    {
+      "path": "tests/test_workflow_request.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for minimum executable workflow requirements.",
+      "size_bytes": 2157
+    },
+    {
+      "path": "tests/test_workflow_schema.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for the general collider-workflow schema.",
+      "size_bytes": 5330
+    },
+    {
+      "path": "uninstall.sh",
+      "directory": ".",
+      "category": "project support",
+      "description": "Shell utility script.",
+      "size_bytes": 157
+    }
+  ]
+}

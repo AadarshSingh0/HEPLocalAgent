@@ -1,0 +1,281 @@
+{
+  "suite_name": "process_generalization_v1",
+  "suite_version": "1.0",
+  "description": "Frozen process-generalization evaluation for the local HEP agent. No external HEP execution.",
+  "scenarios": [
+    {
+      "scenario_id": "P01",
+      "group": "core",
+      "description": "Inclusive electron pair production",
+      "request": "Simulate p p > e+ e- at 13 TeV with 100 events. Do not use Pythia8, Delphes, or MadAnalysis.",
+      "expectation": "ready_exact",
+      "expected_process_commands": ["generate p p > e+ e-"],
+      "expected_incoming": ["p", "p"],
+      "expected_final": ["e+", "e-"],
+      "expected_required_intermediates": [],
+      "expected_energy_gev": 13000.0,
+      "expected_nevents": 100
+    },
+    {
+      "scenario_id": "P02",
+      "group": "core",
+      "description": "Inclusive muon pair production",
+      "request": "Simulate p p > mu+ mu- at 13 TeV with 100 events. Do not use Pythia8, Delphes, or MadAnalysis.",
+      "expectation": "ready_exact",
+      "expected_process_commands": ["generate p p > mu+ mu-"],
+      "expected_incoming": ["p", "p"],
+      "expected_final": ["mu+", "mu-"],
+      "expected_required_intermediates": [],
+      "expected_energy_gev": 13000.0,
+      "expected_nevents": 100
+    },
+    {
+      "scenario_id": "P03",
+      "group": "core",
+      "description": "Inclusive tau pair production",
+      "request": "Simulate p p > ta+ ta- at 13 TeV with 100 events. Do not use Pythia8, Delphes, or MadAnalysis.",
+      "expectation": "ready_exact",
+      "expected_process_commands": ["generate p p > ta+ ta-"],
+      "expected_incoming": ["p", "p"],
+      "expected_final": ["ta+", "ta-"],
+      "expected_required_intermediates": [],
+      "expected_energy_gev": 13000.0,
+      "expected_nevents": 100
+    },
+    {
+      "scenario_id": "P04",
+      "group": "core",
+      "description": "Inclusive top-pair production",
+      "request": "Simulate p p > t t~ at 13 TeV with 100 events. Do not use Pythia8, Delphes, or MadAnalysis.",
+      "expectation": "ready_exact",
+      "expected_process_commands": ["generate p p > t t~"],
+      "expected_incoming": ["p", "p"],
+      "expected_final": ["t", "t~"],
+      "expected_required_intermediates": [],
+      "expected_energy_gev": 13000.0,
+      "expected_nevents": 100
+    },
+    {
+      "scenario_id": "P05",
+      "group": "core",
+      "description": "Inclusive up-quark pair production",
+      "request": "Simulate p p > u u~ at 13 TeV with 100 events. Do not use Pythia8, Delphes, or MadAnalysis.",
+      "expectation": "ready_exact",
+      "expected_process_commands": ["generate p p > u u~"],
+      "expected_incoming": ["p", "p"],
+      "expected_final": ["u", "u~"],
+      "expected_required_intermediates": [],
+      "expected_energy_gev": 13000.0,
+      "expected_nevents": 100
+    },
+    {
+      "scenario_id": "P06",
+      "group": "core",
+      "description": "Electron-neutrino pair production",
+      "request": "Simulate p p > ve ve~ at 13 TeV with 100 events. Do not use Pythia8, Delphes, or MadAnalysis.",
+      "expectation": "ready_exact",
+      "expected_process_commands": ["generate p p > ve ve~"],
+      "expected_incoming": ["p", "p"],
+      "expected_final": ["ve", "ve~"],
+      "expected_required_intermediates": [],
+      "expected_energy_gev": 13000.0,
+      "expected_nevents": 100
+    },
+    {
+      "scenario_id": "P07",
+      "group": "core",
+      "description": "Muon-neutrino pair production",
+      "request": "Simulate p p > vm vm~ at 13 TeV with 100 events. Do not use Pythia8, Delphes, or MadAnalysis.",
+      "expectation": "ready_exact",
+      "expected_process_commands": ["generate p p > vm vm~"],
+      "expected_incoming": ["p", "p"],
+      "expected_final": ["vm", "vm~"],
+      "expected_required_intermediates": [],
+      "expected_energy_gev": 13000.0,
+      "expected_nevents": 100
+    },
+    {
+      "scenario_id": "P08",
+      "group": "core",
+      "description": "Electron-positron collider to muons",
+      "request": "Simulate e+ e- > mu+ mu- at a total center-of-mass energy of 250 GeV with 100 events. Do not use Pythia8, Delphes, or MadAnalysis.",
+      "expectation": "ready_exact",
+      "expected_process_commands": ["generate e+ e- > mu+ mu-"],
+      "expected_incoming": ["e+", "e-"],
+      "expected_final": ["mu+", "mu-"],
+      "expected_required_intermediates": [],
+      "expected_energy_gev": 250.0,
+      "expected_nevents": 100
+    },
+    {
+      "scenario_id": "P09",
+      "group": "core",
+      "description": "Electron pair plus jet",
+      "request": "Simulate p p > e+ e- j at 13 TeV with 100 events. Do not use Pythia8, Delphes, or MadAnalysis.",
+      "expectation": "ready_exact",
+      "expected_process_commands": ["generate p p > e+ e- j"],
+      "expected_incoming": ["p", "p"],
+      "expected_final": ["e+", "e-", "j"],
+      "expected_required_intermediates": [],
+      "expected_energy_gev": 13000.0,
+      "expected_nevents": 100
+    },
+    {
+      "scenario_id": "P10",
+      "group": "core",
+      "description": "Top pair plus jet",
+      "request": "Simulate p p > t t~ j at 13 TeV with 100 events. Do not use Pythia8, Delphes, or MadAnalysis.",
+      "expectation": "ready_exact",
+      "expected_process_commands": ["generate p p > t t~ j"],
+      "expected_incoming": ["p", "p"],
+      "expected_final": ["t", "t~", "j"],
+      "expected_required_intermediates": [],
+      "expected_energy_gev": 13000.0,
+      "expected_nevents": 100
+    },
+    {
+      "scenario_id": "P11",
+      "group": "core",
+      "description": "Explicit partonic hard process inside pp collider",
+      "request": "At a 13 TeV proton-proton collider, simulate the hard process q q > u u with 100 events. Do not use Pythia8, Delphes, or MadAnalysis.",
+      "expectation": "ready_exact",
+      "expected_process_commands": ["generate q q > u u"],
+      "expected_incoming": ["q", "q"],
+      "expected_final": ["u", "u"],
+      "expected_required_intermediates": [],
+      "expected_energy_gev": 13000.0,
+      "expected_nevents": 100
+    },
+
+    {
+      "scenario_id": "D01",
+      "group": "decay",
+      "description": "Z production with explicit electron decay",
+      "request": "At a 13 TeV proton-proton collider, simulate p p > z with 100 events, with the z decaying to e+ e-. Do not use Pythia8, Delphes, or MadAnalysis.",
+      "expectation": "ready_exact",
+      "expected_process_commands": [
+        "generate p p > z, z > e+ e-",
+        "generate p p > z > e+ e-"
+      ],
+      "expected_energy_gev": 13000.0,
+      "expected_nevents": 100
+    },
+    {
+      "scenario_id": "D02",
+      "group": "decay",
+      "description": "W production with explicit leptonic decay",
+      "request": "At a 13 TeV proton-proton collider, simulate p p > w+ with 100 events, with the w+ decaying to e+ ve. Do not use Pythia8, Delphes, or MadAnalysis.",
+      "expectation": "ready_exact",
+      "expected_process_commands": [
+        "generate p p > w+, w+ > e+ ve",
+        "generate p p > w+ > e+ ve"
+      ],
+      "expected_energy_gev": 13000.0,
+      "expected_nevents": 100
+    },
+    {
+      "scenario_id": "D03",
+      "group": "decay",
+      "description": "Higgs production with explicit electron decay",
+      "request": "At a 13 TeV proton-proton collider, simulate p p > h with 100 events, with the h decaying to e+ e-. Do not use Pythia8, Delphes, or MadAnalysis.",
+      "expectation": "ready_exact",
+      "expected_process_commands": [
+        "generate p p > h, h > e+ e-",
+        "generate p p > h > e+ e-"
+      ],
+      "expected_energy_gev": 13000.0,
+      "expected_nevents": 100
+    },
+    {
+      "scenario_id": "D04",
+      "group": "decay",
+      "description": "Explicit Z intermediate to neutrinos",
+      "request": "Simulate p p > z > ve ve~ at 13 TeV with 100 events. Do not use Pythia8, Delphes, or MadAnalysis.",
+      "expectation": "ready_exact",
+      "expected_process_commands": ["generate p p > z > ve ve~"],
+      "expected_incoming": ["p", "p"],
+      "expected_final": ["ve", "ve~"],
+      "expected_required_intermediates": ["z"],
+      "expected_energy_gev": 13000.0,
+      "expected_nevents": 100
+    },
+    {
+      "scenario_id": "D05",
+      "group": "decay",
+      "description": "Electron pair constrained to a Z intermediate",
+      "request": "Simulate p p > e+ e- through a z only at 13 TeV with 100 events. Do not use Pythia8, Delphes, or MadAnalysis.",
+      "expectation": "ready_exact",
+      "expected_process_commands": ["generate p p > z > e+ e-"],
+      "expected_incoming": ["p", "p"],
+      "expected_final": ["e+", "e-"],
+      "expected_required_intermediates": ["z"],
+      "expected_energy_gev": 13000.0,
+      "expected_nevents": 100
+    },
+
+    {
+      "scenario_id": "N01",
+      "group": "safety",
+      "description": "Missing final state",
+      "request": "Run proton-proton collisions at 13 TeV with 100 events.",
+      "expectation": "not_ready",
+      "expected_zero_llm": true
+    },
+    {
+      "scenario_id": "N02",
+      "group": "safety",
+      "description": "Ambiguous uncharged electron notation",
+      "request": "Simulate p p > e e at 13 TeV with 100 events.",
+      "expectation": "not_ready",
+      "expected_zero_llm": false
+    },
+    {
+      "scenario_id": "N03",
+      "group": "safety",
+      "description": "Ambiguous neutrino flavour and conjugation",
+      "request": "Simulate p p > nu nu at 13 TeV with 100 events.",
+      "expectation": "not_ready",
+      "expected_zero_llm": false
+    },
+    {
+      "scenario_id": "N04",
+      "group": "safety",
+      "description": "Missing collider energy",
+      "request": "Simulate p p > z with 100 events.",
+      "expectation": "not_ready",
+      "expected_zero_llm": true
+    },
+    {
+      "scenario_id": "N05",
+      "group": "safety",
+      "description": "Missing event count",
+      "request": "Simulate p p > z at 13 TeV.",
+      "expectation": "not_ready",
+      "expected_zero_llm": true
+    },
+    {
+      "scenario_id": "N06",
+      "group": "safety",
+      "description": "Vague interesting-process request",
+      "request": "Generate something interesting at 13 TeV with 100 events.",
+      "expectation": "not_ready",
+      "expected_zero_llm": true
+    },
+    {
+      "scenario_id": "N07",
+      "group": "safety",
+      "description": "Software named without physics process",
+      "request": "Run MadGraph with 100 events.",
+      "expectation": "not_ready",
+      "expected_zero_llm": true
+    },
+    {
+      "scenario_id": "N08",
+      "group": "safety",
+      "description": "Decay-only request without collider beams",
+      "request": "Simulate h > e+ e- at 125 GeV with 100 events.",
+      "expectation": "not_ready",
+      "expected_zero_llm": false
+    }
+  ]
+}

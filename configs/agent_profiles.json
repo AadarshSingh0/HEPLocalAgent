@@ -1,0 +1,33 @@
+{
+  "legacy_llama3": {
+    "primary_model": "llama3:8b",
+    "fallback_model": null,
+    "primary_timeout_seconds": 180,
+    "fallback_timeout_seconds": null,
+    "max_repairs": 3,
+    "max_planner_attempts": 2
+  },
+  "qwen_primary": {
+    "primary_model": "qwen3-coder-next:Q4_K_M",
+    "fallback_model": null,
+    "primary_timeout_seconds": 180,
+    "fallback_timeout_seconds": null,
+    "max_repairs": 2,
+    "max_planner_attempts": 2
+  },
+  "qwen_cascade": {
+    "primary_model": "qwen3-coder-next:Q4_K_M",
+    "fallback_model": "llama3.3:70b",
+    "primary_timeout_seconds": 180,
+    "fallback_timeout_seconds": 600,
+    "max_repairs": 2,
+    "max_planner_attempts": 2
+  },
+  "starter_local": {
+    "primary_model": "llama3.1:8b",
+    "fallback_model": null,
+    "primary_timeout_seconds": 300,
+    "fallback_timeout_seconds": null,
+    "max_repairs": 2
+  }
+}

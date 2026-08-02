@@ -1,0 +1,327 @@
+{
+  "schema_version": "1.0",
+  "suite_id": "preexecution_generalization_v1",
+  "description": "Frozen pre-execution stress tests for numerical generalization, structured MadAnalysis planning, and safe rejection.",
+  "scenarios": [
+    {
+      "id": "E01",
+      "title": "Changed collider energy",
+      "request": "Simulate proton-proton collisions producing an electron and a positron at 14 TeV. Generate 120 events. Do not use Pythia8 or Delphes.",
+      "expected": {
+        "ready": true,
+        "energy_gev": 14000.0,
+        "nevents": 120,
+        "pipeline": {
+          "madgraph": true,
+          "pythia8": false,
+          "delphes": false,
+          "madanalysis": false
+        },
+        "analysis": {
+          "mode": "disabled"
+        }
+      }
+    },
+    {
+      "id": "E02",
+      "title": "Changed symmetric lepton cuts",
+      "request": "Simulate proton-proton collisions producing an electron and a positron at 13.6 TeV. Generate 100 events with Pythia8 and no Delphes. Use MadAnalysis to plot the electron-positron invariant mass from 70 to 110 GeV with 20 bins. Require both particles to have transverse momentum greater than 35 GeV and absolute pseudorapidity less than 2.1.",
+      "expected": {
+        "ready": true,
+        "energy_gev": 13600.0,
+        "nevents": 100,
+        "pipeline": {
+          "madgraph": true,
+          "pythia8": true,
+          "delphes": false,
+          "madanalysis": true
+        },
+        "analysis": {
+          "mode": "custom",
+          "exact_histogram_count": 1,
+          "exact_cut_count": 4,
+          "histograms": [
+            {
+              "observable": "invariant_mass",
+              "particles": ["e+", "e-"],
+              "bins": 20,
+              "minimum": 70.0,
+              "maximum": 110.0,
+              "unit": "GeV"
+            }
+          ],
+          "cuts": [
+            {
+              "observable": "pt",
+              "particles": ["e+"],
+              "comparison": ">",
+              "value": 35.0,
+              "unit": "GeV"
+            },
+            {
+              "observable": "pt",
+              "particles": ["e-"],
+              "comparison": ">",
+              "value": 35.0,
+              "unit": "GeV"
+            },
+            {
+              "observable": "abs_eta",
+              "particles": ["e+"],
+              "comparison": "<",
+              "value": 2.1,
+              "unit": "dimensionless"
+            },
+            {
+              "observable": "abs_eta",
+              "particles": ["e-"],
+              "comparison": "<",
+              "value": 2.1,
+              "unit": "dimensionless"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "E03",
+      "title": "Asymmetric particle cuts",
+      "request": "Simulate proton-proton collisions producing an electron and a positron at 13 TeV. Generate 100 events with Pythia8 and no Delphes. Use MadAnalysis to plot the electron-positron invariant mass from 50 to 150 GeV with 25 bins. Require the positron transverse momentum to be greater than 30 GeV and the electron transverse momentum to be greater than 45 GeV.",
+      "expected": {
+        "ready": true,
+        "energy_gev": 13000.0,
+        "nevents": 100,
+        "pipeline": {
+          "madgraph": true,
+          "pythia8": true,
+          "delphes": false,
+          "madanalysis": true
+        },
+        "analysis": {
+          "mode": "custom",
+          "exact_histogram_count": 1,
+          "exact_cut_count": 2,
+          "histograms": [
+            {
+              "observable": "invariant_mass",
+              "particles": ["e+", "e-"],
+              "bins": 25,
+              "minimum": 50.0,
+              "maximum": 150.0,
+              "unit": "GeV"
+            }
+          ],
+          "cuts": [
+            {
+              "observable": "pt",
+              "particles": ["e+"],
+              "comparison": ">",
+              "value": 30.0,
+              "unit": "GeV"
+            },
+            {
+              "observable": "pt",
+              "particles": ["e-"],
+              "comparison": ">",
+              "value": 45.0,
+              "unit": "GeV"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "E04",
+      "title": "Invariant-mass window",
+      "request": "Simulate proton-proton collisions producing an electron and a positron at 13 TeV. Generate 100 events with Pythia8 and no Delphes. In MadAnalysis plot their invariant mass from 60 to 120 GeV with 30 bins and select events with invariant mass greater than 80 GeV and less than 100 GeV.",
+      "expected": {
+        "ready": true,
+        "energy_gev": 13000.0,
+        "nevents": 100,
+        "pipeline": {
+          "madgraph": true,
+          "pythia8": true,
+          "delphes": false,
+          "madanalysis": true
+        },
+        "analysis": {
+          "mode": "custom",
+          "exact_histogram_count": 1,
+          "exact_cut_count": 2,
+          "histograms": [
+            {
+              "observable": "invariant_mass",
+              "particles": ["e+", "e-"],
+              "bins": 30,
+              "minimum": 60.0,
+              "maximum": 120.0,
+              "unit": "GeV"
+            }
+          ],
+          "cuts": [
+            {
+              "observable": "invariant_mass",
+              "particles": ["e+", "e-"],
+              "comparison": ">",
+              "value": 80.0,
+              "unit": "GeV"
+            },
+            {
+              "observable": "invariant_mass",
+              "particles": ["e+", "e-"],
+              "comparison": "<",
+              "value": 100.0,
+              "unit": "GeV"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "E05",
+      "title": "Changed histogram scale",
+      "request": "Simulate proton-proton collisions producing an electron and a positron at 14 TeV. Generate 100 events with Pythia8 and no Delphes. Use MadAnalysis to plot the electron transverse momentum from 0 to 500 GeV with 50 bins. Do not apply selection cuts.",
+      "expected": {
+        "ready": true,
+        "energy_gev": 14000.0,
+        "nevents": 100,
+        "pipeline": {
+          "madgraph": true,
+          "pythia8": true,
+          "delphes": false,
+          "madanalysis": true
+        },
+        "analysis": {
+          "mode": "custom",
+          "exact_histogram_count": 1,
+          "exact_cut_count": 0,
+          "histograms": [
+            {
+              "observable": "pt",
+              "particles": ["e-"],
+              "bins": 50,
+              "minimum": 0.0,
+              "maximum": 500.0,
+              "unit": "GeV"
+            }
+          ],
+          "cuts": []
+        }
+      }
+    },
+    {
+      "id": "E06",
+      "title": "Delta-R observable",
+      "request": "Simulate proton-proton collisions producing an electron and a positron at 13 TeV. Generate 100 events with Pythia8 and no Delphes. Use MadAnalysis to plot delta R between the electron and positron from 0 to 6 with 30 bins. Do not apply selection cuts.",
+      "expected": {
+        "ready": true,
+        "energy_gev": 13000.0,
+        "nevents": 100,
+        "pipeline": {
+          "madgraph": true,
+          "pythia8": true,
+          "delphes": false,
+          "madanalysis": true
+        },
+        "analysis": {
+          "mode": "custom",
+          "exact_histogram_count": 1,
+          "exact_cut_count": 0,
+          "histograms": [
+            {
+              "observable": "delta_r",
+              "particles": ["e+", "e-"],
+              "bins": 30,
+              "minimum": 0.0,
+              "maximum": 6.0,
+              "unit": "dimensionless"
+            }
+          ],
+          "cuts": []
+        }
+      }
+    },
+    {
+      "id": "E07",
+      "title": "Energy observable at future collider scale",
+      "request": "Simulate proton-proton collisions producing an electron and a positron at 27 TeV. Generate 100 events with Pythia8 and no Delphes. Use MadAnalysis to plot the electron energy from 100 to 1000 GeV with 45 bins. Do not apply selection cuts.",
+      "expected": {
+        "ready": true,
+        "energy_gev": 27000.0,
+        "nevents": 100,
+        "pipeline": {
+          "madgraph": true,
+          "pythia8": true,
+          "delphes": false,
+          "madanalysis": true
+        },
+        "analysis": {
+          "mode": "custom",
+          "exact_histogram_count": 1,
+          "exact_cut_count": 0,
+          "histograms": [
+            {
+              "observable": "energy",
+              "particles": ["e-"],
+              "bins": 45,
+              "minimum": 100.0,
+              "maximum": 1000.0,
+              "unit": "GeV"
+            }
+          ],
+          "cuts": []
+        }
+      }
+    },
+    {
+      "id": "E08",
+      "title": "Vague standard cuts must not be invented",
+      "request": "Simulate proton-proton collisions producing an electron and a positron at 13 TeV. Generate 100 events with Pythia8 and no Delphes. Use MadAnalysis to plot their invariant mass from 50 to 130 GeV with 40 bins and apply standard cuts.",
+      "expected": {
+        "ready": true,
+        "energy_gev": 13000.0,
+        "nevents": 100,
+        "pipeline": {
+          "madgraph": true,
+          "pythia8": true,
+          "delphes": false,
+          "madanalysis": true
+        },
+        "analysis": {
+          "mode": "custom",
+          "exact_histogram_count": 1,
+          "exact_cut_count": 0,
+          "histograms": [
+            {
+              "observable": "invariant_mass",
+              "particles": ["e+", "e-"],
+              "bins": 40,
+              "minimum": 50.0,
+              "maximum": 130.0,
+              "unit": "GeV"
+            }
+          ],
+          "cuts": []
+        }
+      }
+    },
+    {
+      "id": "E09",
+      "title": "Cut-only structured-analysis limitation",
+      "request": "Simulate proton-proton collisions producing an electron and a positron at 13 TeV. Generate 100 events with Pythia8 and no Delphes. Use MadAnalysis to require both particles to have transverse momentum above 20 GeV, but do not produce any plots.",
+      "expected": {
+        "ready": false,
+        "safe_rejection_reason": "The current structured-analysis schema does not support a cut-only plan without at least one histogram."
+      }
+    },
+    {
+      "id": "E10",
+      "title": "Unsupported energy-difference observable",
+      "request": "Simulate proton-proton collisions producing an electron and a positron at 13 TeV. Generate 100 events with Pythia8 and no Delphes. Use MadAnalysis to plot the energy difference E(e+) minus E(e-) from -500 to 500 GeV with 50 bins.",
+      "expected": {
+        "ready": false,
+        "safe_rejection_reason": "The structured-analysis schema does not support algebraic energy-difference observables."
+      }
+    }
+  ]
+}
