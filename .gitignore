@@ -21,3 +21,6 @@ env/
 .idea/
 .vscode/
 *~
+
+# Generated package metadata
+*.egg-info/

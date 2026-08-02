@@ -69,10 +69,10 @@ Repository root containing project metadata, documentation, configuration, sourc
 | File | Category | Purpose |
 |---|---|---|
 | `AI_ASSISTED_DEVELOPMENT.md` | project support | Markdown documentation: AI-Assisted Development Disclosure. |
-| `FOLDER_GUIDE.md` | project support | Markdown documentation: Local HEP Agent — Practical Folder Guide. |
+| `FOLDER_GUIDE.md` | project support | Markdown documentation: HEPLocalAgent — Practical Folder Guide. |
 | `install.sh` | project support | Shell utility script. |
 | `pyproject.toml` | package metadata | TOML project or tool configuration. |
-| `README.md` | project support | Markdown documentation: Local HEP Agent. |
+| `README.md` | project support | Markdown documentation: HEPLocalAgent. |
 | `requirements-web.txt` | project support | -r requirements.txt |
 | `requirements.txt` | package metadata | pydantic>=2.7,<3 |
 | `run_agent.sh` | project support | Shell utility script. |

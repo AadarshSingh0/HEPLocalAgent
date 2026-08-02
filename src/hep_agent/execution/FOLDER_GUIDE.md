@@ -28,7 +28,7 @@ The tests use fake executables. They do not run real MadGraph.
 
 Run all tests with:
 
-    cd ~/Benchmark/HEPToolBench_GitHub/local_hep_agent
+    cd ~/Benchmark/HEPLocalAgent
     PYTHONPATH=src python -m unittest discover -s tests -v
 
 Real MadGraph execution will be tested only after its executable path

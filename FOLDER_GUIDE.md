@@ -1,4 +1,4 @@
-# Local HEP Agent — Practical Folder Guide
+# HEPLocalAgent — Practical Folder Guide
 
 This folder contains the local collider-agent project connected to HEPToolBench.
 
@@ -53,7 +53,7 @@ It should not contain source code.
 
 Show the folder structure:
 
-    cd ~/Benchmark/HEPToolBench_GitHub/local_hep_agent
+    cd ~/Benchmark/HEPLocalAgent
     tree -a -L 4
 
 Show source and documentation files:

@@ -1,4 +1,4 @@
-# Local HEP Agent
+# HEPLocalAgent
 
 This directory contains the local multi-model agent developed using the
 results of the HEPToolBench local-model evaluation.

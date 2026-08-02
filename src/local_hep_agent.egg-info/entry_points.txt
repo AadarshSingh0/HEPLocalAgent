@@ -1,2 +1,0 @@
-[console_scripts]
-hep-agent = hep_agent.ui.cli:main

@@ -93,7 +93,7 @@
       "path": "FOLDER_GUIDE.md",
       "directory": ".",
       "category": "project support",
-      "description": "Markdown documentation: Local HEP Agent \u2014 Practical Folder Guide.",
+      "description": "Markdown documentation: HEPLocalAgent \u2014 Practical Folder Guide.",
       "size_bytes": 2099
     },
     {
@@ -254,7 +254,7 @@
       "path": "README.md",
       "directory": ".",
       "category": "project support",
-      "description": "Markdown documentation: Local HEP Agent.",
+      "description": "Markdown documentation: HEPLocalAgent.",
       "size_bytes": 2041
     },
     {

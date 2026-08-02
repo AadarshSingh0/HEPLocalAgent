@@ -16,7 +16,7 @@ must record the prompt file hash.
 
 To read the planner prompt:
 
-    cd ~/Benchmark/HEPToolBench_GitHub/local_hep_agent
+    cd ~/Benchmark/HEPLocalAgent
     cat prompts/planner_system.txt
 
 ## Repair prompt

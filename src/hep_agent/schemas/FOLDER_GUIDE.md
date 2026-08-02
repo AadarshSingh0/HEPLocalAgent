@@ -40,5 +40,5 @@ There is nothing to execute yet.
 
 To read the schema design:
 
-    cd ~/Benchmark/HEPToolBench_GitHub/local_hep_agent
+    cd ~/Benchmark/HEPLocalAgent
     cat src/hep_agent/schemas/SCHEMA_DESIGN.md
