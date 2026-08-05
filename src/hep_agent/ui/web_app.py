@@ -2948,7 +2948,7 @@ def _inject_final_ui_polish() -> None:
 
 def main() -> None:
     st.set_page_config(
-        page_title="HEPToolBench Agent",
+        page_title="HEPLocalAgent",
         page_icon="⚛️",
         layout="wide",
         initial_sidebar_state="collapsed",

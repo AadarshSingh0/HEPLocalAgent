@@ -1,7 +1,8 @@
 # HEPLocalAgent
 
-This directory contains the local multi-model agent developed using the
-results of the HEPToolBench local-model evaluation.
+HEPLocalAgent is a standalone local multi-model collider agent. Its model
+routing and validation design was informed by the HEPToolBench evaluation,
+but the benchmark repository is not a runtime dependency.
 
 The planned controlled comparison includes:
 
@@ -10,17 +11,13 @@ The planned controlled comparison includes:
 3. a routed architecture using Qwen3-Coder-Next by default and
    Llama 3.3 70B as a fallback for repeated validation failures.
 
-The agent will reuse the deterministic task validators distributed under:
-
-    ../local_llm_benchmark/
-
-The final release will include:
+The repository includes:
 
 - agent source code;
 - model-routing configuration;
 - prompt templates;
 - whitelisted tools;
-- deterministic validation;
+- self-contained deterministic validation under `src/hep_agent/validation`;
 - bounded repair logic;
 - held-out agent evaluation scenarios;
 - execution logs and aggregate results.

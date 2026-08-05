@@ -504,8 +504,8 @@ def _pythia_installation_check(
                 "missing_marker": str(native_marker),
             },
             remediation=(
-                "Rerun ./install.sh --agent-only "
-                "--with-pythia8 --yes to rebuild HepMC2 "
+                "Rerun ./install.sh --with-pythia8 --yes "
+                "to rebuild HepMC2 "
                 "and Pythia8 with Apple Clang."
             ),
         )

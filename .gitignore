@@ -16,6 +16,12 @@ env/
 /results/
 /logs/
 
+# Generated machine configuration and installer backups
+/configs/local_paths.json
+/configs/ollama_host
+/configs/conda_root
+/configs/*.before_bootstrap
+
 # Operating systems and editors
 .DS_Store
 .idea/

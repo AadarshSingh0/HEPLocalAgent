@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
-# Remove software and machine configuration created by HEPToolBench.
+# Remove software and machine configuration created by HEPLocalAgent.
 
 set -Eeuo pipefail
 IFS=$'\n\t'
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
-REPOSITORY_ROOT="$(cd -- "${PROJECT_ROOT}/.." && pwd)"
 
 DEFAULT_TOOLS_ROOT="${HOME}/.local/share/hep-agent-tools"
 TOOLS_ROOT="${DEFAULT_TOOLS_ROOT}"
@@ -22,19 +21,19 @@ PURGE_RESULTS=0
 
 usage() {
     cat <<'EOF'
-HEPToolBench uninstaller
+HEPLocalAgent uninstaller
 
 Usage:
   ./uninstall.sh [options]
 
 Default cleanup:
-  - removes local_hep_agent/.venv
+  - removes .venv
   - removes ~/.local/share/hep-agent-tools
   - removes generated machine-path and Ollama-host configuration
   - restores pre-install configuration backups when present
   - removes the generated starter_local profile
 
-The repository, benchmark/agent results, Ollama, downloaded Ollama models,
+The repository, agent results, Ollama, downloaded Ollama models,
 and operating-system packages are preserved by default.
 
 Options:
@@ -42,7 +41,7 @@ Options:
   --dry-run              Show the cleanup plan without deleting anything.
   --tools-root PATH      Remove a custom HEP tools directory.
   --profile NAME         Remove this generated agent profile.
-  --purge-results        Also delete locally generated agent and benchmark runs.
+  --purge-results        Also delete locally generated agent runs.
   --remove-model NAME    Also remove one model from a local Ollama server.
   --ollama-host URL      Local Ollama URL used by --remove-model.
   -h, --help             Show this help.
@@ -177,13 +176,13 @@ fi
 
 [[ "${VENV_DIR}" == "${PROJECT_ROOT}/.venv" ]] || \
     die "Internal safety check failed for the isolated environment."
-[[ "${PROJECT_ROOT}" != "/" && "${REPOSITORY_ROOT}" != "/" ]] || \
-    die "Internal safety check resolved a repository path to /."
+[[ "${PROJECT_ROOT}" != "/" ]] || \
+    die "Internal safety check resolved the project path to /."
 [[ "${TOOLS_ROOT}" != "/" && "${TOOLS_ROOT}" != "${HOME}" ]] || \
     die "Refusing to remove a broad tools path: ${TOOLS_ROOT}"
 
 log "============================================================"
-log "HEPTOOLBENCH UNINSTALL PLAN"
+log "HEPLOCALAGENT UNINSTALL PLAN"
 log "============================================================"
 log "Remove isolated Python environment:"
 log "  ${VENV_DIR}"
@@ -195,12 +194,10 @@ log "Remove generated profile:"
 log "  ${PROFILE_NAME}"
 
 if (( PURGE_RESULTS )); then
-    log "Delete generated agent and benchmark runs:"
+    log "Delete generated agent runs:"
     log "  ${PROJECT_ROOT}/results"
-    log "  ${REPOSITORY_ROOT}/local_llm_benchmark/runs"
-    log "  ${REPOSITORY_ROOT}/local_llm_benchmark/results/all_runs_long.csv"
 else
-    log "Preserve generated agent and benchmark results."
+    log "Preserve generated agent results."
 fi
 
 if [[ -n "${REMOVE_MODEL_NAME}" ]]; then
@@ -356,14 +353,11 @@ remove_path "${TOOLS_ROOT}"
 
 if (( PURGE_RESULTS )); then
     remove_path "${PROJECT_ROOT}/results"
-    remove_path "${REPOSITORY_ROOT}/local_llm_benchmark/runs"
-    remove_path \
-        "${REPOSITORY_ROOT}/local_llm_benchmark/results/all_runs_long.csv"
 fi
 
 log ""
 if (( DRY_RUN )); then
     log "Dry run complete. Nothing was deleted."
 else
-    log "HEPToolBench-managed software cleanup complete."
+    log "HEPLocalAgent-managed software cleanup complete."
 fi

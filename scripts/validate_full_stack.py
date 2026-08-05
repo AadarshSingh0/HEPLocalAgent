@@ -237,7 +237,7 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     print("=" * 72)
-    print("HEPTOOLBENCH FULL-STACK VALIDATION")
+    print("HEPLOCALAGENT FULL-STACK VALIDATION")
     print("=" * 72)
     print(f"MadGraph:   {mg5_executable}")
     print(f"MadAnalysis: {madanalysis_executable}")

@@ -18,10 +18,6 @@ ROOT = Path(__file__).resolve().parents[1]
 class BootstrapScriptTests(unittest.TestCase):
     def test_shell_scripts_have_valid_syntax(self) -> None:
         scripts = (
-            ROOT.parent / "install.sh",
-            ROOT.parent / "run_agent.sh",
-            ROOT.parent / "run_benchmark.sh",
-            ROOT.parent / "uninstall.sh",
             ROOT / "install.sh",
             ROOT / "run_agent.sh",
             ROOT / "uninstall.sh",
@@ -43,22 +39,18 @@ class BootstrapScriptTests(unittest.TestCase):
                 completed.stderr,
             )
 
-    def test_repository_installer_is_safe_for_empty_apple_bash_array(
+    def test_repository_installer_delegates_to_agent_bootstrap(
         self,
     ) -> None:
-        script = ROOT.parent / "install.sh"
+        script = ROOT / "install.sh"
         source = script.read_text(encoding="utf-8")
 
         self.assertIn(
-            'local -a agent_command=(',
-            source,
-        )
-        self.assertIn(
-            '"${agent_command[@]}"',
+            'scripts/bootstrap_local_hep_agent.sh" "$@"',
             source,
         )
         self.assertNotIn(
-            '"${ROOT}/local_hep_agent/install.sh" "${AGENT_ARGS[@]}"',
+            "local_llm_benchmark",
             source,
         )
 
@@ -83,7 +75,7 @@ class BootstrapScriptTests(unittest.TestCase):
         self.assertIn("--validate-full-stack", completed.stdout)
 
     def test_uninstall_help_is_available(self) -> None:
-        script = ROOT.parent / "uninstall.sh"
+        script = ROOT / "uninstall.sh"
         completed = subprocess.run(
             ["bash", str(script), "--help"],
             check=False,
@@ -91,7 +83,7 @@ class BootstrapScriptTests(unittest.TestCase):
             text=True,
         )
         self.assertEqual(completed.returncode, 0)
-        self.assertIn("HEPToolBench uninstaller", completed.stdout)
+        self.assertIn("HEPLocalAgent uninstaller", completed.stdout)
         self.assertIn("--dry-run", completed.stdout)
         self.assertIn("--purge-results", completed.stdout)
         self.assertIn("--remove-model", completed.stdout)
@@ -99,11 +91,10 @@ class BootstrapScriptTests(unittest.TestCase):
     def test_uninstaller_removes_only_managed_runtime_files(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             temporary = Path(temporary_directory)
-            repository = temporary / "HEPToolBench"
-            agent = repository / "local_hep_agent"
-            scripts = agent / "scripts"
-            configs = agent / "configs"
-            benchmark = repository / "local_llm_benchmark"
+            repository = temporary / "HEPLocalAgent"
+            scripts = repository / "scripts"
+            configs = repository / "configs"
+            benchmark = temporary / "HEPToolBench"
             home = temporary / "home"
 
             scripts.mkdir(parents=True)
@@ -112,20 +103,16 @@ class BootstrapScriptTests(unittest.TestCase):
             (benchmark / "runs" / "test-run").mkdir(parents=True)
 
             shutil.copy2(
-                ROOT.parent / "uninstall.sh",
-                repository / "uninstall.sh",
-            )
-            shutil.copy2(
                 ROOT / "uninstall.sh",
-                agent / "uninstall.sh",
+                repository / "uninstall.sh",
             )
             shutil.copy2(
                 ROOT / "scripts" / "uninstall_local_hep_agent.sh",
                 scripts / "uninstall_local_hep_agent.sh",
             )
 
-            (agent / ".venv" / "bin").mkdir(parents=True)
-            (agent / ".venv" / "installed.txt").write_text(
+            (repository / ".venv" / "bin").mkdir(parents=True)
+            (repository / ".venv" / "installed.txt").write_text(
                 "installed\n",
                 encoding="utf-8",
             )
@@ -153,8 +140,8 @@ class BootstrapScriptTests(unittest.TestCase):
                     encoding="utf-8",
                 )
 
-            (agent / "results").mkdir()
-            (agent / "results" / "user-run.json").write_text(
+            (repository / "results").mkdir()
+            (repository / "results" / "user-run.json").write_text(
                 "{}\n",
                 encoding="utf-8",
             )
@@ -191,7 +178,7 @@ class BootstrapScriptTests(unittest.TestCase):
                 0,
                 completed.stderr,
             )
-            self.assertFalse((agent / ".venv").exists())
+            self.assertFalse((repository / ".venv").exists())
             self.assertFalse(tools.exists())
             self.assertFalse((configs / "local_paths.json").exists())
             self.assertFalse((configs / "ollama_host").exists())
@@ -204,7 +191,7 @@ class BootstrapScriptTests(unittest.TestCase):
             self.assertIn("legacy_llama3", remaining_profiles)
             self.assertNotIn("starter_local", remaining_profiles)
 
-            self.assertTrue((agent / "results").exists())
+            self.assertTrue((repository / "results").exists())
             self.assertTrue((benchmark / "runs").exists())
             self.assertTrue(
                 (
@@ -229,37 +216,30 @@ class BootstrapScriptTests(unittest.TestCase):
                 0,
                 completed.stderr,
             )
-            self.assertFalse((agent / "results").exists())
-            self.assertFalse((benchmark / "runs").exists())
-            self.assertFalse(
-                (
-                    benchmark / "results" / "all_runs_long.csv"
-                ).exists()
+            self.assertFalse((repository / "results").exists())
+            self.assertTrue((benchmark / "runs").exists())
+            self.assertTrue(
+                (benchmark / "results" / "all_runs_long.csv").exists()
             )
             self.assertTrue(canonical_result.exists())
 
     def test_uninstaller_refuses_unmarked_custom_tools_root(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             temporary = Path(temporary_directory)
-            repository = temporary / "HEPToolBench"
-            agent = repository / "local_hep_agent"
-            scripts = agent / "scripts"
+            repository = temporary / "HEPLocalAgent"
+            scripts = repository / "scripts"
             custom_tools = temporary / "shared-tools"
 
             scripts.mkdir(parents=True)
             custom_tools.mkdir()
             (custom_tools / "keep.txt").write_text(
-                "not owned by HEPToolBench\n",
+                "not owned by HEPLocalAgent\n",
                 encoding="utf-8",
             )
 
             shutil.copy2(
-                ROOT.parent / "uninstall.sh",
-                repository / "uninstall.sh",
-            )
-            shutil.copy2(
                 ROOT / "uninstall.sh",
-                agent / "uninstall.sh",
+                repository / "uninstall.sh",
             )
             shutil.copy2(
                 ROOT / "scripts" / "uninstall_local_hep_agent.sh",
@@ -406,6 +386,7 @@ class BootstrapScriptTests(unittest.TestCase):
                 "HEP_AGENT_TEST_PLATFORM": "Darwin",
                 "HEP_AGENT_TEST_ARCH": "x86_64",
                 "HEP_AGENT_TEST_MACOS_VERSION": "13.7.8",
+                "PATH": os.defpath,
             }
         )
         completed = subprocess.run(
@@ -822,6 +803,7 @@ class BootstrapScriptTests(unittest.TestCase):
                 "HEP_AGENT_TEST_PLATFORM": "Darwin",
                 "HEP_AGENT_TEST_ARCH": "arm64",
                 "HEP_AGENT_TEST_MACOS_VERSION": "14.0",
+                "PATH": os.defpath,
             }
         )
         completed = subprocess.run(

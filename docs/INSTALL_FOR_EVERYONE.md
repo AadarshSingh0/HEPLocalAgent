@@ -142,13 +142,13 @@ obsolete architecture detector bundled with MadGraph's older HepMC2 source
 and prevents the Pythia shutdown crash that can occur when Conda and native
 C++ runtimes are loaded into the same interface process.
 
-An Apple-Silicon installation made with an earlier HEPToolBench package can be
+An Apple-Silicon installation made with an earlier combined package can be
 repaired without reinstalling MadGraph, ROOT, Delphes, MadAnalysis, Ollama, or
-the benchmark:
+the agent environment:
 
 ```bash
 HEP_AGENT_TOOL_TIMEOUT_SECONDS=7200 \
-  ./install.sh --agent-only --with-pythia8 --yes
+  ./install.sh --with-pythia8 --yes
 ```
 
 The installer recognizes the older Pythia build, compiles a native replacement,
@@ -164,7 +164,7 @@ The installer is designed to be resumable. Existing downloads, the virtual envir
 
 ## Uninstalling
 
-From the top-level HEPToolBench directory, preview the cleanup first:
+From the HEPLocalAgent repository root, preview the cleanup first:
 
 ```bash
 ./uninstall.sh --dry-run
@@ -176,12 +176,12 @@ Then remove the project-managed software:
 ./uninstall.sh
 ```
 
-This removes the isolated `.venv`, the HEPToolBench-owned tools directory
+This removes the isolated `.venv`, the HEPLocalAgent-managed tools directory
 (including Miniforge, MadGraph, Pythia8, ROOT, Delphes, and MadAnalysis 5),
 generated machine configuration, and the generated starter profile. The
 repository and all run results are preserved.
 
-To also delete locally generated agent and benchmark runs:
+To also delete locally generated agent runs:
 
 ```bash
 ./uninstall.sh --purge-results
@@ -199,7 +199,7 @@ time:
 The uninstaller does not implicitly remove the Ollama application, unrelated
 Ollama models, Apple command-line tools, Homebrew, or Linux system packages,
 because these may be shared with other projects. It also never deletes the
-downloaded HEPToolBench source directory.
+downloaded HEPLocalAgent source directory.
 
 ## Files created
 

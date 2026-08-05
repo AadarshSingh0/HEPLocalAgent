@@ -1,6 +1,6 @@
 # HEPLocalAgent — Practical Folder Guide
 
-This folder contains the local collider-agent project connected to HEPToolBench.
+This folder contains the standalone HEPLocalAgent collider-agent project.
 
 The goal is to build a useful local agent that can:
 
@@ -25,15 +25,13 @@ This contains the new production agent.
 
 The planner, model routing, workflow schema, builders, execution controller, and user interface will be developed here.
 
-### validators
+### src/hep_agent/validation
 
-This contains checks performed before execution.
+This contains the self-contained checks performed before execution.
 
-Whenever possible, these validators should reuse the deterministic validators in:
-
-../local_llm_benchmark/
-
-Do not maintain silently different copies of benchmark scorers.
+HEPToolBench scorers are not a runtime dependency of this repository. Keep
+agent validation behavior explicit and cover any intentional comparison with
+benchmark scoring in tests.
 
 ### evaluation
 
@@ -53,7 +51,7 @@ It should not contain source code.
 
 Show the folder structure:
 
-    cd ~/Benchmark/HEPLocalAgent
+    cd HEPLocalAgent
     tree -a -L 4
 
 Show source and documentation files:

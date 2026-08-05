@@ -549,7 +549,7 @@ if (( DRY_RUN )); then
     log "+ create ${TOOLS_ROOT}/${TOOLS_MARKER_NAME}"
 else
     printf '%s\n' \
-        "HEPToolBench managed tools directory" \
+        "HEPLocalAgent managed tools directory" \
         > "${TOOLS_ROOT}/${TOOLS_MARKER_NAME}"
 fi
 
@@ -1450,7 +1450,7 @@ install_macos_arm64_native_hepmc2() {
         return 1
     fi
 
-    # This prefix belongs exclusively to HEPToolBench and is safe to replace.
+    # This prefix belongs exclusively to HEPLocalAgent and is safe to replace.
     rm -rf "${native_prefix}"
 
     (
@@ -1644,7 +1644,7 @@ text = makefile.read_text(encoding="utf-8")
 anchor = "include doc/Makefile.arch\n"
 addition = (
     "\n"
-    "# HEPToolBench macOS compatibility: Delphes' platform makefile replaces\n"
+    "# HEPLocalAgent macOS compatibility: Delphes' platform makefile replaces\n"
     "# environment CXXFLAGS, so this flag must be added after that include.\n"
     "CXXFLAGS += -D_LIBCPP_DISABLE_AVAILABILITY\n"
 )
