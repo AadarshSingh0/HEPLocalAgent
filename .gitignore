@@ -30,3 +30,7 @@ env/
 
 # Generated package metadata
 *.egg-info/
+
+# local helper/patch downloads
+*.patch
+apply_increment_*.py
