@@ -1,0 +1,520 @@
+diff --git a/src/hep_agent/validation/__init__.py b/src/hep_agent/validation/__init__.py
+index 36f5277..a5f8897 100644
+--- a/src/hep_agent/validation/__init__.py
++++ b/src/hep_agent/validation/__init__.py
+@@ -16,16 +16,24 @@ from .grounding import (
+ from .madgraph_workflow import (
+     validate_madgraph_workflow_artifact,
+ )
++from .model_domain import (
++    ModelNamespace,
++    namespace_for_model,
++    validate_model_domain,
++)
+ 
+ __all__ = [
+     "ExplicitRequestFacts",
+     "GroundingResult",
++    "ModelNamespace",
+     "ValidationIssue",
+     "ValidationLevel",
+     "ValidationReport",
+     "extract_explicit_request_facts",
++    "namespace_for_model",
+     "validate_madgraph_artifact",
+     "validate_madgraph_workflow_artifact",
++    "validate_model_domain",
+     "validate_request_grounding",
+     "validate_workflow",
+ ]
+diff --git a/src/hep_agent/validation/core.py b/src/hep_agent/validation/core.py
+index 6fef757..c1106cf 100644
+--- a/src/hep_agent/validation/core.py
++++ b/src/hep_agent/validation/core.py
+@@ -247,6 +247,14 @@ def validate_workflow(workflow: WorkflowIntent) -> ValidationReport:
+                     )
+                 )
+ 
++    # Model-relative domain validation: reject particle or multiparticle
++    # tokens that do not exist in the selected model before any artifact is
++    # built or executed. Imported locally to avoid an import cycle at module
++    # load time (model_domain imports the issue types from this module).
++    from hep_agent.validation.model_domain import validate_model_domain
++
++    issues.extend(validate_model_domain(workflow).issues)
++
+     try:
+         build_madgraph_artifact(workflow)
+     except MadGraphBuildError as exc:
+diff --git a/src/hep_agent/validation/model_domain.py b/src/hep_agent/validation/model_domain.py
+new file mode 100644
+index 0000000..a473b15
+--- /dev/null
++++ b/src/hep_agent/validation/model_domain.py
+@@ -0,0 +1,247 @@
++"""Model-relative domain validation for collider workflows.
++
++This is a *containment* layer, distinct from *interpretation*. Interpretation
++asks "what did the user mean?" and should become more permissive as the local
++model grows more capable. Containment asks "is every proposed value a real,
++executable thing?" and must hold regardless of model capability, because the
++failure mode of every model - small or large - is being confident and wrong.
++
++Concretely, this module checks that every particle and multiparticle token in a
++``WorkflowIntent`` actually exists in the namespace of the *selected physics
++model*, before any MadGraph artifact is built or executed. A token such as
++``tt~`` (two glued particles) is syntactically safe but is not a real label in
++the Standard Model, so today it reaches MadGraph and fails there; this validator
++stops it inside the agent instead.
++
++The check is deliberately **model-relative**. The authority is whatever model is
++loaded, not a hard-coded Standard Model list. A user who loads a richer model is
++therefore not constrained to Standard Model particles: the namespace expands to
++exactly what that model defines. When the namespace cannot be determined - for
++example an installed or user UFO model we have not parsed yet - validation is
++**permissive**: it returns no issues rather than inventing a rejection it cannot
++justify. Containment must never manufacture a false block.
++
++Suggestions are attached to every rejection so a later repair stage can correct
++one field without regenerating the whole workflow. For a glued token like
++``tt~`` the suggestion is the split ``["t", "t~"]``.
++"""
++
++from __future__ import annotations
++
++from dataclasses import dataclass
++
++from hep_agent.schemas import ModelSource, WorkflowIntent
++from hep_agent.validation.core import (
++    ValidationIssue,
++    ValidationLevel,
++    ValidationReport,
++)
++
++
++# ---------------------------------------------------------------------------
++# Standard Model namespace
++# ---------------------------------------------------------------------------
++#
++# These are the particle and antiparticle labels the default MadGraph ``sm``
++# model exposes, plus MadGraph's default multiparticle labels. ``loop_sm``
++# shares the same particle content. The generic parton labels ``q`` and ``q~``
++# are included because the rest of this codebase already treats them as
++# first-class partonic initial states (see ``SUPPORTED_TOTAL_COM_PAIRS`` in the
++# workflow builder). A later MadGraph-preflight layer can tighten ``q``/``j``/
++# ``p`` distinctions against the live model; this static layer intentionally
++# errs toward accepting anything the existing pipeline already accepts.
++
++_SM_QUARKS = {"u", "c", "d", "s", "b", "t", "q"}
++_SM_QUARKS_BAR = {f"{name}~" for name in _SM_QUARKS}
++
++_SM_CHARGED_LEPTONS = {"e-", "mu-", "ta-"}
++_SM_ANTI_CHARGED_LEPTONS = {"e+", "mu+", "ta+"}
++
++_SM_NEUTRINOS = {"ve", "vm", "vt"}
++_SM_ANTI_NEUTRINOS = {f"{name}~" for name in _SM_NEUTRINOS}
++
++# Self-conjugate bosons plus the charged-W conjugate pair.
++_SM_BOSONS = {"g", "a", "z", "h", "w+", "w-"}
++
++# MadGraph default multiparticle labels.
++_SM_MULTIPARTICLES = {"p", "j", "l+", "l-", "vl", "vl~", "all"}
++
++_SM_LABELS: frozenset[str] = frozenset(
++    _SM_QUARKS
++    | _SM_QUARKS_BAR
++    | _SM_CHARGED_LEPTONS
++    | _SM_ANTI_CHARGED_LEPTONS
++    | _SM_NEUTRINOS
++    | _SM_ANTI_NEUTRINOS
++    | _SM_BOSONS
++    | _SM_MULTIPARTICLES
++)
++
++# Built-in model names (lower-cased) whose namespace we know statically.
++_KNOWN_BUILTIN_SM_NAMES = {"sm", "standard model", "standard_model", "loop_sm"}
++
++
++@dataclass(frozen=True)
++class ModelNamespace:
++    """The set of valid particle/multiparticle labels for one model.
++
++    ``authoritative`` is ``True`` only when we are confident the label set is
++    complete for the selected model. When it is ``False`` no membership
++    conclusions may be drawn, and the domain validator stays silent.
++    """
++
++    model_name: str
++    labels: frozenset[str]
++    authoritative: bool
++
++    def contains(self, token: str) -> bool:
++        return token.strip().lower() in self.labels
++
++
++def namespace_for_model(
++    workflow: WorkflowIntent,
++) -> ModelNamespace:
++    """Resolve the particle namespace for a workflow's selected model.
++
++    Only built-in Standard Model variants are resolved statically today. For
++    installed or user UFO models the namespace is returned as non-authoritative
++    so that the domain validator does not reject unknown-but-possibly-valid
++    labels. UFO parsing is a separate, later capability.
++    """
++
++    model = workflow.model
++    name = model.name.strip().lower()
++
++    if (
++        model.source == ModelSource.BUILTIN
++        and name in _KNOWN_BUILTIN_SM_NAMES
++    ):
++        return ModelNamespace(
++            model_name=model.name,
++            labels=_SM_LABELS,
++            authoritative=True,
++        )
++
++    # Installed UFO, user UFO, or an unrecognised built-in name: we do not
++    # know the full namespace, so we make no membership claims.
++    return ModelNamespace(
++        model_name=model.name,
++        labels=frozenset(),
++        authoritative=False,
++    )
++
++
++def _suggest_replacements(
++    token: str,
++    labels: frozenset[str],
++) -> list[str]:
++    """Suggest valid label(s) for an unknown token.
++
++    The primary heuristic targets the common failure of gluing two particles
++    into one token (``tt~`` -> ``t`` ``t~``, ``e+e-`` -> ``e+`` ``e-``). If the
++    token splits cleanly into two known labels, those are returned in order.
++    Otherwise labels sharing the token's alphabetic stem are offered.
++    """
++
++    cleaned = token.strip().lower()
++
++    # Two-way split into known labels.
++    best_split: list[str] | None = None
++    for index in range(1, len(cleaned)):
++        left = cleaned[:index]
++        right = cleaned[index:]
++        if left in labels and right in labels:
++            candidate = [left, right]
++            # Prefer the split whose parts are longest/most specific.
++            if best_split is None or (
++                min(len(left), len(right))
++                > min(len(best_split[0]), len(best_split[1]))
++            ):
++                best_split = candidate
++
++    if best_split is not None:
++        return best_split
++
++    # Fall back to same-stem labels (strip charge/conjugation markers).
++    stem = cleaned.rstrip("+-~")
++    stem_matches = sorted(
++        label
++        for label in labels
++        if label.rstrip("+-~") == stem and label != cleaned
++    )
++
++    return stem_matches
++
++
++def _iter_process_tokens(
++    workflow: WorkflowIntent,
++):
++    """Yield ``(token, path)`` for every particle label in the workflow."""
++
++    for process_index, process in enumerate(workflow.processes):
++        base = f"processes[{process_index}]"
++
++        for index, name in enumerate(process.incoming_particles):
++            yield name, f"{base}.incoming_particles[{index}]"
++
++        for index, node in enumerate(process.final_particles):
++            for nested in node.walk():
++                yield nested.particle, f"{base}.final_particles[{index}]"
++
++        for index, name in enumerate(process.required_intermediates):
++            yield name, f"{base}.required_intermediates[{index}]"
++
++        for index, name in enumerate(process.excluded_particles):
++            yield name, f"{base}.excluded_particles[{index}]"
++
++
++def validate_model_domain(
++    workflow: WorkflowIntent,
++) -> ValidationReport:
++    """Reject particle tokens that do not exist in the selected model.
++
++    Returns an empty (passing) report whenever the model namespace is not
++    authoritatively known, so custom-model and future-model workflows are never
++    falsely blocked.
++    """
++
++    namespace = namespace_for_model(workflow)
++
++    if not namespace.authoritative:
++        return ValidationReport(issues=())
++
++    issues: list[ValidationIssue] = []
++    seen: set[tuple[str, str]] = set()
++
++    for token, path in _iter_process_tokens(workflow):
++        if namespace.contains(token):
++            continue
++
++        key = (token.strip().lower(), path)
++        if key in seen:
++            continue
++        seen.add(key)
++
++        suggestions = _suggest_replacements(token, namespace.labels)
++
++        if suggestions:
++            hint = " Did you mean: " + ", ".join(
++                repr(item) for item in suggestions
++            ) + "?"
++        else:
++            hint = ""
++
++        issues.append(
++            ValidationIssue(
++                code="unknown_model_particle",
++                message=(
++                    f"The token {token!r} is not a particle or multiparticle "
++                    f"defined in the selected model {namespace.model_name!r}."
++                    + hint
++                ),
++                level=ValidationLevel.ERROR,
++                path=path,
++            )
++        )
++
++    return ValidationReport(issues=tuple(issues))
+diff --git a/tests/test_model_domain_validation.py b/tests/test_model_domain_validation.py
+new file mode 100644
+index 0000000..dafa17f
+--- /dev/null
++++ b/tests/test_model_domain_validation.py
+@@ -0,0 +1,213 @@
++"""Tests for model-relative particle-domain validation."""
++
++from __future__ import annotations
++
++import unittest
++
++from hep_agent.schemas import (
++    BeamSpec,
++    ColliderSpec,
++    ColliderType,
++    EnergyMeaning,
++    EnergySpec,
++    ModelSource,
++    ParticleNode,
++    PhysicsModelSpec,
++    ProcessSpec,
++    TaskType,
++    WorkflowIntent,
++)
++from hep_agent.validation import validate_workflow
++from hep_agent.validation.model_domain import (
++    namespace_for_model,
++    validate_model_domain,
++)
++
++
++def make_workflow(
++    *,
++    incoming=("p", "p"),
++    final_particles=None,
++    required_intermediates=(),
++    excluded_particles=(),
++    model_name="sm",
++    model_source=ModelSource.BUILTIN,
++    model_path=None,
++) -> WorkflowIntent:
++    """Build a minimal but valid workflow for domain testing."""
++
++    if final_particles is None:
++        final_particles = [ParticleNode(particle="t"), ParticleNode(particle="t~")]
++
++    return WorkflowIntent(
++        task_type=TaskType.RUN_SIMULATION,
++        model=PhysicsModelSpec(
++            name=model_name,
++            source=model_source,
++            model_path=model_path,
++        ),
++        collider=ColliderSpec(
++            collider_type=ColliderType.HADRON,
++            beams=[BeamSpec(particle="p"), BeamSpec(particle="p")],
++            energy=EnergySpec(
++                value_gev=13000.0,
++                meaning=EnergyMeaning.TOTAL_CENTER_OF_MASS,
++            ),
++        ),
++        processes=[
++            ProcessSpec(
++                incoming_particles=list(incoming),
++                final_particles=list(final_particles),
++                required_intermediates=list(required_intermediates),
++                excluded_particles=list(excluded_particles),
++            )
++        ],
++    )
++
++
++class ModelDomainValidationTests(unittest.TestCase):
++    def test_correct_top_pair_is_accepted(self) -> None:
++        workflow = make_workflow(
++            final_particles=[
++                ParticleNode(particle="t"),
++                ParticleNode(particle="t~"),
++            ]
++        )
++
++        report = validate_model_domain(workflow)
++
++        self.assertTrue(report.is_valid)
++
++    def test_glued_token_is_rejected_with_split_suggestion(self) -> None:
++        workflow = make_workflow(
++            final_particles=[ParticleNode(particle="tt~")]
++        )
++
++        report = validate_model_domain(workflow)
++
++        self.assertFalse(report.is_valid)
++
++        codes = {issue.code for issue in report.errors}
++        self.assertIn("unknown_model_particle", codes)
++
++        message = report.errors[0].message
++        self.assertIn("t", message)
++        self.assertIn("t~", message)
++
++    def test_multiparticles_and_leptons_are_accepted(self) -> None:
++        workflow = make_workflow(
++            incoming=("p", "p"),
++            final_particles=[
++                ParticleNode(particle="e+"),
++                ParticleNode(particle="e-"),
++                ParticleNode(particle="j"),
++            ],
++        )
++
++        report = validate_model_domain(workflow)
++
++        self.assertTrue(report.is_valid)
++
++    def test_partonic_q_qbar_is_accepted(self) -> None:
++        # Guards existing behaviour: the codebase treats q / q~ as valid
++        # partonic labels.
++        workflow = make_workflow(
++            incoming=("q", "q~"),
++            final_particles=[
++                ParticleNode(particle="mu+"),
++                ParticleNode(particle="mu-"),
++            ],
++        )
++
++        report = validate_model_domain(workflow)
++
++        self.assertTrue(report.is_valid)
++
++    def test_self_conjugate_and_charged_bosons_are_accepted(self) -> None:
++        workflow = make_workflow(
++            final_particles=[
++                ParticleNode(particle="z"),
++                ParticleNode(particle="a"),
++                ParticleNode(particle="w+"),
++                ParticleNode(particle="w-"),
++                ParticleNode(particle="h"),
++            ]
++        )
++
++        report = validate_model_domain(workflow)
++
++        self.assertTrue(report.is_valid)
++
++    def test_unknown_token_is_rejected(self) -> None:
++        workflow = make_workflow(
++            final_particles=[ParticleNode(particle="zprime")]
++        )
++
++        report = validate_model_domain(workflow)
++
++        self.assertFalse(report.is_valid)
++        self.assertEqual(
++            report.errors[0].code, "unknown_model_particle"
++        )
++
++    def test_invalid_decay_daughter_is_flagged(self) -> None:
++        # t -> (nonexistent daughter) must be caught by tree traversal.
++        workflow = make_workflow(
++            final_particles=[
++                ParticleNode(
++                    particle="t",
++                    decay_products=[ParticleNode(particle="qq~")],
++                ),
++                ParticleNode(particle="t~"),
++            ]
++        )
++
++        report = validate_model_domain(workflow)
++
++        self.assertFalse(report.is_valid)
++        codes = {issue.code for issue in report.errors}
++        self.assertIn("unknown_model_particle", codes)
++
++    def test_user_ufo_model_is_permissive(self) -> None:
++        # We cannot know a user UFO namespace, so we must not reject.
++        workflow = make_workflow(
++            final_particles=[ParticleNode(particle="xyz1")],
++            model_name="MyBSM",
++            model_source=ModelSource.USER_UFO,
++            model_path="/models/MyBSM",
++        )
++
++        namespace = namespace_for_model(workflow)
++        self.assertFalse(namespace.authoritative)
++
++        report = validate_model_domain(workflow)
++        self.assertTrue(report.is_valid)
++
++    def test_validate_workflow_blocks_glued_token(self) -> None:
++        # Integration: the wiring into validate_workflow makes the invalid
++        # token an error, so it can never reach approval or MadGraph.
++        workflow = make_workflow(
++            final_particles=[ParticleNode(particle="tt~")]
++        )
++
++        report = validate_workflow(workflow)
++
++        self.assertFalse(report.is_valid)
++        codes = {issue.code for issue in report.errors}
++        self.assertIn("unknown_model_particle", codes)
++
++    def test_validate_workflow_accepts_valid_top_pair(self) -> None:
++        workflow = make_workflow(
++            final_particles=[
++                ParticleNode(particle="t"),
++                ParticleNode(particle="t~"),
++            ]
++        )
++
++        report = validate_workflow(workflow)
++
++        self.assertTrue(report.is_valid)
++
++
++if __name__ == "__main__":
++    unittest.main()
