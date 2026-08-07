@@ -28,7 +28,9 @@ one field without regenerating the whole workflow. For a glued token like
 
 from __future__ import annotations
 
+import ast
 from dataclasses import dataclass
+from pathlib import Path
 
 from hep_agent.schemas import ModelSource, WorkflowIntent
 from hep_agent.validation.core import (
@@ -98,15 +100,83 @@ class ModelNamespace:
         return token.strip().lower() in self.labels
 
 
+def _ufo_particle_labels(
+    model_path: str | None,
+) -> frozenset[str] | None:
+    """Statically extract particle/antiparticle labels from a UFO model.
+
+    Reads the model's ``particles.py`` and returns the set of ``name`` and
+    ``antiname`` string literals passed to ``Particle(...)`` constructors,
+    parsed with the ``ast`` module *without executing the file*. Returns
+    ``None`` when the file cannot be found or no names can be extracted, so the
+    caller falls back to permissive validation rather than blocking on a model
+    whose definition style we do not recognise.
+    """
+
+    if not model_path:
+        return None
+
+    path = Path(model_path)
+    if path.suffix == ".py":
+        particles_file = path
+    else:
+        particles_file = path / "particles.py"
+
+    try:
+        source = particles_file.read_text(encoding="utf-8")
+    except (OSError, ValueError):
+        return None
+
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return None
+
+    labels: set[str] = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+
+        func = node.func
+        if isinstance(func, ast.Name):
+            func_name = func.id
+        elif isinstance(func, ast.Attribute):
+            func_name = func.attr
+        else:
+            continue
+
+        if func_name != "Particle":
+            continue
+
+        for keyword in node.keywords:
+            if keyword.arg not in ("name", "antiname"):
+                continue
+            value = keyword.value
+            if isinstance(value, ast.Constant) and isinstance(
+                value.value, str
+            ):
+                token = value.value.strip().lower()
+                if token:
+                    labels.add(token)
+
+    if not labels:
+        return None
+
+    return frozenset(labels)
+
+
 def namespace_for_model(
     workflow: WorkflowIntent,
 ) -> ModelNamespace:
     """Resolve the particle namespace for a workflow's selected model.
 
-    Only built-in Standard Model variants are resolved statically today. For
-    installed or user UFO models the namespace is returned as non-authoritative
-    so that the domain validator does not reject unknown-but-possibly-valid
-    labels. UFO parsing is a separate, later capability.
+    Built-in Standard Model variants use a static Standard Model namespace.
+    For installed or user UFO models we statically parse the model's
+    ``particles.py`` and validate against the particles that model actually
+    defines (plus MadGraph's default multiparticles). When a model's namespace
+    cannot be determined - an unrecognised built-in name, or a UFO whose
+    particles cannot be parsed - the namespace is non-authoritative and the
+    domain validator makes no membership claims, so nothing is falsely blocked.
     """
 
     model = workflow.model
@@ -122,7 +192,22 @@ def namespace_for_model(
             authoritative=True,
         )
 
-    # Installed UFO, user UFO, or an unrecognised built-in name: we do not
+    if model.source in (
+        ModelSource.USER_UFO,
+        ModelSource.INSTALLED_UFO,
+    ):
+        ufo_labels = _ufo_particle_labels(model.model_path)
+        if ufo_labels is not None:
+            return ModelNamespace(
+                model_name=model.name,
+                # The model's own particles plus MadGraph's default
+                # multiparticle labels (p, j, l+, ...), which are runtime
+                # defaults not declared in particles.py.
+                labels=frozenset(ufo_labels | _SM_MULTIPARTICLES),
+                authoritative=True,
+            )
+
+    # An unrecognised built-in name, or a UFO we could not parse: we do not
     # know the full namespace, so we make no membership claims.
     return ModelNamespace(
         model_name=model.name,
