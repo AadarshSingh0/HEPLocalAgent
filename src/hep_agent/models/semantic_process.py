@@ -1,14 +1,19 @@
 """Thin semantic planning for collider-process requests.
 
-The LLM performs one narrow task:
+The LLM performs one narrow interpretation task:
 
     natural language -> one MadGraph generate command
+                        + parton-shower / detector-stage intent
 
-All remaining workflow construction is deterministic.
+All remaining workflow construction is deterministic. Process syntax and
+execution stay under deterministic control; only the interpretation of which
+stages the user asked for is model-led, with explicit deterministic anchors
+taking precedence when present.
 """
 
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass
 
@@ -25,45 +30,47 @@ from hep_agent.validation.grounding import (
 )
 
 
-SEMANTIC_PROCESS_PROMPT = """You translate collider-simulation requests into MadGraph process syntax.
+SEMANTIC_PROCESS_PROMPT = """You translate a collider-simulation request into a MadGraph process and pipeline-stage decisions.
 
-Return exactly one line beginning with:
+Return a JSON object with exactly these fields:
+- "process": one command beginning with "generate", using MadGraph particle labels. Preserve explicitly requested decay chains and intermediate particles. Do not include event counts, collider energies, or coupling-order restrictions unless explicitly requested.
+- "pythia8": "on" if the user wants parton showering / hadronisation / Pythia; "off" if they explicitly do not; "unspecified" if they do not mention it.
+- "delphes": "on" if the user wants detector simulation / Delphes; "off" if they explicitly do not; "unspecified" if they do not mention it.
 
-generate
-
-Do not return JSON.
-Do not explain.
-Do not include event counts or collider energies.
-Do not add coupling-order restrictions unless explicitly requested.
-Use MadGraph particle labels.
-Preserve explicitly requested decay chains and intermediate particles.
+Interpret meaning, not exact words. Treat "turn on Pythia", "enable showering", "shower the events", "include parton shower", and "with Pythia8" as pythia8 = "on". Treat "parton level only", "no showering", and "do not shower" as pythia8 = "off". Treat "detector simulation", "with Delphes", and "reconstruct with Delphes" as delphes = "on"; treat "no detector simulation" and "switch Delphes off" as delphes = "off". If a stage is not mentioned, use "unspecified".
 
 Examples:
 
-Request:
-Produce an electron pair in proton-proton collisions.
+Request: Produce an electron pair in proton-proton collisions.
+JSON: {"process": "generate p p > e+ e-", "pythia8": "unspecified", "delphes": "unspecified"}
 
-Answer:
-generate p p > e+ e-
+Request: Produce a Z boson and decay it to an electron and a positron, and turn on Pythia.
+JSON: {"process": "generate p p > z, z > e+ e-", "pythia8": "on", "delphes": "unspecified"}
 
-Request:
-Produce a Z boson and decay it to an electron and a positron.
-
-Answer:
-generate p p > z, z > e+ e-
-
-Request:
-Produce a W+ boson and decay it to a positron and electron neutrino.
-
-Answer:
-generate p p > w+, w+ > e+ ve
-
-Request:
-Use an explicit Z intermediate for electron-neutrino pair production.
-
-Answer:
-generate p p > z > ve ve~
+Request: Top pair production, parton level only, no detector simulation.
+JSON: {"process": "generate p p > t t~", "pythia8": "off", "delphes": "off"}
 """
+
+
+# JSON schema constraining the semantic planner's structured output. Stage
+# fields use an explicit three-value enum so "unspecified" is distinguishable
+# from "off": the model must not silently default a stage the user did not
+# mention.
+SEMANTIC_OUTPUT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "process": {"type": "string"},
+        "pythia8": {
+            "type": "string",
+            "enum": ["on", "off", "unspecified"],
+        },
+        "delphes": {
+            "type": "string",
+            "enum": ["on", "off", "unspecified"],
+        },
+    },
+    "required": ["process", "pythia8", "delphes"],
+}
 
 
 class SemanticPlanningError(ValueError):
@@ -93,10 +100,18 @@ class ParsedSemanticProcess:
 
 @dataclass(frozen=True)
 class SemanticProcessResult:
-    """Semantic command plus model metadata."""
+    """Semantic command, model-interpreted stage intent, and metadata.
+
+    ``pythia8`` and ``delphes`` are the model's interpretation of whether the
+    user asked for those stages: ``True`` (on), ``False`` (off), or ``None``
+    (the user did not mention the stage). Explicit deterministic anchors, when
+    present, still take precedence over these during compilation.
+    """
 
     process_command: str
     model_response: ModelResponse
+    pythia8: bool | None = None
+    delphes: bool | None = None
 
     @property
     def raw_content(self) -> str:
@@ -181,6 +196,61 @@ def extract_generate_command(
     return commands[0]
 
 
+def _stage_to_optional_bool(value: object) -> bool | None:
+    """Map an "on"/"off"/"unspecified" stage token to True/False/None."""
+
+    if value == "on":
+        return True
+    if value == "off":
+        return False
+    return None
+
+
+def parse_semantic_planner_output(
+    content: str,
+) -> tuple[str, bool | None, bool | None]:
+    """Parse the semantic planner's output into command and stage intent.
+
+    Accepts the structured JSON object, and falls back to a bare ``generate``
+    line for backward compatibility. Returned stage values are True (on),
+    False (off), or None (unspecified).
+    """
+
+    cleaned = (
+        content
+        .replace("```json", "")
+        .replace("```", "")
+        .strip()
+    )
+
+    data: object = None
+    try:
+        data = json.loads(cleaned)
+    except (ValueError, TypeError):
+        start = cleaned.find("{")
+        end = cleaned.rfind("}")
+        if start != -1 and end != -1 and end > start:
+            try:
+                data = json.loads(cleaned[start : end + 1])
+            except (ValueError, TypeError):
+                data = None
+
+    if isinstance(data, dict) and isinstance(
+        data.get("process"), str
+    ):
+        command = extract_generate_command(
+            data["process"]
+        )
+        return (
+            command,
+            _stage_to_optional_bool(data.get("pythia8")),
+            _stage_to_optional_bool(data.get("delphes")),
+        )
+
+    # Fallback: a bare generate line carrying no stage information.
+    return extract_generate_command(content), None, None
+
+
 def plan_semantic_process(
     user_request: str,
     *,
@@ -188,7 +258,12 @@ def plan_semantic_process(
     model: str,
     timeout_seconds: int = 300,
 ) -> SemanticProcessResult:
-    """Translate one natural-language request to a process command."""
+    """Translate one natural-language request to a process command.
+
+    The model additionally interprets whether the user asked for the Pythia8
+    and Delphes stages. The process syntax remains deterministically parsed and
+    validated downstream.
+    """
 
     if not user_request.strip():
         raise ValueError(
@@ -213,19 +288,23 @@ def plan_semantic_process(
                 "content": user_request,
             },
         ],
-        response_schema=None,
+        response_schema=SEMANTIC_OUTPUT_SCHEMA,
         temperature=0.0,
         num_predict=300,
         timeout_seconds=timeout_seconds,
     )
 
-    command = extract_generate_command(
-        response.content
+    command, pythia8, delphes = (
+        parse_semantic_planner_output(
+            response.content
+        )
     )
 
     return SemanticProcessResult(
         process_command=command,
         model_response=response,
+        pythia8=pythia8,
+        delphes=delphes,
     )
 
 
@@ -492,11 +571,37 @@ def _infer_collider_type(
     return "partonic"
 
 
+def _resolve_stage(
+    explicit: bool | None,
+    model_hint: bool | None,
+) -> tuple[bool, str]:
+    """Resolve a pipeline stage from a deterministic anchor and model intent.
+
+    Precedence: an explicit deterministic anchor (a phrase the grounding
+    extractor recognised) wins; otherwise the model's interpretation stands;
+    otherwise the stage defaults to off. The second element records provenance
+    for the workflow's field_sources.
+    """
+
+    if explicit is not None:
+        return explicit, "user"
+    if model_hint is not None:
+        return model_hint, "model_inference"
+    return False, "validated_default"
+
+
 def compile_semantic_process_workflow(
     user_request: str,
     process_command: str,
+    *,
+    pythia8_hint: bool | None = None,
+    delphes_hint: bool | None = None,
 ) -> WorkflowIntent:
-    """Compile a semantic command into the full internal workflow."""
+    """Compile a semantic command into the full internal workflow.
+
+    ``pythia8_hint`` and ``delphes_hint`` are the model's interpretation of the
+    requested stages; explicit deterministic anchors take precedence over them.
+    """
 
     ensure_semantic_request_supported(
         user_request
@@ -581,6 +686,13 @@ def compile_semantic_process_workflow(
             }
         )
 
+    pythia8_value, pythia8_source = _resolve_stage(
+        facts.pythia8, pythia8_hint
+    )
+    delphes_value, delphes_source = _resolve_stage(
+        facts.delphes, delphes_hint
+    )
+
     workflow_payload = {
         "schema_version": "1.0",
         "task_type": "run_simulation",
@@ -646,12 +758,8 @@ def compile_semantic_process_workflow(
         },
         "pipeline": {
             "madgraph": True,
-            "pythia8": bool(
-                facts.pythia8
-            ),
-            "delphes": bool(
-                facts.delphes
-            ),
+            "pythia8": pythia8_value,
+            "delphes": delphes_value,
             "madanalysis": (
                 analysis_facts
                 .madanalysis_choice
@@ -672,18 +780,8 @@ def compile_semantic_process_workflow(
                 "model_inference"
             ),
             "run.nevents": "user",
-            "pipeline.pythia8": (
-                "user"
-                if facts.pythia8
-                is not None
-                else "validated_default"
-            ),
-            "pipeline.delphes": (
-                "user"
-                if facts.delphes
-                is not None
-                else "validated_default"
-            ),
+            "pipeline.pythia8": pythia8_source,
+            "pipeline.delphes": delphes_source,
             "pipeline.madanalysis": (
                 "user"
                 if analysis_facts

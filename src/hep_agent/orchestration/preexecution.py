@@ -464,6 +464,8 @@ def _run_semantic_preexecution(
             compile_semantic_process_workflow(
                 user_request,
                 semantic.process_command,
+                pythia8_hint=semantic.pythia8,
+                delphes_hint=semantic.delphes,
             )
         )
 
