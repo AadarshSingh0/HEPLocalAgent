@@ -54,10 +54,12 @@ from hep_agent.orchestration.process_reconciliation import (
 )
 from hep_agent.schemas import WorkflowIntent
 from hep_agent.validation import (
+    GroundingResult,
     ValidationIssue,
     ValidationLevel,
     ValidationReport,
     validate_madgraph_workflow_artifact,
+    validate_model_domain,
     validate_request_grounding,
 )
 from hep_agent.validation.analysis_request import (
@@ -595,6 +597,26 @@ def _run_semantic_preexecution(
     )
 
 
+def _repair_driving_report(
+    grounding: GroundingResult,
+) -> ValidationReport:
+    """Errors the repair loop should attempt to fix.
+
+    Combines grounding mismatches (physics vs. the request) with model-domain
+    violations (e.g. a particle token not defined in the selected model). This
+    lets an invalid particle produced by the planner be fed back to the repair
+    model with its suggested correction, instead of only being blocked at the
+    final artifact check. If repair cannot fix it, the final artifact
+    validation still blocks execution, so containment is preserved.
+    """
+
+    domain = validate_model_domain(grounding.workflow)
+    return ValidationReport(
+        issues=tuple(grounding.report.issues)
+        + tuple(domain.issues)
+    )
+
+
 def run_preexecution_loop(
     user_request: str,
     *,
@@ -840,9 +862,11 @@ def run_preexecution_loop(
         current_workflow,
     )
 
+    repair_report = _repair_driving_report(grounding)
+
     _emit_validation_progress(
         progress_observer,
-        report=grounding.report,
+        report=repair_report,
         stage="Initial workflow",
     )
 
@@ -852,11 +876,11 @@ def run_preexecution_loop(
     # The feedback supplied to a repair begins with deterministic
     # grounding issues. Schema-invalid repair attempts append their
     # exact error so the next model does not repeat the same mistake.
-    repair_feedback = grounding.report
+    repair_feedback = repair_report
     last_repair_error: str | None = None
 
     while (
-        not grounding.report.is_valid
+        not repair_report.is_valid
         and repair_attempts < profile.max_repairs
     ):
         repair_attempts += 1
@@ -1032,17 +1056,19 @@ def run_preexecution_loop(
             current_workflow,
         )
 
+        repair_report = _repair_driving_report(grounding)
+
         _emit_validation_progress(
             progress_observer,
-            report=grounding.report,
+            report=repair_report,
             stage=role,
         )
 
-        repair_feedback = grounding.report
+        repair_feedback = repair_report
         last_repair_error = None
 
     if (
-        not grounding.report.is_valid
+        not repair_report.is_valid
         and profile.fallback_model is not None
     ):
         fallback_used = True
@@ -1196,13 +1222,15 @@ def run_preexecution_loop(
             current_workflow,
         )
 
+        repair_report = _repair_driving_report(grounding)
+
         _emit_validation_progress(
             progress_observer,
-            report=grounding.report,
+            report=repair_report,
             stage="Fallback repair",
         )
 
-        repair_feedback = grounding.report
+        repair_feedback = repair_report
         last_repair_error = None
 
     if not grounding.report.is_valid:
