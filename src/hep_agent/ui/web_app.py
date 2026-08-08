@@ -2393,17 +2393,30 @@ def _render_system_doctor(
 
     selftest_result = st.session_state.get("selftest_result")
     if selftest_result is not None:
-        if selftest_result.success:
+        if selftest_result.success and selftest_result.missing:
+            st.success(
+                "Installed tools ran successfully. Not installed: "
+                + ", ".join(selftest_result.missing)
+                + " (⚠️ means not installed, not a failure)."
+            )
+        elif selftest_result.success:
             st.success(
                 "All tools ran successfully - your installation works "
                 "end to end."
             )
         else:
             st.error(
-                "One or more tools failed. See the per-stage results."
+                "One or more installed tools failed. See the per-stage "
+                "results."
             )
+        _stage_icons = {
+            "ok": "✅",
+            "failed": "❌",
+            "missing": "⚠️",
+            "skipped": "⏭️",
+        }
         for stage in selftest_result.stages:
-            marker = "✅" if stage.ok else "❌"
+            marker = _stage_icons.get(stage.status, "•")
             detail = (
                 f" - {stage.detail}" if stage.detail else ""
             )
