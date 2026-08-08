@@ -15,6 +15,7 @@ from unittest import mock
 
 from hep_agent.builders import build_madgraph_workflow_artifact
 from hep_agent.selftest import (
+    _diagnose_from_log,
     build_selftest_workflow,
     detect_tools,
     run_installation_selftest,
@@ -201,6 +202,57 @@ class ReportingTests(unittest.TestCase):
         status = {s.name: s.status for s in result.stages}
         self.assertEqual(status["Delphes"], "skipped")
         self.assertTrue(result.success)
+
+
+    def test_pythia_failure_includes_log_diagnosis(self) -> None:
+        # The real user case: version mismatch + segfault -> shower disabled.
+        self.stdout.write_text(
+            "RuntimeWarning: compiletime version 3.8 of module "
+            "'python.lhapdf' does not match runtime version 3.12\n"
+            "Segmentation fault (core dumped)\n"
+        )
+        mg5 = make_mg5_tree(self.tree, pythia=True, delphes=False)
+        result = self._run(
+            mg5,
+            execution=SimpleNamespace(
+                success=True, stdout_path=self.stdout, failure_message=None
+            ),
+            physics=self._good_physics(hepmc=False, root=False),
+            valid=True,
+            analysis=SimpleNamespace(success=True, failure_message=None),
+        )
+        pythia = next(s for s in result.stages if s.name == "Pythia8")
+        self.assertEqual(pythia.status, "failed")
+        self.assertIn("Likely cause", pythia.detail)
+        self.assertIn("3.8", pythia.detail)
+
+
+class DiagnosisTests(unittest.TestCase):
+    def test_version_mismatch_is_diagnosed(self) -> None:
+        diagnosis = _diagnose_from_log(
+            "RuntimeWarning: compiletime version 3.8 of module "
+            "'python.lhapdf' does not match runtime version 3.12"
+        )
+        self.assertIsNotNone(diagnosis)
+        self.assertIn("3.8", diagnosis)
+        self.assertIn("3.12", diagnosis)
+
+    def test_segfault_is_diagnosed(self) -> None:
+        diagnosis = _diagnose_from_log("Segmentation fault (core dumped)")
+        self.assertIsNotNone(diagnosis)
+        self.assertIn("segmentation fault", diagnosis.lower())
+
+    def test_shower_off_is_diagnosed(self) -> None:
+        diagnosis = _diagnose_from_log(
+            "| 1. Choose the shower program   shower = OFF   |"
+        )
+        self.assertIsNotNone(diagnosis)
+        self.assertIn("shower", diagnosis.lower())
+
+    def test_clean_log_has_no_diagnosis(self) -> None:
+        self.assertIsNone(
+            _diagnose_from_log("Events generated successfully.")
+        )
 
 
 if __name__ == "__main__":

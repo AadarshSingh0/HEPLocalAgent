@@ -16,6 +16,7 @@ installed one.
 
 from __future__ import annotations
 
+import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -164,6 +165,55 @@ def _resolve(flag: str, detected: bool) -> tuple[bool, str]:
     return (detected, "detected" if detected else "missing")
 
 
+def _diagnose_from_log(log_text: str) -> str | None:
+    """Return a human-readable cause for a shower/tool failure, or None.
+
+    Scans the MadGraph log for well-known failure signatures - a Python or
+    library version mismatch, a crash, or MadGraph silently disabling the
+    shower - so the self-test can explain *why* a tool did not run instead of
+    only reporting that it did not.
+    """
+
+    if not log_text:
+        return None
+
+    lowered = log_text.lower()
+    hints: list[str] = []
+
+    match = re.search(
+        r"compiletime version ([\d.]+) of module '([^']+)' "
+        r"does not match runtime version ([\d.]+)",
+        log_text,
+    )
+    if match:
+        hints.append(
+            f"a component ({match.group(2)}) was built for Python "
+            f"{match.group(1)} but is running under Python {match.group(3)} "
+            f"(version mismatch) - run the agent in the Python environment "
+            f"the HEP tools were compiled against, or rebuild LHAPDF/Pythia8 "
+            f"for this Python"
+        )
+
+    if "segmentation fault" in lowered or "core dumped" in lowered:
+        hints.append(
+            "a component crashed (segmentation fault), commonly an ABI or "
+            "version mismatch between Python, LHAPDF, and Pythia8"
+        )
+
+    if (
+        "shower = off" in lowered or "shower=off" in lowered
+    ) and not hints:
+        hints.append(
+            "MadGraph disabled the shower (shower = OFF), so Pythia8 did not "
+            "run - the Pythia8 interface likely failed to load at startup"
+        )
+
+    if not hints:
+        return None
+
+    return "; ".join(hints) + "."
+
+
 def run_installation_selftest(
     *,
     mg5_executable: str | Path,
@@ -210,6 +260,7 @@ def run_installation_selftest(
     )
 
     physics = None
+    stdout_text = ""
     if execution.stdout_path is not None and execution.stdout_path.is_file():
         stdout_text = execution.stdout_path.read_text(
             encoding="utf-8", errors="replace"
@@ -241,6 +292,9 @@ def run_installation_selftest(
             execution.failure_message
             or "MadGraph did not produce valid physics output."
         )
+        diagnosis = _diagnose_from_log(stdout_text)
+        if diagnosis:
+            mg_detail += f" Likely cause: {diagnosis}"
     stages.append(StageOutcome("MadGraph", OK if mg_ok else FAILED, mg_detail))
 
     # Pythia8.
@@ -260,15 +314,17 @@ def run_installation_selftest(
     else:
         hepmc = physics.showered_hepmc_file if physics is not None else None
         ok = hepmc is not None and Path(hepmc).exists()
-        stages.append(
-            StageOutcome(
-                "Pythia8",
-                OK if ok else FAILED,
-                "Parton shower produced HepMC output."
-                if ok
-                else "Installed and requested, but no HepMC output was "
-                "produced.",
+        if ok:
+            py_detail = "Parton shower produced HepMC output."
+        else:
+            py_detail = (
+                "Installed and requested, but no HepMC output was produced."
             )
+            diagnosis = _diagnose_from_log(stdout_text)
+            if diagnosis:
+                py_detail += f" Likely cause: {diagnosis}"
+        stages.append(
+            StageOutcome("Pythia8", OK if ok else FAILED, py_detail)
         )
 
     # Delphes.
