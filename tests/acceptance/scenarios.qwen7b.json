@@ -1,0 +1,130 @@
+[
+  {
+    "name": "full_explicit_top_pair",
+    "route": "full",
+    "request": "At a 13 TeV proton-proton collider, generate p p > t t~. Generate 100 events. Do not use Pythia8 or Delphes.",
+    "expect": {
+      "outcome": "ready",
+      "generate": "generate p p > t t~",
+      "final": [
+        "t",
+        "t~"
+      ],
+      "pythia8": false,
+      "delphes": false,
+      "nevents": 100
+    },
+    "model_outputs": [
+      "{\n  \"task_type\": \"generate_process\",\n  \"model\": {\n    \"name\": \"Standard Model\",\n    \"source\": \"user_ufo\"\n  },\n  \"collider\": {\n    \"collider_type\": \"partonic\",\n    \"beams\": [\n      {\"particle\": \"p\", \"label\": \"beam1\"},\n      {\"particle\": \"p\", \"label\": \"beam2\"}\n    ],\n    \"energy\": {\n      \"value_gev\": 13000,\n      \"meaning\": \"total_center_of_mass\"\n    }\n  },\n  \"processes\": [\n    {\n      \"incoming_particles\": [\n        \"q\",\n        \"q~\"\n      ],\n      \"final_particles\": [\n        {\"particle\": \"t\", \"label\": \"t1\"},\n        {\"particle\": \"t~\", \"label\": \"t2\"}\n      ]\n    }\n  ],\n  \"run\": {\n    \"nevents\": 100,\n    \"output_name\": \"events.root\"\n  },\n  \"pipeline\": {\n    \"pythia8\": false,\n    \"delphes\": false\n  },\n  \"field_sources\": {\n    \"model.name\": \"user\",\n    \"collider.beams\": \"user\",\n    \"collider.energy.value_gev\": \"user\",\n    \"processes\": \"user\",\n    \"run.nevents\": \"user\"\n  }\n}"
+    ]
+  },
+  {
+    "name": "full_standardmodel_user_ufo_recovered",
+    "route": "full",
+    "request": "At a 13 TeV proton-proton collider, use the Standard Model to generate p p > t t~. Generate 100 events. Do not use Pythia8 or Delphes.",
+    "expect": {
+      "outcome": "ready",
+      "model_name": "sm",
+      "final": [
+        "t",
+        "t~"
+      ]
+    },
+    "model_outputs": [
+      "{\n  \"task_type\": \"generate_process\",\n  \"model\": {\n    \"name\": \"StandardModel\",\n    \"source\": \"user_ufo\"\n  },\n  \"collider\": {\n    \"collider_type\": \"partonic\",\n    \"beams\": [\n      {\"particle\": \"p\", \"label\": \"beam1\"},\n      {\"particle\": \"p\", \"label\": \"beam2\"}\n    ],\n    \"energy\": {\n      \"value_gev\": 13000,\n      \"meaning\": \"total_center_of_mass\"\n    }\n  },\n  \"processes\": [\n    {\n      \"incoming_particles\": [\n        \"q\",\n        \"q~\"\n      ],\n      \"final_particles\": [\n        {\"particle\": \"t\", \"label\": \"top\"},\n        {\"particle\": \"t~\", \"label\": \"anti-top\"}\n      ]\n    }\n  ],\n  \"run\": {\n    \"nevents\": 100,\n    \"output_name\": \"ttbar_events\"\n  },\n  \"pipeline\": {\n    \"pythia8\": false,\n    \"delphes\": false\n  },\n  \"field_sources\": {\n    \"model.name\": \"user\",\n    \"collider.beams\": \"validated_default\",\n    \"collider.energy.value_gev\": \"user\",\n    \"processes\": \"user\",\n    \"run.nevents\": \"user\"\n  }\n}"
+    ]
+  },
+  {
+    "name": "full_invalid_particle_is_repaired",
+    "route": "full",
+    "request": "Simulate proton-proton collisions at a total centre-of-mass energy of 13 TeV. Generate 100 events. Do not use Pythia8 or Delphes.",
+    "expect": {
+      "outcome": "repaired",
+      "final": [
+        "t",
+        "t~"
+      ]
+    },
+    "model_outputs": [
+      "{\n  \"task_type\": \"run_simulation\",\n  \"model\": {\n    \"name\": \"default\"\n  },\n  \"collider\": {\n    \"collider_type\": \"partonic\",\n    \"beams\": [\n      {\n        \"particle\": \"p\",\n        \"label\": \"beam1\"\n      },\n      {\n        \"particle\": \"p\",\n        \"label\": \"beam2\"\n      }\n    ],\n    \"energy\": {\n      \"value_gev\": 13000,\n      \"meaning\": \"total_center_of_mass\"\n    }\n  },\n  \"processes\": [\n    {\n      \"incoming_particles\": [\n        \"q\",\n        \"q~\"\n      ],\n      \"final_particles\": [\n        {\n          \"particle\": \"g\",\n          \"label\": \"jet1\"\n        },\n        {\n          \"particle\": \"g\",\n          \"label\": \"jet2\"\n        }\n      ]\n    }\n  ],\n  \"run\": {\n    \"nevents\": 100\n  },\n  \"pipeline\": {\n    \"pythia8\": false,\n    \"delphes\": false\n  },\n  \"field_sources\": {\n    \"model.name\": \"validated_default\",\n    \"collider.beams\": \"user\",\n    \"collider.energy.value_gev\": \"user\",\n    \"processes\": \"user\",\n    \"run.nevents\": \"user\",\n    \"pipeline.pythia8\": \"user\",\n    \"pipeline.delphes\": \"user\"\n  }\n}"
+    ]
+  },
+  {
+    "name": "full_invalid_particle_is_blocked",
+    "route": "full",
+    "request": "Simulate proton-proton collisions at a total centre-of-mass energy of 13 TeV. Generate 100 events. Do not use Pythia8 or Delphes.",
+    "expect": {
+      "outcome": "blocked"
+    },
+    "model_outputs": [
+      "{\n  \"task_type\": \"run_simulation\",\n  \"model\": {\n    \"name\": \"default\"\n  },\n  \"collider\": {\n    \"collider_type\": \"partonic\",\n    \"beams\": [\n      {\n        \"particle\": \"p\",\n        \"label\": \"beam1\"\n      },\n      {\n        \"particle\": \"p\",\n        \"label\": \"beam2\"\n      }\n    ],\n    \"energy\": {\n      \"value_gev\": 13000,\n      \"meaning\": \"total_center_of_mass\"\n    }\n  },\n  \"processes\": [\n    {\n      \"incoming_particles\": [\n        \"q\",\n        \"q~\"\n      ],\n      \"final_particles\": [\n        {\n          \"particle\": \"g\",\n          \"label\": \"jet1\"\n        },\n        {\n          \"particle\": \"g\",\n          \"label\": \"jet2\"\n        }\n      ]\n    }\n  ],\n  \"run\": {\n    \"nevents\": 100\n  },\n  \"pipeline\": {\n    \"pythia8\": false,\n    \"delphes\": false\n  },\n  \"field_sources\": {\n    \"model.name\": \"validated_default\",\n    \"collider.beams\": \"user\",\n    \"collider.energy.value_gev\": \"user\",\n    \"processes\": \"user\",\n    \"run.nevents\": \"user\",\n    \"pipeline.pythia8\": \"user\",\n    \"pipeline.delphes\": \"user\"\n  }\n}"
+    ]
+  },
+  {
+    "name": "semantic_turn_on_pythia",
+    "route": "semantic",
+    "request": "Simulate top-pair production at 13 TeV in proton-proton collisions. Generate 100 events. Turn on Pythia.",
+    "expect": {
+      "outcome": "compiled",
+      "generate": "generate p p > t t~",
+      "pythia8": true,
+      "delphes": false
+    },
+    "model_outputs": [
+      "{\"process\": \"generate p p > t t~\", \"pythia8\": \"on\", \"delphes\": \"unspecified\"}"
+    ]
+  },
+  {
+    "name": "semantic_enable_showering",
+    "route": "semantic",
+    "request": "Simulate top-pair production at 13 TeV in proton-proton collisions. Generate 100 events. Please enable showering.",
+    "expect": {
+      "outcome": "compiled",
+      "pythia8": true,
+      "delphes": false
+    },
+    "model_outputs": [
+      "{\"process\": \"generate p p > t t~\", \"pythia8\": \"on\", \"delphes\": \"unspecified\"}"
+    ]
+  },
+  {
+    "name": "semantic_parton_level_only",
+    "route": "semantic",
+    "request": "Simulate top-pair production at 13 TeV in proton-proton collisions. Generate 100 events. Parton level only.",
+    "expect": {
+      "outcome": "compiled",
+      "pythia8": false,
+      "delphes": false
+    },
+    "model_outputs": [
+      "{\"process\": \"generate p p > t t~\", \"pythia8\": \"off\", \"delphes\": \"off\"}"
+    ]
+  },
+  {
+    "name": "semantic_include_detector_simulation",
+    "route": "semantic",
+    "request": "Simulate top-pair production at 13 TeV in proton-proton collisions. Generate 100 events. Include detector simulation.",
+    "expect": {
+      "outcome": "compiled",
+      "pythia8": false,
+      "delphes": true
+    },
+    "model_outputs": [
+      "{\"process\": \"generate p p > t t~\", \"pythia8\": \"on\", \"delphes\": \"on\"}"
+    ]
+  },
+  {
+    "name": "semantic_electron_pair_defaults_off",
+    "route": "semantic",
+    "request": "Produce an electron-positron pair at 13 TeV in proton-proton collisions. Generate 100 events.",
+    "expect": {
+      "outcome": "compiled",
+      "generate": "generate p p > e+ e-",
+      "pythia8": false,
+      "delphes": false
+    },
+    "model_outputs": [
+      "{\"process\": \"generate p p > e+ e-\", \"pythia8\": \"unspecified\", \"delphes\": \"unspecified\"}"
+    ]
+  }
+]

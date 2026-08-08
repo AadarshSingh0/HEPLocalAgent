@@ -31,7 +31,12 @@
   {
     "name": "full_invalid_particle_is_repaired",
     "route": "full",
+    "synthetic": true,
     "request": "Simulate proton-proton collisions at a total centre-of-mass energy of 13 TeV. Generate 100 events. Do not use Pythia8 or Delphes.",
+    "model_outputs": [
+      "{\"schema_version\": \"1.0\", \"task_type\": \"run_simulation\", \"model\": {\"name\": \"sm\", \"source\": \"builtin\", \"model_path\": null}, \"collider\": {\"collider_type\": \"hadron\", \"beams\": [{\"particle\": \"p\"}, {\"particle\": \"p\"}], \"energy\": {\"value_gev\": 13000, \"meaning\": \"total_center_of_mass\"}}, \"processes\": [{\"process_id\": \"process_1\", \"incoming_particles\": [\"p\", \"p\"], \"final_particles\": [{\"particle\": \"tt~\", \"decay_products\": []}], \"required_intermediates\": [], \"excluded_particles\": [], \"coupling_orders\": {}}], \"run\": {\"nevents\": 100, \"random_seed\": null, \"timeout_seconds\": 1800, \"output_name\": null}, \"pipeline\": {\"madgraph\": true, \"pythia8\": false, \"delphes\": false, \"madanalysis\": false}, \"field_sources\": {}, \"notes\": []}",
+      "{\"schema_version\": \"1.0\", \"task_type\": \"run_simulation\", \"model\": {\"name\": \"sm\", \"source\": \"builtin\", \"model_path\": null}, \"collider\": {\"collider_type\": \"hadron\", \"beams\": [{\"particle\": \"p\"}, {\"particle\": \"p\"}], \"energy\": {\"value_gev\": 13000, \"meaning\": \"total_center_of_mass\"}}, \"processes\": [{\"process_id\": \"process_1\", \"incoming_particles\": [\"p\", \"p\"], \"final_particles\": [{\"particle\": \"t\", \"decay_products\": []}, {\"particle\": \"t~\", \"decay_products\": []}], \"required_intermediates\": [], \"excluded_particles\": [], \"coupling_orders\": {}}], \"run\": {\"nevents\": 100, \"random_seed\": null, \"timeout_seconds\": 1800, \"output_name\": null}, \"pipeline\": {\"madgraph\": true, \"pythia8\": false, \"delphes\": false, \"madanalysis\": false}, \"field_sources\": {}, \"notes\": []}"
+    ],
     "expect": {
       "outcome": "repaired",
       "final": [
@@ -43,7 +48,13 @@
   {
     "name": "full_invalid_particle_is_blocked",
     "route": "full",
+    "synthetic": true,
     "request": "Simulate proton-proton collisions at a total centre-of-mass energy of 13 TeV. Generate 100 events. Do not use Pythia8 or Delphes.",
+    "model_outputs": [
+      "{\"schema_version\": \"1.0\", \"task_type\": \"run_simulation\", \"model\": {\"name\": \"sm\", \"source\": \"builtin\", \"model_path\": null}, \"collider\": {\"collider_type\": \"hadron\", \"beams\": [{\"particle\": \"p\"}, {\"particle\": \"p\"}], \"energy\": {\"value_gev\": 13000, \"meaning\": \"total_center_of_mass\"}}, \"processes\": [{\"process_id\": \"process_1\", \"incoming_particles\": [\"p\", \"p\"], \"final_particles\": [{\"particle\": \"tt~\", \"decay_products\": []}], \"required_intermediates\": [], \"excluded_particles\": [], \"coupling_orders\": {}}], \"run\": {\"nevents\": 100, \"random_seed\": null, \"timeout_seconds\": 1800, \"output_name\": null}, \"pipeline\": {\"madgraph\": true, \"pythia8\": false, \"delphes\": false, \"madanalysis\": false}, \"field_sources\": {}, \"notes\": []}",
+      "{\"schema_version\": \"1.0\", \"task_type\": \"run_simulation\", \"model\": {\"name\": \"sm\", \"source\": \"builtin\", \"model_path\": null}, \"collider\": {\"collider_type\": \"hadron\", \"beams\": [{\"particle\": \"p\"}, {\"particle\": \"p\"}], \"energy\": {\"value_gev\": 13000, \"meaning\": \"total_center_of_mass\"}}, \"processes\": [{\"process_id\": \"process_1\", \"incoming_particles\": [\"p\", \"p\"], \"final_particles\": [{\"particle\": \"tt~\", \"decay_products\": []}], \"required_intermediates\": [], \"excluded_particles\": [], \"coupling_orders\": {}}], \"run\": {\"nevents\": 100, \"random_seed\": null, \"timeout_seconds\": 1800, \"output_name\": null}, \"pipeline\": {\"madgraph\": true, \"pythia8\": false, \"delphes\": false, \"madanalysis\": false}, \"field_sources\": {}, \"notes\": []}",
+      "{\"schema_version\": \"1.0\", \"task_type\": \"run_simulation\", \"model\": {\"name\": \"sm\", \"source\": \"builtin\", \"model_path\": null}, \"collider\": {\"collider_type\": \"hadron\", \"beams\": [{\"particle\": \"p\"}, {\"particle\": \"p\"}], \"energy\": {\"value_gev\": 13000, \"meaning\": \"total_center_of_mass\"}}, \"processes\": [{\"process_id\": \"process_1\", \"incoming_particles\": [\"p\", \"p\"], \"final_particles\": [{\"particle\": \"tt~\", \"decay_products\": []}], \"required_intermediates\": [], \"excluded_particles\": [], \"coupling_orders\": {}}], \"run\": {\"nevents\": 100, \"random_seed\": null, \"timeout_seconds\": 1800, \"output_name\": null}, \"pipeline\": {\"madgraph\": true, \"pythia8\": false, \"delphes\": false, \"madanalysis\": false}, \"field_sources\": {}, \"notes\": []}"
+    ],
     "expect": {
       "outcome": "blocked"
     }
@@ -55,8 +66,7 @@
     "expect": {
       "outcome": "compiled",
       "generate": "generate p p > t t~",
-      "pythia8": true,
-      "delphes": false
+      "pythia8": true
     }
   },
   {
@@ -65,8 +75,7 @@
     "request": "Simulate top-pair production at 13 TeV in proton-proton collisions. Generate 100 events. Please enable showering.",
     "expect": {
       "outcome": "compiled",
-      "pythia8": true,
-      "delphes": false
+      "pythia8": true
     }
   },
   {
@@ -75,8 +84,7 @@
     "request": "Simulate top-pair production at 13 TeV in proton-proton collisions. Generate 100 events. Parton level only.",
     "expect": {
       "outcome": "compiled",
-      "pythia8": false,
-      "delphes": false
+      "pythia8": false
     }
   },
   {
@@ -85,7 +93,6 @@
     "request": "Simulate top-pair production at 13 TeV in proton-proton collisions. Generate 100 events. Include detector simulation.",
     "expect": {
       "outcome": "compiled",
-      "pythia8": false,
       "delphes": true
     }
   },

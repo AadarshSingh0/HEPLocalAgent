@@ -84,6 +84,9 @@ def main(argv: list[str] | None = None) -> int:
     recorded = 0
     for scenario in scenarios:
         name = scenario.get("name", "<unnamed>")
+        if scenario.get("synthetic"):
+            print(f"skipped (synthetic): {name}")
+            continue
         if args.only_missing and scenario.get("model_outputs"):
             continue
         try:

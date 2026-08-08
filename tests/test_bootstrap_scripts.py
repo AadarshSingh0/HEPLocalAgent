@@ -15,6 +15,19 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def _clean_environ() -> dict:
+    """Environment for bootstrap subprocesses, with OLLAMA_HOST removed.
+
+    The bootstrap script changes its install decisions based on OLLAMA_HOST,
+    so inheriting a developer's shell value (for example a remote Ollama)
+    would make these tests non-hermetic. Removing it keeps them deterministic.
+    """
+
+    environment = dict(os.environ)
+    environment.pop("OLLAMA_HOST", None)
+    return environment
+
+
 class BootstrapScriptTests(unittest.TestCase):
     def test_shell_scripts_have_valid_syntax(self) -> None:
         scripts = (
@@ -163,7 +176,7 @@ class BootstrapScriptTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            environment = os.environ.copy()
+            environment = _clean_environ()
             environment["HOME"] = str(home)
 
             completed = subprocess.run(
@@ -246,7 +259,7 @@ class BootstrapScriptTests(unittest.TestCase):
                 scripts / "uninstall_local_hep_agent.sh",
             )
 
-            environment = os.environ.copy()
+            environment = _clean_environ()
             environment["HOME"] = str(temporary / "home")
             completed = subprocess.run(
                 [
@@ -323,7 +336,7 @@ class BootstrapScriptTests(unittest.TestCase):
             / "scripts"
             / "bootstrap_local_hep_agent.sh"
         )
-        environment = os.environ.copy()
+        environment = _clean_environ()
         environment.update(
             {
                 "HEP_AGENT_TEST_PLATFORM": "Darwin",
@@ -380,7 +393,7 @@ class BootstrapScriptTests(unittest.TestCase):
             / "scripts"
             / "bootstrap_local_hep_agent.sh"
         )
-        environment = os.environ.copy()
+        environment = _clean_environ()
         environment.update(
             {
                 "HEP_AGENT_TEST_PLATFORM": "Darwin",
@@ -456,7 +469,7 @@ class BootstrapScriptTests(unittest.TestCase):
             / "scripts"
             / "bootstrap_local_hep_agent.sh"
         )
-        environment = os.environ.copy()
+        environment = _clean_environ()
         environment.update(
             {
                 "HEP_AGENT_TEST_PLATFORM": "Darwin",
@@ -560,7 +573,7 @@ class BootstrapScriptTests(unittest.TestCase):
             / "scripts"
             / "bootstrap_local_hep_agent.sh"
         )
-        environment = os.environ.copy()
+        environment = _clean_environ()
         environment.update(
             {
                 "HEP_AGENT_TEST_PLATFORM": "Darwin",
@@ -605,7 +618,7 @@ class BootstrapScriptTests(unittest.TestCase):
             / "scripts"
             / "bootstrap_local_hep_agent.sh"
         )
-        environment = os.environ.copy()
+        environment = _clean_environ()
         environment.update(
             {
                 "HEP_AGENT_TEST_PLATFORM": "Linux",
@@ -711,7 +724,7 @@ class BootstrapScriptTests(unittest.TestCase):
             )
             rootcint.chmod(0o755)
 
-            environment = os.environ.copy()
+            environment = _clean_environ()
             environment.update(
                 {
                     "HEP_AGENT_TEST_PLATFORM": "Linux",
@@ -761,7 +774,7 @@ class BootstrapScriptTests(unittest.TestCase):
             / "scripts"
             / "bootstrap_local_hep_agent.sh"
         )
-        environment = os.environ.copy()
+        environment = _clean_environ()
         environment.update(
             {
                 "HEP_AGENT_TEST_PLATFORM": "Darwin",
@@ -797,7 +810,7 @@ class BootstrapScriptTests(unittest.TestCase):
             / "scripts"
             / "bootstrap_local_hep_agent.sh"
         )
-        environment = os.environ.copy()
+        environment = _clean_environ()
         environment.update(
             {
                 "HEP_AGENT_TEST_PLATFORM": "Darwin",
@@ -841,7 +854,7 @@ class BootstrapScriptTests(unittest.TestCase):
             / "scripts"
             / "bootstrap_local_hep_agent.sh"
         )
-        environment = os.environ.copy()
+        environment = _clean_environ()
         environment.update(
             {
                 "HEP_AGENT_TEST_PLATFORM": "Darwin",
@@ -877,7 +890,7 @@ class BootstrapScriptTests(unittest.TestCase):
             / "scripts"
             / "bootstrap_local_hep_agent.sh"
         )
-        environment = os.environ.copy()
+        environment = _clean_environ()
         environment.update(
             {
                 "HEP_AGENT_TEST_PLATFORM": "Darwin",
