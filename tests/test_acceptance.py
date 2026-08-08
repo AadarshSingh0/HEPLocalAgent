@@ -174,6 +174,11 @@ def _run_semantic(test, scenario) -> None:
 
 def _make_test(scenario):
     def test(self):
+        if not scenario.get("model_outputs"):
+            reason = scenario.get(
+                "record_error", "no model_outputs recorded"
+            )
+            self.skipTest(f"{scenario['name']}: {reason}")
         route = scenario.get("route")
         if route == "full":
             _run_full(self, scenario)
