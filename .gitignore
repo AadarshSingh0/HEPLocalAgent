@@ -34,3 +34,7 @@ env/
 # local helper/patch downloads
 *.patch
 apply_increment_*.py
+
+# recorded, machine-specific acceptance outputs
+tests/acceptance/scenarios.*.json
+!tests/acceptance/scenarios.template.json
