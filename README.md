@@ -48,6 +48,41 @@ Remove the project-managed environment and HEP tools with:
 
     ./uninstall.sh
 
+## Installation self-test
+
+To verify that the physics toolchain is installed and working end to end,
+without involving any model, run the deterministic self-test:
+
+    python -m hep_agent.selftest --events 1000
+
+It runs a fixed trial process (`p p > e+ e-`) with Pythia8, Delphes, and
+MadAnalysis, detects which of those tools the selected MadGraph actually
+provides, and reports each one as `OK` (ran and produced output), `MISS` (not
+installed), or `FAIL` (installed but did not produce output). It reads the
+MadGraph log and explains common failures (for example a Python/library
+version mismatch). Point it at your tools with `--mg5` and `--ma5`, or create
+`configs/local_paths.json`:
+
+    {
+      "mg5_executable": "/path/to/MG5_aMC/bin/mg5_aMC",
+      "madanalysis5_executable": "/path/to/madanalysis5/bin/ma5"
+    }
+
+The same check is available in the web interface under **System doctor →
+Run installation self-test**.
+
+## Environment requirements
+
+The agent is a Python package that orchestrates an existing MadGraph install;
+MadGraph in turn provides Pythia8, Delphes, and MadAnalysis under its
+`HEPTools` directory. A common pitfall is a **Python version mismatch**: if
+MadGraph's Pythia8/LHAPDF were compiled against one Python version but the
+agent is run under a different one, MadGraph's shower probe can crash silently
+and fall back to `shower = OFF`, so Pythia8 produces no output. Run the agent
+in the same Python environment the HEP tools were compiled against (or rebuild
+LHAPDF/Pythia8 for your current Python). The installation self-test detects and
+reports this condition explicitly.
+
 ## AI-assisted development
 
 This software was developed with extensive assistance from large language models, including ChatGPT, for implementation, debugging, documentation, architecture, and interface design.
