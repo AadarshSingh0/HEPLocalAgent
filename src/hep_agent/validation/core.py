@@ -247,6 +247,14 @@ def validate_workflow(workflow: WorkflowIntent) -> ValidationReport:
                     )
                 )
 
+    # Model-relative domain validation: reject particle or multiparticle
+    # tokens that do not exist in the selected model before any artifact is
+    # built or executed. Imported locally to avoid an import cycle at module
+    # load time (model_domain imports the issue types from this module).
+    from hep_agent.validation.model_domain import validate_model_domain
+
+    issues.extend(validate_model_domain(workflow).issues)
+
     try:
         build_madgraph_artifact(workflow)
     except MadGraphBuildError as exc:

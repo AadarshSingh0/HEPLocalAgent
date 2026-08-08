@@ -20,5 +20,6 @@ web = [
 hep-local-agent = "hep_agent.ui.cli:main"
 hep-local-agent-web = "hep_agent.ui.web_launcher:main"
 hep-local-agent-doctor = "hep_agent.doctor.cli:main"
+hep-local-agent-selftest = "hep_agent.selftest:main"
 [tool.setuptools.packages.find]
 where = ["src"]

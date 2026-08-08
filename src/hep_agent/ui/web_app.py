@@ -65,6 +65,9 @@ from hep_agent.ui.web_support import (
     resolve_record_path,
     should_disable_request_input,
 )
+from hep_agent.selftest import (
+    run_installation_selftest,
+)
 
 
 PROJECT_ROOT = (
@@ -2323,6 +2326,108 @@ def _render_system_doctor(
             use_container_width=True,
             key="system_doctor_clear",
         )
+
+    st.divider()
+    st.markdown("**Installation self-test** — no model involved")
+    st.caption(
+        "Runs a fixed trial process (p p > e+ e-) with Pythia8, Delphes, "
+        "and MadAnalysis all enabled, to verify the full toolchain is "
+        "installed and working end to end. This generates events and can "
+        "take a few minutes."
+    )
+
+    selftest_events = st.number_input(
+        "Trial events",
+        min_value=100,
+        max_value=100000,
+        value=1000,
+        step=100,
+        key="system_selftest_events",
+    )
+
+    selftest_requested = st.button(
+        "🧰 Run installation self-test",
+        use_container_width=True,
+        key="system_selftest_run",
+    )
+
+    if selftest_requested:
+        try:
+            local_paths = load_json_object(LOCAL_PATHS_PATH)
+            mg5_executable = local_paths.get("mg5_executable")
+            madanalysis_executable = local_paths.get(
+                "madanalysis5_executable"
+            )
+            if not mg5_executable:
+                raise ValueError(
+                    "configs/local_paths.json does not define "
+                    "'mg5_executable'."
+                )
+            with st.spinner(
+                "Running the full toolchain (MadGraph, Pythia8, "
+                "Delphes, MadAnalysis). This may take a few minutes..."
+            ):
+                st.session_state.selftest_result = (
+                    run_installation_selftest(
+                        mg5_executable=mg5_executable,
+                        madanalysis_executable=(
+                            madanalysis_executable
+                        ),
+                        nevents=int(selftest_events),
+                        run_directory=str(
+                            PROJECT_ROOT / "results" / "selftest"
+                        ),
+                    )
+                )
+            st.session_state.selftest_error = None
+        except Exception as exc:
+            st.session_state.selftest_result = None
+            st.session_state.selftest_error = (
+                f"{type(exc).__name__}: {exc}"
+            )
+
+    selftest_error = st.session_state.get("selftest_error")
+    if selftest_error:
+        st.error("The installation self-test could not run.")
+        st.code(str(selftest_error), language=None)
+
+    selftest_result = st.session_state.get("selftest_result")
+    if selftest_result is not None:
+        if selftest_result.success and selftest_result.missing:
+            st.success(
+                "Installed tools ran successfully. Not installed: "
+                + ", ".join(selftest_result.missing)
+                + " (⚠️ means not installed, not a failure)."
+            )
+        elif selftest_result.success:
+            st.success(
+                "All tools ran successfully - your installation works "
+                "end to end."
+            )
+        else:
+            st.error(
+                "One or more installed tools failed. See the per-stage "
+                "results."
+            )
+        _stage_icons = {
+            "ok": "✅",
+            "failed": "❌",
+            "missing": "⚠️",
+            "skipped": "⏭️",
+        }
+        for stage in selftest_result.stages:
+            marker = _stage_icons.get(stage.status, "•")
+            detail = (
+                f" - {stage.detail}" if stage.detail else ""
+            )
+            st.markdown(f"{marker} **{stage.name}**{detail}")
+        if selftest_result.cross_section_pb is not None:
+            st.caption(
+                f"Cross section: {selftest_result.cross_section_pb} "
+                f"pb · events: {selftest_result.event_count}"
+            )
+
+    st.divider()
 
     if clear_requested:
         st.session_state.doctor_report = None

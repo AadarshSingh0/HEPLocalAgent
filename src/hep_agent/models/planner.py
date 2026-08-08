@@ -7,6 +7,7 @@ from hep_agent.models.workflow_payload import (
 )
 
 import json
+import re
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
@@ -23,12 +24,26 @@ from hep_agent.schemas import (
 )
 
 
-KNOWN_BUILTIN_MODEL_ALIASES = {
+# Built-in model spellings we recognise. Keys have case, spaces, underscores,
+# and hyphens removed, so "sm", "SM", "Standard Model", "Standard_Model", and
+# "StandardModel" all resolve to the same canonical name. loop_sm shares the
+# Standard Model particle content. A genuine UFO name we do not recognise is
+# left untouched.
+_BUILTIN_MODEL_CANONICAL = {
     "sm": "sm",
-    "standard model": "sm",
-    "standard_model": "sm",
-    "loop_sm": "loop_sm",
+    "standardmodel": "sm",
+    "loopsm": "loop_sm",
 }
+
+
+def _canonical_builtin_model_name(name: object) -> str | None:
+    """Return the canonical built-in model name for a spelling, or None."""
+
+    if not isinstance(name, str):
+        return None
+
+    key = re.sub(r"[\s_\-]+", "", name.strip().lower())
+    return _BUILTIN_MODEL_CANONICAL.get(key)
 
 
 class PlannerFailureType(str, Enum):
@@ -132,9 +147,12 @@ def _normalize_known_builtin_model_payload(
 ) -> object:
     """Correct safe, recognised built-in model classifications.
 
-    Local models sometimes correctly identify the Standard Model name
-    but incorrectly label it as a user UFO. We correct only explicitly
-    allowlisted built-in names and only when no model path is supplied.
+    Local models sometimes correctly identify a built-in model (the Standard
+    Model or loop_sm) but mislabel it as a user UFO, or spell its name in a
+    way the schema does not expect ("StandardModel"). We normalise any
+    recognised built-in spelling to its canonical name, and additionally
+    repair a built-in mislabelled as a user UFO when no model path is given.
+    Genuine, unrecognised UFO names are left untouched.
     """
 
     if not isinstance(payload, dict):
@@ -152,18 +170,18 @@ def _normalize_known_builtin_model_payload(
     if not isinstance(name, str):
         return payload
 
-    canonical_name = KNOWN_BUILTIN_MODEL_ALIASES.get(
-        name.strip().lower()
-    )
+    canonical_name = _canonical_builtin_model_name(name)
 
-    if (
-        canonical_name is not None
-        and source == "user_ufo"
-        and not model_path
-    ):
+    if canonical_name is not None:
+        # Normalise the spelling so the compiler emits the correct built-in
+        # model name and downstream domain validation is authoritative.
         model["name"] = canonical_name
-        model["source"] = "builtin"
-        model["model_path"] = None
+
+        # A recognised built-in model mislabelled as a user UFO (with no
+        # path) is corrected back to a built-in source.
+        if source == "user_ufo" and not model_path:
+            model["source"] = "builtin"
+            model["model_path"] = None
 
     return payload
 

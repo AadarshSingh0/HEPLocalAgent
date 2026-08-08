@@ -16,16 +16,24 @@ from .grounding import (
 from .madgraph_workflow import (
     validate_madgraph_workflow_artifact,
 )
+from .model_domain import (
+    ModelNamespace,
+    namespace_for_model,
+    validate_model_domain,
+)
 
 __all__ = [
     "ExplicitRequestFacts",
     "GroundingResult",
+    "ModelNamespace",
     "ValidationIssue",
     "ValidationLevel",
     "ValidationReport",
     "extract_explicit_request_facts",
+    "namespace_for_model",
     "validate_madgraph_artifact",
     "validate_madgraph_workflow_artifact",
+    "validate_model_domain",
     "validate_request_grounding",
     "validate_workflow",
 ]
