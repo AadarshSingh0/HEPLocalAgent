@@ -1,0 +1,103 @@
+[
+  {
+    "name": "full_explicit_top_pair",
+    "route": "full",
+    "request": "At a 13 TeV proton-proton collider, generate p p > t t~. Generate 100 events. Do not use Pythia8 or Delphes.",
+    "expect": {
+      "outcome": "ready",
+      "generate": "generate p p > t t~",
+      "final": [
+        "t",
+        "t~"
+      ],
+      "pythia8": false,
+      "delphes": false,
+      "nevents": 100
+    }
+  },
+  {
+    "name": "full_standardmodel_user_ufo_recovered",
+    "route": "full",
+    "request": "At a 13 TeV proton-proton collider, use the Standard Model to generate p p > t t~. Generate 100 events. Do not use Pythia8 or Delphes.",
+    "expect": {
+      "outcome": "ready",
+      "model_name": "sm",
+      "final": [
+        "t",
+        "t~"
+      ]
+    }
+  },
+  {
+    "name": "full_invalid_particle_is_repaired",
+    "route": "full",
+    "request": "Simulate proton-proton collisions at a total centre-of-mass energy of 13 TeV. Generate 100 events. Do not use Pythia8 or Delphes.",
+    "expect": {
+      "outcome": "repaired",
+      "final": [
+        "t",
+        "t~"
+      ]
+    }
+  },
+  {
+    "name": "full_invalid_particle_is_blocked",
+    "route": "full",
+    "request": "Simulate proton-proton collisions at a total centre-of-mass energy of 13 TeV. Generate 100 events. Do not use Pythia8 or Delphes.",
+    "expect": {
+      "outcome": "blocked"
+    }
+  },
+  {
+    "name": "semantic_turn_on_pythia",
+    "route": "semantic",
+    "request": "Simulate top-pair production at 13 TeV in proton-proton collisions. Generate 100 events. Turn on Pythia.",
+    "expect": {
+      "outcome": "compiled",
+      "generate": "generate p p > t t~",
+      "pythia8": true,
+      "delphes": false
+    }
+  },
+  {
+    "name": "semantic_enable_showering",
+    "route": "semantic",
+    "request": "Simulate top-pair production at 13 TeV in proton-proton collisions. Generate 100 events. Please enable showering.",
+    "expect": {
+      "outcome": "compiled",
+      "pythia8": true,
+      "delphes": false
+    }
+  },
+  {
+    "name": "semantic_parton_level_only",
+    "route": "semantic",
+    "request": "Simulate top-pair production at 13 TeV in proton-proton collisions. Generate 100 events. Parton level only.",
+    "expect": {
+      "outcome": "compiled",
+      "pythia8": false,
+      "delphes": false
+    }
+  },
+  {
+    "name": "semantic_include_detector_simulation",
+    "route": "semantic",
+    "request": "Simulate top-pair production at 13 TeV in proton-proton collisions. Generate 100 events. Include detector simulation.",
+    "expect": {
+      "outcome": "compiled",
+      "pythia8": false,
+      "delphes": true
+    }
+  },
+  {
+    "name": "semantic_electron_pair_defaults_off",
+    "route": "semantic",
+    "request": "Produce an electron-positron pair at 13 TeV in proton-proton collisions. Generate 100 events.",
+    "expect": {
+      "outcome": "compiled",
+      "generate": "generate p p > e+ e-",
+      "pythia8": false,
+      "delphes": false
+    }
+  }
+]
