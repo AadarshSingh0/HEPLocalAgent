@@ -144,6 +144,33 @@ class ValidationTests(unittest.TestCase):
             [issue.code for issue in report.errors],
         )
 
+    def test_unsupported_amplitude_exact_coupling_is_rejected(
+        self,
+    ) -> None:
+        process = ProcessSpec(
+            incoming_particles=["p", "p"],
+            final_particles=[
+                ParticleNode(particle="e-"),
+                ParticleNode(particle="e+"),
+            ],
+            coupling_orders={
+                "QED": CouplingOrderSpec(
+                    value=2,
+                    comparison=CouplingComparison.EXACT,
+                )
+            },
+        )
+
+        report = validate_workflow(
+            make_workflow(process=process)
+        )
+
+        self.assertFalse(report.is_valid)
+        self.assertIn(
+            "unsupported_exact_coupling",
+            [issue.code for issue in report.errors],
+        )
+
     def test_modified_artifact_is_rejected(self) -> None:
         workflow = make_workflow()
         artifact = MadGraphArtifact(

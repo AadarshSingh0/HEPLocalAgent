@@ -231,7 +231,25 @@ def validate_workflow(workflow: WorkflowIntent) -> ValidationReport:
                     )
                 )
 
-            if coupling.comparison == CouplingComparison.MINIMUM:
+            if coupling.comparison == CouplingComparison.EXACT:
+                issues.append(
+                    ValidationIssue(
+                        code="unsupported_exact_coupling",
+                        message=(
+                            "Exact amplitude-level coupling-order "
+                            "restrictions are not supported safely. "
+                            "MadGraph interprets a single '=' as a "
+                            "maximum, not exact equality."
+                        ),
+                        level=ValidationLevel.ERROR,
+                        path=(
+                            f"{base_path}.coupling_orders."
+                            f"{coupling_name}"
+                        ),
+                    )
+                )
+
+            elif coupling.comparison == CouplingComparison.MINIMUM:
                 issues.append(
                     ValidationIssue(
                         code="unsupported_minimum_coupling",

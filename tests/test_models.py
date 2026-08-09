@@ -10,6 +10,7 @@ from hep_agent.models import (
     OllamaClient,
     OllamaClientError,
     load_agent_profiles,
+    profile_with_primary_model,
 )
 
 
@@ -84,6 +85,48 @@ class ModelLayerTests(unittest.TestCase):
         self.assertIn("format", sent_payload)
 
     @patch("hep_agent.models.ollama.urllib.request.urlopen")
+    def test_all_installed_ollama_models_are_listed(
+        self,
+        mock_urlopen,
+    ) -> None:
+        mock_urlopen.return_value = FakeResponse(
+            {
+                "models": [
+                    {"name": "qwen3:8b"},
+                    {"name": "llama3.3:70b"},
+                    {"name": "qwen3:8b"},
+                    {"model": "phi4:14b"},
+                    {"name": "  "},
+                    "invalid",
+                ]
+            }
+        )
+
+        client = OllamaClient(
+            "http://localhost:11434/v1"
+        )
+
+        self.assertEqual(
+            client.list_models(),
+            [
+                "llama3.3:70b",
+                "phi4:14b",
+                "qwen3:8b",
+            ],
+        )
+
+        request = mock_urlopen.call_args.args[0]
+
+        self.assertEqual(
+            request.full_url,
+            "http://localhost:11434/api/tags",
+        )
+        self.assertEqual(
+            request.get_method(),
+            "GET",
+        )
+
+    @patch("hep_agent.models.ollama.urllib.request.urlopen")
     def test_connection_failure_is_classified(
         self,
         mock_urlopen,
@@ -129,6 +172,30 @@ class ModelLayerTests(unittest.TestCase):
         )
         self.assertTrue(
             profiles["qwen_cascade"].has_fallback
+        )
+
+    def test_selected_model_overrides_profile_primary(self) -> None:
+        profiles = load_agent_profiles(
+            "configs/agent_profiles.json"
+        )
+
+        selected = profile_with_primary_model(
+            profiles["qwen_cascade"],
+            "llama3.3:70b",
+            known_profiles=profiles.values(),
+        )
+
+        self.assertEqual(
+            selected.primary_model,
+            "llama3.3:70b",
+        )
+        self.assertEqual(
+            selected.primary_timeout_seconds,
+            600,
+        )
+        self.assertIsNone(selected.fallback_model)
+        self.assertIsNone(
+            selected.fallback_timeout_seconds
         )
 
 

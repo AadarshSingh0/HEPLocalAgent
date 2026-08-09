@@ -19,6 +19,7 @@ from hep_agent.schemas import (
 )
 from hep_agent.validation import validate_workflow
 from hep_agent.validation.model_domain import (
+    model_domain_repair_matches,
     namespace_for_model,
     validate_model_domain,
 )
@@ -93,6 +94,36 @@ class ModelDomainValidationTests(unittest.TestCase):
         message = report.errors[0].message
         self.assertIn("t", message)
         self.assertIn("t~", message)
+
+    def test_only_exact_suggested_split_is_a_proven_repair(self) -> None:
+        workflow = make_workflow(
+            final_particles=[
+                ParticleNode(particle="t~"),
+                ParticleNode(particle="t"),
+            ]
+        )
+
+        self.assertTrue(
+            model_domain_repair_matches(
+                workflow,
+                requested_tokens=("tt~",),
+                actual_tokens=("t~", "t"),
+            )
+        )
+        self.assertFalse(
+            model_domain_repair_matches(
+                workflow,
+                requested_tokens=("tt~",),
+                actual_tokens=("h",),
+            )
+        )
+        self.assertFalse(
+            model_domain_repair_matches(
+                workflow,
+                requested_tokens=("t", "t~"),
+                actual_tokens=("h",),
+            )
+        )
 
     def test_multiparticles_and_leptons_are_accepted(self) -> None:
         workflow = make_workflow(

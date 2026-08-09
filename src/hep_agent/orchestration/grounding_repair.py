@@ -11,6 +11,7 @@ import re
 
 from hep_agent.schemas import (
     BeamSpec,
+    CouplingOrderSpec,
     ModelSource,
     ParticleNode,
     WorkflowIntent,
@@ -21,6 +22,7 @@ from hep_agent.validation.process_request import (
 from hep_agent.validation import (
     ExplicitRequestFacts,
     extract_explicit_request_facts,
+    model_domain_repair_matches,
     validate_request_grounding,
 )
 
@@ -33,6 +35,7 @@ class GroundingCorrection:
     previous_value: object
     corrected_value: object
     reason: str
+    requires_confirmation: bool = False
 
 
 @dataclass(frozen=True)
@@ -109,10 +112,13 @@ def apply_safe_grounding_corrections(
     - explicitly stated Pythia8 and Delphes choices;
     - an explicitly stated Standard Model choice.
 
-    Exact MadGraph-style process expressions are authoritative.
-    Their incoming particles, final-state tokens, and intermediate
-    channel are restored deterministically. Natural-language final
-    states remain validator-controlled.
+    Valid MadGraph-style process expressions are authoritative. Their
+    incoming particles, final-state tokens, intermediate channel, exclusions,
+    and coupling-order restrictions are restored deterministically. The only
+    exception is a token that is proven absent from an authoritative selected-
+    model namespace: a model-proposed replacement may survive grounding only
+    when it exactly matches the deterministic domain validator's suggestions.
+    Natural-language final states remain validator-controlled.
     """
 
     facts = extract_explicit_request_facts(user_request)
@@ -157,21 +163,49 @@ def apply_safe_grounding_corrections(
         )
 
         if previous_incoming != expected_incoming:
-            corrected.processes[0].incoming_particles = list(
-                expected_incoming
-            )
-
-            corrections.append(
-                GroundingCorrection(
-                    path="processes[0].incoming_particles",
-                    previous_value=previous_incoming,
-                    corrected_value=expected_incoming,
-                    reason=(
-                        "Restored incoming particles explicitly "
-                        "stated by the user."
-                    ),
+            accepted_domain_repair = (
+                explicit_process is not None
+                and model_domain_repair_matches(
+                    corrected,
+                    requested_tokens=expected_incoming,
+                    actual_tokens=previous_incoming,
                 )
             )
+
+            if accepted_domain_repair:
+                corrections.append(
+                    GroundingCorrection(
+                        path=(
+                            "processes[0]."
+                            "incoming_particles"
+                        ),
+                        previous_value=expected_incoming,
+                        corrected_value=previous_incoming,
+                        reason=(
+                            "Accepted a model-domain correction of "
+                            "an invalid explicit incoming-particle "
+                            "token because it exactly matches the "
+                            "deterministic validator's suggestions."
+                        ),
+                        requires_confirmation=True,
+                    )
+                )
+            else:
+                corrected.processes[0].incoming_particles = list(
+                    expected_incoming
+                )
+
+                corrections.append(
+                    GroundingCorrection(
+                        path="processes[0].incoming_particles",
+                        previous_value=previous_incoming,
+                        corrected_value=expected_incoming,
+                        reason=(
+                            "Restored incoming particles explicitly "
+                            "stated by the user."
+                        ),
+                    )
+                )
 
     if (
         corrected.processes
@@ -223,7 +257,46 @@ def apply_safe_grounding_corrections(
             for node in process.final_particles
         )
 
-        if (
+        accepted_domain_repair = (
+            previous_final
+            != explicit_process.final_particles
+            and model_domain_repair_matches(
+                corrected,
+                requested_tokens=(
+                    explicit_process.final_particles
+                ),
+                actual_tokens=previous_final,
+            )
+        )
+
+        if accepted_domain_repair:
+            if had_decay_trees:
+                process.final_particles = [
+                    ParticleNode(particle=particle)
+                    for particle in previous_final
+                ]
+
+            corrections.append(
+                GroundingCorrection(
+                    path=(
+                        "processes[0]."
+                        "final_particles"
+                    ),
+                    previous_value=(
+                        explicit_process.final_particles
+                    ),
+                    corrected_value=previous_final,
+                    reason=(
+                        "Accepted a model-domain correction of an "
+                        "invalid explicit final-state token because "
+                        "it exactly matches the deterministic "
+                        "validator's suggestions."
+                    ),
+                    requires_confirmation=True,
+                )
+            )
+
+        elif (
             previous_final
             != explicit_process.final_particles
             or had_decay_trees
@@ -266,28 +339,129 @@ def apply_safe_grounding_corrections(
             != explicit_process
             .required_intermediates
         ):
-            process.required_intermediates = list(
-                explicit_process
-                .required_intermediates
+            accepted_domain_repair = (
+                model_domain_repair_matches(
+                    corrected,
+                    requested_tokens=(
+                        explicit_process
+                        .required_intermediates
+                    ),
+                    actual_tokens=(
+                        previous_intermediates
+                    ),
+                )
             )
+
+            if accepted_domain_repair:
+                corrections.append(
+                    GroundingCorrection(
+                        path=(
+                            "processes[0]."
+                            "required_intermediates"
+                        ),
+                        previous_value=(
+                            explicit_process
+                            .required_intermediates
+                        ),
+                        corrected_value=(
+                            previous_intermediates
+                        ),
+                        reason=(
+                            "Accepted a model-domain correction of "
+                            "an invalid explicit intermediate token "
+                            "because it exactly matches the "
+                            "deterministic validator's suggestions."
+                        ),
+                        requires_confirmation=True,
+                    )
+                )
+            else:
+                process.required_intermediates = list(
+                    explicit_process
+                    .required_intermediates
+                )
+
+                corrections.append(
+                    GroundingCorrection(
+                        path=(
+                            "processes[0]."
+                            "required_intermediates"
+                        ),
+                        previous_value=(
+                            previous_intermediates
+                        ),
+                        corrected_value=(
+                            explicit_process
+                            .required_intermediates
+                        ),
+                        reason=(
+                            "Restored the exact intermediate "
+                            "channel from explicit MadGraph-style "
+                            "process syntax."
+                        ),
+                    )
+                )
+
+        expected_exclusions = list(
+            explicit_process.excluded_particles
+        )
+        previous_exclusions = list(
+            process.excluded_particles
+        )
+
+        if previous_exclusions != expected_exclusions:
+            process.excluded_particles = expected_exclusions
 
             corrections.append(
                 GroundingCorrection(
                     path=(
                         "processes[0]."
-                        "required_intermediates"
+                        "excluded_particles"
                     ),
-                    previous_value=(
-                        previous_intermediates
-                    ),
-                    corrected_value=(
-                        explicit_process
-                        .required_intermediates
-                    ),
+                    previous_value=tuple(previous_exclusions),
+                    corrected_value=tuple(expected_exclusions),
                     reason=(
-                        "Restored the exact intermediate "
-                        "channel from explicit MadGraph-style "
-                        "process syntax."
+                        "Restored the diagram exclusions from "
+                        "explicit MadGraph-style process syntax "
+                        "and removed exclusions the user did not "
+                        "request."
+                    ),
+                )
+            )
+
+        expected_coupling_orders = {
+            order.name: CouplingOrderSpec(
+                value=order.value,
+                comparison=order.comparison,
+            )
+            for order in explicit_process.coupling_orders
+        }
+        previous_coupling_orders = {
+            name: order.model_dump(mode="json")
+            for name, order in process.coupling_orders.items()
+        }
+
+        if process.coupling_orders != expected_coupling_orders:
+            process.coupling_orders = expected_coupling_orders
+
+            corrections.append(
+                GroundingCorrection(
+                    path=(
+                        "processes[0]."
+                        "coupling_orders"
+                    ),
+                    previous_value=previous_coupling_orders,
+                    corrected_value={
+                        name: order.model_dump(mode="json")
+                        for name, order in (
+                            expected_coupling_orders.items()
+                        )
+                    },
+                    reason=(
+                        "Restored coupling-order restrictions "
+                        "from explicit MadGraph-style process "
+                        "syntax and removed restrictions the user "
+                        "did not request."
                     ),
                 )
             )

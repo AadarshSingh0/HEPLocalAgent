@@ -32,7 +32,9 @@ from hep_agent.conversation import (
 )
 from hep_agent.models import (
     OllamaClient,
+    OllamaClientError,
     load_agent_profiles,
+    profile_with_primary_model,
 )
 from hep_agent.orchestration import (
     EndToEndResult,
@@ -60,7 +62,9 @@ from hep_agent.ui.web_support import (
     RunHistoryEntry,
     approval_countdown_seconds,
     detect_hep_tool_status,
+    failure_validation_issues,
     load_run_history,
+    ollama_model_options,
     read_text_tail,
     resolve_record_path,
     should_disable_request_input,
@@ -111,6 +115,42 @@ SCAN_SUMMARIES_DIRECTORY = (
 )
 
 
+STARTER_WORKFLOWS: tuple[
+    tuple[str, str, str],
+    ...,
+] = (
+    (
+        "Drell-Yan",
+        "A fast parton-level validation run.",
+        (
+            "At a 13 TeV proton-proton collider, generate "
+            "p p > e+ e-. Generate 100 events. Do not use "
+            "Pythia8, Delphes, or MadAnalysis."
+        ),
+    ),
+    (
+        "Top pair + detector",
+        "Exercise showering and detector simulation.",
+        (
+            "Simulate top-pair production at 13 TeV in "
+            "proton-proton collisions. Generate 100 events. "
+            "Use Pythia8 and Delphes, but do not use "
+            "MadAnalysis."
+        ),
+    ),
+    (
+        "Energy scan",
+        "Prepare a deterministic multi-point scan.",
+        (
+            "Simulate p p to e+ e-. Do an energy scan from "
+            "1 TeV to 2 TeV in steps of 500 GeV. Generate "
+            "100 events per point. Do not use Pythia8, "
+            "Delphes, or MadAnalysis."
+        ),
+    ),
+)
+
+
 def _initialize_state() -> None:
     defaults: dict[str, Any] = {
         "prepared_workflow": None,
@@ -145,38 +185,77 @@ def _initialize_state() -> None:
             st.session_state[key] = value
 
 
+def _seed_starter_workflow(prompt: str) -> None:
+    """Prefill, but never submit, a reviewed starter workflow."""
+
+    st.session_state.request_mode = "Build workflow"
+    st.session_state.request_draft_seed = prompt
+    st.session_state.request_editor_version += 1
+
+
 def _inject_style() -> None:
     st.markdown(
         """
 <style>
+    :root {
+        --hep-canvas: #07111f;
+        --hep-surface: rgba(15, 30, 46, 0.82);
+        --hep-border: rgba(125, 211, 252, 0.18);
+        --hep-muted: #9db0c5;
+        --hep-radius: 0.9rem;
+    }
+
     .stApp {
         background:
             radial-gradient(
                 circle at 12% 5%,
-                rgba(14, 165, 233, 0.12),
+                rgba(14, 165, 233, 0.13),
                 transparent 26rem
             ),
             radial-gradient(
                 circle at 90% 10%,
-                rgba(168, 85, 247, 0.10),
+                rgba(139, 92, 246, 0.09),
                 transparent 28rem
             ),
-            #07111f;
+            var(--hep-canvas);
+    }
+
+    [data-testid="stMainBlockContainer"] {
+        max-width: 92rem;
+        padding-top: 2rem;
+        padding-bottom: 4rem;
     }
 
     .hep-hero {
-        padding: 1.8rem 2rem;
+        position: relative;
+        overflow: hidden;
+        padding: 1.9rem 2rem 1.35rem;
         margin-bottom: 1.3rem;
-        border: 1px solid rgba(125, 211, 252, 0.20);
+        border: 1px solid var(--hep-border);
         border-radius: 1.1rem;
         background:
             linear-gradient(
                 135deg,
-                rgba(15, 23, 42, 0.96),
-                rgba(15, 38, 61, 0.82)
+                rgba(15, 23, 42, 0.98),
+                rgba(15, 38, 61, 0.88)
             );
         box-shadow:
-            0 22px 65px rgba(0, 0, 0, 0.22);
+            0 22px 65px rgba(0, 0, 0, 0.24);
+    }
+
+    .hep-hero::after {
+        position: absolute;
+        width: 18rem;
+        height: 18rem;
+        right: -7rem;
+        top: -10rem;
+        border: 1px solid rgba(56, 189, 248, 0.15);
+        border-radius: 50%;
+        content: "";
+        box-shadow:
+            0 0 0 2.5rem rgba(56, 189, 248, 0.025),
+            0 0 0 5rem rgba(167, 139, 250, 0.018);
+        pointer-events: none;
     }
 
     .hep-eyebrow {
@@ -196,21 +275,71 @@ def _inject_style() -> None:
     }
 
     .hep-hero p {
-        color: #b7c7db;
+        color: #b9c9dc;
         max-width: 52rem;
         margin: 0.8rem 0 0;
     }
 
-    .hep-caption {
-        color: #8fa5bd;
-        font-size: 0.86rem;
+    .hep-flow {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.65rem;
+        margin-top: 1.35rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(148, 163, 184, 0.14);
+    }
+
+    .hep-flow-step {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        min-width: 0;
+        padding: 0.55rem 0.65rem;
+        border: 1px solid rgba(148, 163, 184, 0.13);
+        border-radius: 0.7rem;
+        background: rgba(2, 6, 23, 0.25);
+    }
+
+    .hep-flow-number {
+        display: inline-grid;
+        flex: 0 0 1.7rem;
+        width: 1.7rem;
+        height: 1.7rem;
+        place-items: center;
+        border: 1px solid rgba(56, 189, 248, 0.48);
+        border-radius: 50%;
+        color: #bae6fd;
+        background: rgba(14, 165, 233, 0.13);
+        font-size: 0.75rem;
+        font-weight: 800;
+    }
+
+    .hep-flow-step strong {
+        display: block;
+        color: #f8fafc;
+        font-size: 0.85rem;
+        line-height: 1.15;
+    }
+
+    .hep-flow-step small {
+        display: block;
+        overflow: hidden;
+        color: var(--hep-muted);
+        font-size: 0.72rem;
+        line-height: 1.2;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     [data-testid="stMetric"] {
-        background: rgba(15, 23, 42, 0.62);
+        min-height: 6.15rem;
+        background: var(--hep-surface);
         border: 1px solid rgba(148, 163, 184, 0.16);
-        padding: 0.75rem;
-        border-radius: 0.8rem;
+        padding: 0.8rem;
+        border-radius: var(--hep-radius);
+        box-shadow: 0 8px 22px rgba(2, 6, 23, 0.12);
     }
 
     [data-testid="stSidebar"] {
@@ -218,8 +347,62 @@ def _inject_style() -> None:
     }
 
     div[data-testid="stCodeBlock"] {
-        border: 1px solid rgba(125, 211, 252, 0.16);
+        border: 1px solid var(--hep-border);
         border-radius: 0.75rem;
+    }
+
+    div[data-testid="stAlert"] {
+        border-radius: var(--hep-radius);
+    }
+
+    div[data-testid="stExpander"] details {
+        overflow: hidden;
+        border-color: rgba(148, 163, 184, 0.18);
+        border-radius: var(--hep-radius);
+        background: rgba(15, 30, 46, 0.42);
+    }
+
+    button:focus-visible,
+    textarea:focus-visible,
+    input:focus-visible,
+    [role="tab"]:focus-visible {
+        outline: 3px solid rgba(56, 189, 248, 0.42) !important;
+        outline-offset: 2px;
+    }
+
+    @media (max-width: 800px) {
+        [data-testid="stMainBlockContainer"] {
+            padding-left: 1rem;
+            padding-right: 1rem;
+            padding-top: 1rem;
+        }
+
+        .hep-hero {
+            padding: 1.35rem 1.15rem 1rem;
+        }
+
+        .hep-hero h1 {
+            font-size: 1.8rem;
+        }
+
+        .hep-flow {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 480px) {
+        .hep-flow {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+            scroll-behavior: auto !important;
+            transition-duration: 0.01ms !important;
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+        }
     }
 </style>
 """,
@@ -1118,23 +1301,22 @@ def _render_prepared(
                     language=None,
                 )
 
-            if result.grounding_report:
+            failure_issues = (
+                failure_validation_issues(
+                    result
+                )
+            )
+
+            if failure_issues:
                 st.json(
                     {
-                        "issues": [
-                            {
-                                "code": issue.code,
-                                "message": (
-                                    issue.message
-                                ),
-                                "path": issue.path,
-                            }
-                            for issue
-                            in result
-                            .grounding_report
-                            .errors
-                        ]
+                        "issues": failure_issues
                     }
+                )
+            else:
+                st.caption(
+                    "No structured validation issues were "
+                    "reported for this failure."
                 )
 
         if st.button(
@@ -2278,78 +2460,50 @@ def _render_prepared_scan(
 
 
 
-def _render_system_doctor(
+def _render_installation_check(
     *,
     profile_name: str,
     ollama_host: str,
 ) -> None:
-    """Render read-only environment diagnostics."""
+    """Render the first-run toolchain test and optional diagnostics."""
 
-    st.subheader("System doctor")
+    st.subheader("Test your installation")
 
     st.write(
-        "Check the model service, selected profile, "
-        "Python environment, repository configuration, "
-        "writable output directories, and installed HEP tools."
+        "Recommended after installation: run one deterministic trial "
+        "to confirm that the complete local HEP toolchain works before "
+        "building your own workflow."
     )
 
     st.caption(
-        "Standard checks are lightweight. Deep checks additionally "
-        "send one tiny model request and ask MadGraph to construct "
-        "a temporary e+ e- > mu+ mu- process. No events are generated."
-    )
-
-    standard_column, deep_column, clear_column = (
-        st.columns(
-            [1.25, 1.25, 1],
-        )
-    )
-
-    with standard_column:
-        standard_requested = st.button(
-            "🩺 Run standard doctor",
-            type="primary",
-            use_container_width=True,
-            key="system_doctor_standard",
-        )
-
-    with deep_column:
-        deep_requested = st.button(
-            "🧪 Run deep doctor",
-            use_container_width=True,
-            key="system_doctor_deep",
-        )
-
-    with clear_column:
-        clear_requested = st.button(
-            "Clear report",
-            use_container_width=True,
-            key="system_doctor_clear",
-        )
-
-    st.divider()
-    st.markdown("**Installation self-test** — no model involved")
-    st.caption(
-        "Runs a fixed trial process (p p > e+ e-) with Pythia8, Delphes, "
-        "and MadAnalysis all enabled, to verify the full toolchain is "
-        "installed and working end to end. This generates events and can "
-        "take a few minutes."
-    )
-
-    selftest_events = st.number_input(
-        "Trial events",
-        min_value=100,
-        max_value=100000,
-        value=1000,
-        step=100,
-        key="system_selftest_events",
+        "No model is involved. The test runs a fixed p p > e+ e- "
+        "process through MadGraph, Pythia8, Delphes, and MadAnalysis. "
+        "It generates events and can take a few minutes."
     )
 
     selftest_requested = st.button(
-        "🧰 Run installation self-test",
+        "🚀 Run full installation test",
+        type="primary",
         use_container_width=True,
         key="system_selftest_run",
     )
+
+    with st.expander(
+        "Test settings",
+        expanded=False,
+    ):
+        selftest_events = st.number_input(
+            "Trial events",
+            min_value=100,
+            max_value=100000,
+            value=1000,
+            step=100,
+            key="system_selftest_events",
+        )
+        st.caption(
+            "The default is a small validation run; no physics result "
+            "from this trial is used by the agent."
+        )
 
     if selftest_requested:
         try:
@@ -2428,6 +2582,47 @@ def _render_system_doctor(
             )
 
     st.divider()
+
+    st.subheader("Additional diagnostics")
+
+    st.write(
+        "Inspect the model service, selected profile, Python "
+        "environment, repository configuration, writable output "
+        "directories, and individual HEP tools."
+    )
+
+    st.caption(
+        "Standard checks are lightweight. Deep checks additionally "
+        "send one tiny model request and ask MadGraph to construct "
+        "a temporary e+ e- > mu+ mu- process. No events are generated."
+    )
+
+    standard_column, deep_column, clear_column = (
+        st.columns(
+            [1.25, 1.25, 1],
+        )
+    )
+
+    with standard_column:
+        standard_requested = st.button(
+            "🩺 Run standard doctor",
+            use_container_width=True,
+            key="system_doctor_standard",
+        )
+
+    with deep_column:
+        deep_requested = st.button(
+            "🧪 Run deep doctor",
+            use_container_width=True,
+            key="system_doctor_deep",
+        )
+
+    with clear_column:
+        clear_requested = st.button(
+            "Clear doctor report",
+            use_container_width=True,
+            key="system_doctor_clear",
+        )
 
     if clear_requested:
         st.session_state.doctor_report = None
@@ -2640,7 +2835,7 @@ def _render_system_doctor(
 def _render_sidebar(
     profiles: dict[str, Any],
     local_paths: dict[str, Any],
-) -> tuple[str, str, str, str | None]:
+) -> tuple[str, Any, str, str, str | None]:
     """Render compact controls with technical detail collapsed."""
 
     st.sidebar.markdown("## HEP Agent")
@@ -2668,18 +2863,140 @@ def _render_sidebar(
         )
     )
 
+    profile_name = st.session_state.get(
+        "hep_agent_routing_profile",
+        profile_names[default_index],
+    )
+
+    if profile_name not in profiles:
+        profile_name = profile_names[default_index]
+
+    selected_profile = profiles[
+        profile_name
+    ]
+
+    default_ollama_host = (
+        os.environ.get("OLLAMA_HOST")
+        or "http://localhost:11434"
+    )
+
+    ollama_host = str(
+        st.session_state.get(
+            "hep_agent_ollama_host",
+            default_ollama_host,
+        )
+    ).strip()
+
+    if not ollama_host:
+        ollama_host = default_ollama_host
+
+    installed_models: list[str] = []
+    discovery_error: str | None = None
+
+    try:
+        installed_models = OllamaClient(
+            ollama_host
+        ).list_models(
+            timeout_seconds=3
+        )
+    except OllamaClientError as exc:
+        discovery_error = str(exc)
+
+    configured_models = [
+        model
+        for profile in profiles.values()
+        for model in (
+            profile.primary_model,
+            profile.fallback_model,
+        )
+        if model is not None
+    ]
+
+    model_options = ollama_model_options(
+        installed_models,
+        configured_models,
+    )
+
+    if not model_options:
+        st.sidebar.error(
+            "No Ollama models are installed or configured."
+        )
+        st.stop()
+
+    preferred_model = os.environ.get(
+        "HEP_AGENT_DEFAULT_MODEL",
+        selected_profile.primary_model,
+    )
+
+    current_model = st.session_state.get(
+        "hep_agent_selected_model"
+    )
+
+    if current_model not in model_options:
+        st.session_state.pop(
+            "hep_agent_selected_model",
+            None,
+        )
+
+    model_index = (
+        model_options.index(preferred_model)
+        if preferred_model in model_options
+        else 0
+    )
+
+    selected_model = st.sidebar.selectbox(
+        "Ollama model (new requests)",
+        model_options,
+        index=model_index,
+        key="hep_agent_selected_model",
+        help=(
+            "Lists every model currently reported by the "
+            "configured Ollama host. The selected model is used "
+            "for both Chat and Build workflow requests."
+        ),
+    )
+
     profile_name = st.sidebar.selectbox(
-        "Model profile (new requests)",
+        "Routing profile",
         profile_names,
-        index=default_index,
+        index=profile_names.index(profile_name),
+        help=(
+            "Controls retry limits and the optional validated "
+            "repair fallback. The model selected above replaces "
+            "the profile's configured primary model."
+        ),
+        key="hep_agent_routing_profile",
     )
 
     selected_profile = profiles[
         profile_name
     ]
 
+    selected_profile = profile_with_primary_model(
+        selected_profile,
+        selected_model,
+        known_profiles=profiles.values(),
+    )
+
+    if discovery_error is None and installed_models:
+        st.sidebar.caption(
+            f"{len(installed_models)} installed Ollama "
+            "model(s) found."
+        )
+    elif discovery_error is not None:
+        st.sidebar.warning(
+            "Could not refresh installed Ollama models. "
+            "Showing configured models instead."
+        )
+        st.sidebar.caption(discovery_error)
+    else:
+        st.sidebar.warning(
+            "Ollama reported no installed models. Showing "
+            "configured models instead."
+        )
+
     st.sidebar.caption(
-        "Primary model: "
+        "Selected primary model: "
         f"`{selected_profile.primary_model}`"
     )
 
@@ -2749,15 +3066,21 @@ def _render_sidebar(
         "Runtime and tool details",
         expanded=False,
     ):
+        host_input_arguments: dict[str, Any] = {
+            "key": "hep_agent_ollama_host",
+        }
+
+        if "hep_agent_ollama_host" not in st.session_state:
+            host_input_arguments["value"] = ollama_host
+
         ollama_host = st.text_input(
             "Ollama host",
-            value=os.environ.get(
-                "OLLAMA_HOST",
-                (
-                    "http://"
-                    "localhost:11434"
-                ),
-            ),
+            **host_input_arguments,
+        )
+
+        ollama_host = (
+            ollama_host.strip()
+            or default_ollama_host
         )
 
         for tool in tool_statuses:
@@ -2791,6 +3114,7 @@ def _render_sidebar(
 
     return (
         profile_name,
+        selected_profile,
         ollama_host,
         mg5_executable,
         madanalysis_executable,
@@ -2820,15 +3144,18 @@ def _inject_tab_styling() -> None:
                 );
             box-shadow:
                 0 4px 16px rgba(15, 23, 42, 0.10);
+            overflow-x: auto;
+            scrollbar-width: thin;
         }
 
         /* Every tab button. */
         button[data-baseweb="tab"] {
+            flex: 0 0 auto;
             min-height: 46px;
             padding: 0.55rem 1.15rem !important;
             border: 1px solid rgba(100, 116, 139, 0.30);
             border-radius: 10px;
-            background: rgba(255, 255, 255, 0.72);
+            background: rgba(30, 41, 59, 0.76);
             font-weight: 700;
             transition:
                 transform 0.16s ease,
@@ -2839,6 +3166,7 @@ def _inject_tab_styling() -> None:
 
         /* Improve tab text visibility. */
         button[data-baseweb="tab"] p {
+            color: rgba(241, 245, 249, 0.94);
             margin: 0;
             font-size: 0.98rem;
             font-weight: 700;
@@ -2848,7 +3176,7 @@ def _inject_tab_styling() -> None:
         button[data-baseweb="tab"]:hover {
             transform: translateY(-1px);
             border-color: rgba(124, 58, 237, 0.75);
-            background: rgba(255, 255, 255, 0.96);
+            background: rgba(51, 65, 85, 0.94);
             box-shadow:
                 0 5px 14px rgba(79, 70, 229, 0.20);
         }
@@ -2878,19 +3206,10 @@ def _inject_tab_styling() -> None:
             display: none;
         }
 
-        /* Dark-mode compatibility. */
-        @media (prefers-color-scheme: dark) {
+        @media (max-width: 700px) {
             button[data-baseweb="tab"] {
-                background: rgba(30, 41, 59, 0.76);
-                border-color: rgba(148, 163, 184, 0.32);
-            }
-
-            button[data-baseweb="tab"]:hover {
-                background: rgba(51, 65, 85, 0.92);
-            }
-
-            button[data-baseweb="tab"] p {
-                color: rgba(241, 245, 249, 0.96);
+                min-height: 42px;
+                padding: 0.45rem 0.8rem !important;
             }
         }
         </style>
@@ -3036,6 +3355,16 @@ def _inject_final_ui_polish() -> None:
                 0 6px 16px rgba(79, 70, 229, 0.24);
         }
 
+        button[kind="primary"]:hover {
+            box-shadow:
+                0 8px 22px rgba(56, 189, 248, 0.26);
+        }
+
+        div[data-testid="stDownloadButton"] button {
+            border-color: rgba(56, 189, 248, 0.28);
+            border-radius: 11px;
+        }
+
         div[data-testid="stSidebar"] div[data-baseweb="select"] {
             border-radius: 10px;
         }
@@ -3074,6 +3403,7 @@ def main() -> None:
 
     (
         profile_name,
+        selected_profile,
         ollama_host,
         mg5_executable,
         madanalysis_executable,
@@ -3082,13 +3412,15 @@ def main() -> None:
         local_paths,
     )
 
+    profiles[profile_name] = selected_profile
+
     os.environ["OLLAMA_HOST"] = ollama_host
 
     st.markdown(
         """
 <div class="hep-hero">
     <div class="hep-eyebrow">
-        Local · Validated · Reproducible
+        Local · Validated · Auditable
     </div>
     <h1>HEP Workflow Agent</h1>
     <p>
@@ -3097,6 +3429,24 @@ def main() -> None:
         approve the exact MadGraph commands, and revisit every
         generated artifact from one provenance record.
     </p>
+    <div class="hep-flow" aria-label="Workflow stages">
+        <div class="hep-flow-step">
+            <span class="hep-flow-number">1</span>
+            <div><strong>Describe</strong><small>Physics intent</small></div>
+        </div>
+        <div class="hep-flow-step">
+            <span class="hep-flow-number">2</span>
+            <div><strong>Validate</strong><small>Deterministic checks</small></div>
+        </div>
+        <div class="hep-flow-step">
+            <span class="hep-flow-number">3</span>
+            <div><strong>Approve</strong><small>Exact commands</small></div>
+        </div>
+        <div class="hep-flow-step">
+            <span class="hep-flow-number">4</span>
+            <div><strong>Inspect</strong><small>Results and provenance</small></div>
+        </div>
+    </div>
 </div>
 """,
         unsafe_allow_html=True,
@@ -3104,37 +3454,32 @@ def main() -> None:
 
     (
         workspace_tab,
+        installation_tab,
         history_tab,
-        doctor_tab,
     ) = st.tabs(
         [
             "🧰 Workspace",
+            "🧪 Test installation",
             "📚 Run history",
-            "🩺 System doctor",
         ]
     )
 
-    with doctor_tab:
-        _render_system_doctor(
+    with installation_tab:
+        _render_installation_check(
             profile_name=profile_name,
             ollama_host=ollama_host,
         )
 
     with workspace_tab:
-        chat_control_column, chat_note_column = (
-            st.columns(
-                [1, 3]
-            )
-        )
-
-        with chat_control_column:
+        with st.expander(
+            "Session controls",
+            expanded=False,
+        ):
             clear_chat_requested = st.button(
-                "Clear chat history",
+                "Clear this conversation",
                 use_container_width=True,
                 key="clear_chat_history",
             )
-
-        with chat_note_column:
             st.caption(
                 "This clears only the current browser-session "
                 "conversation. Persistent run records and "
@@ -3330,6 +3675,49 @@ def main() -> None:
                 "workflow first."
             )
 
+        show_starters = (
+            not request_disabled
+            and len(
+                st.session_state.session_messages
+            ) == 1
+        )
+
+        if show_starters:
+            st.markdown("#### Start with an example")
+            st.caption(
+                "Choose a tested pattern to prefill the editor. "
+                "Nothing is submitted or executed automatically."
+            )
+
+            starter_columns = st.columns(
+                len(STARTER_WORKFLOWS)
+            )
+
+            for column, starter in zip(
+                starter_columns,
+                STARTER_WORKFLOWS,
+                strict=True,
+            ):
+                label, description, starter_prompt = starter
+
+                with column:
+                    with st.container(border=True):
+                        st.markdown(f"**{label}**")
+                        st.caption(description)
+                        st.button(
+                            "Use this example",
+                            key=(
+                                "starter_workflow_"
+                                + label.lower().replace(
+                                    " ",
+                                    "_",
+                                )
+                            ),
+                            use_container_width=True,
+                            on_click=_seed_starter_workflow,
+                            args=(starter_prompt,),
+                        )
+
         draft_version = int(
             st.session_state[
                 "request_editor_version"
@@ -3364,11 +3752,7 @@ def main() -> None:
             draft = st.text_area(
                 "Request",
                 value=draft_seed,
-                placeholder=(
-                    "Example: At a 13 TeV proton-proton "
-                    "collider, produce a Z boson and decay "
-                    "it to e+ e- with 100 events."
-                ),
+                placeholder=input_placeholder,
                 height=118,
                 disabled=request_disabled,
                 key=(
