@@ -135,6 +135,69 @@ class GroundingRepairTests(unittest.TestCase):
             [issue.code for issue in grounding.report.errors],
         )
 
+    def test_proven_invalid_explicit_token_repair_survives_grounding(
+        self,
+    ) -> None:
+        request = (
+            "Using the Standard Model, simulate p p > tt~ at "
+            "13 TeV with 100 events. Do not use Pythia8 or Delphes."
+        )
+        workflow = make_workflow(
+            incoming=("p", "p"),
+            final=("t~", "t"),
+            nevents=100,
+            pythia8=False,
+        )
+
+        result = apply_safe_grounding_corrections(
+            request,
+            workflow,
+        )
+
+        particles = tuple(
+            node.particle
+            for node in result.workflow.processes[0].final_particles
+        )
+
+        self.assertEqual(particles, ("t~", "t"))
+        self.assertTrue(
+            validate_request_grounding(
+                request,
+                result.workflow,
+            ).report.is_valid
+        )
+        self.assertTrue(
+            any(
+                correction.requires_confirmation
+                for correction in result.corrections
+            )
+        )
+
+    def test_unrelated_particle_does_not_replace_invalid_explicit_token(
+        self,
+    ) -> None:
+        request = (
+            "Using the Standard Model, simulate p p > tt~ at "
+            "13 TeV with 100 events. Do not use Pythia8 or Delphes."
+        )
+        workflow = make_workflow(
+            incoming=("p", "p"),
+            final=("h", "h"),
+            nevents=100,
+            pythia8=False,
+        )
+
+        result = apply_safe_grounding_corrections(
+            request,
+            workflow,
+        )
+
+        particles = tuple(
+            node.particle
+            for node in result.workflow.processes[0].final_particles
+        )
+        self.assertEqual(particles, ("tt~",))
+
 
 if __name__ == "__main__":
     unittest.main()

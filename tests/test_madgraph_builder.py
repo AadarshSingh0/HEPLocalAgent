@@ -150,6 +150,31 @@ class MadGraphBuilderTests(unittest.TestCase):
             "generate p p > z > mu- mu+ QED<=2 / a",
         )
 
+    def test_exact_amplitude_coupling_is_rejected(self) -> None:
+        workflow = workflow_with_processes(
+            [
+                ProcessSpec(
+                    incoming_particles=["p", "p"],
+                    final_particles=[
+                        ParticleNode(particle="e-"),
+                        ParticleNode(particle="e+"),
+                    ],
+                    coupling_orders={
+                        "QED": CouplingOrderSpec(
+                            value=2,
+                            comparison=CouplingComparison.EXACT,
+                        )
+                    },
+                )
+            ]
+        )
+
+        with self.assertRaisesRegex(
+            MadGraphBuildError,
+            "single '=' as a maximum",
+        ):
+            build_madgraph_artifact(workflow)
+
     def test_multiple_processes_use_add_process(self) -> None:
         workflow = workflow_with_processes(
             [

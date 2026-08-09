@@ -16,15 +16,23 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def _clean_environ() -> dict:
-    """Environment for bootstrap subprocesses, with OLLAMA_HOST removed.
+    """Hermetic environment for installer subprocess tests.
 
     The bootstrap script changes its install decisions based on OLLAMA_HOST,
     so inheriting a developer's shell value (for example a remote Ollama)
     would make these tests non-hermetic. Removing it keeps them deterministic.
+
+    Installer dry runs must also ignore the checkout's real ``.venv``. An
+    installed Linux checkout can contain Python 3.12 there, while simulated
+    macOS runs intentionally require the pinned Python 3.11 environment.
     """
 
     environment = dict(os.environ)
     environment.pop("OLLAMA_HOST", None)
+    environment["HEP_AGENT_TEST_VENV_DIR"] = str(
+        Path(tempfile.gettempdir())
+        / f"hep-agent-test-venv-{os.getpid()}-{id(environment)}"
+    )
     return environment
 
 

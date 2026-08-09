@@ -541,3 +541,30 @@ def approval_countdown_seconds(
             - current_timestamp
         ),
     )
+
+
+def failure_validation_issues(
+    result: Any,
+) -> list[dict[str, Any]]:
+    """Collect real grounding and artifact errors for failure display."""
+
+    issues: list[dict[str, Any]] = []
+
+    for stage, report in (
+        ("grounding", result.grounding_report),
+        ("artifact", result.artifact_report),
+    ):
+        if report is None:
+            continue
+
+        issues.extend(
+            {
+                "stage": stage,
+                "code": issue.code,
+                "message": issue.message,
+                "path": issue.path,
+            }
+            for issue in report.errors
+        )
+
+    return issues

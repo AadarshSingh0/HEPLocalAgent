@@ -66,6 +66,93 @@ _PRODUCING_PATTERN = re.compile(
     re.IGNORECASE | re.VERBOSE,
 )
 
+
+_PRODUCTION_PATTERN = re.compile(
+    r"""
+    \b
+    (?:(?P<modifier>[a-z0-9+~_-]+)[\s-]+)?
+    (?P<head>[a-z0-9+~_-]+)
+    [\s-]+production
+    \b
+    """,
+    re.IGNORECASE | re.VERBOSE,
+)
+
+
+_GENERIC_PRODUCTION_WORDS = frozenset(
+    {
+        "a",
+        "an",
+        "and",
+        "at",
+        "by",
+        "carlo",
+        "collider",
+        "collision",
+        "collisions",
+        "data",
+        "dataset",
+        "datasets",
+        "detector",
+        "event",
+        "events",
+        "for",
+        "from",
+        "generate",
+        "generation",
+        "generic",
+        "in",
+        "mc",
+        "monte",
+        "of",
+        "on",
+        "particle",
+        "particles",
+        "physics",
+        "process",
+        "run",
+        "running",
+        "sample",
+        "samples",
+        "simulate",
+        "simulated",
+        "simulation",
+        "test",
+        "testing",
+        "the",
+        "to",
+        "trial",
+        "with",
+        "workflow",
+    }
+)
+
+
+def _has_described_production(text: str) -> bool:
+    """Recognize an explicit ``X production`` final-state description.
+
+    The minimum-requirements gate does not need to translate the description
+    into MadGraph particles; the semantic planner and later validators do
+    that. It only needs to distinguish a named physics target such as
+    ``top-pair production`` from generic phrases such as ``event production``.
+    """
+
+    for match in _PRODUCTION_PATTERN.finditer(text):
+        words = {
+            word
+            for word in (
+                match.group("modifier"),
+                match.group("head"),
+            )
+            if word is not None
+        }
+
+        if words - _GENERIC_PRODUCTION_WORDS:
+            return True
+
+    return False
+
+
 _COLLIDER_TO_PATTERN = re.compile(
     r"""
     (?:
@@ -135,6 +222,7 @@ def extract_workflow_request_facts(
     final_state_present = bool(
         process_arrow
         or _PRODUCING_PATTERN.search(text)
+        or _has_described_production(text)
         or _COLLIDER_TO_PATTERN.search(text)
     )
 

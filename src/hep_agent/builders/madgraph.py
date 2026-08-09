@@ -54,10 +54,14 @@ def _render_coupling_orders(process: ProcessSpec) -> str:
         order = process.coupling_orders[name]
         coupling_name = name.upper()
 
-        if order.comparison == CouplingComparison.EXACT:
-            operator = "="
-        elif order.comparison == CouplingComparison.MAXIMUM:
+        if order.comparison == CouplingComparison.MAXIMUM:
             operator = "<="
+        elif order.comparison == CouplingComparison.EXACT:
+            raise MadGraphBuildError(
+                "Exact amplitude-level coupling-order restrictions "
+                "are not supported safely. MadGraph interprets a "
+                "single '=' as a maximum, not exact equality."
+            )
         else:
             raise MadGraphBuildError(
                 "Minimum coupling-order restrictions are not yet "

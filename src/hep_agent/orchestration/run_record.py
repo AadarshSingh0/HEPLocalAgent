@@ -218,6 +218,9 @@ def build_preexecution_run_record(
             "previous_value": item.previous_value,
             "corrected_value": item.corrected_value,
             "reason": item.reason,
+            "requires_confirmation": (
+                item.requires_confirmation
+            ),
         }
         for item in result.corrections
     ]

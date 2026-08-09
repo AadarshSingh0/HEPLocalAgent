@@ -58,6 +58,32 @@ class WorkflowRequestTests(
             report.is_valid
         )
 
+    def test_named_production_language_is_valid(
+        self,
+    ) -> None:
+        report = validate_workflow_request_minimum(
+            "Simulate top-pair production at 13 TeV in "
+            "proton-proton collisions. Generate 100 events. "
+            "Use Pythia8 and Delphes, but do not use "
+            "MadAnalysis."
+        )
+
+        self.assertTrue(
+            report.is_valid
+        )
+
+    def test_generic_event_production_is_not_a_final_state(
+        self,
+    ) -> None:
+        facts = extract_workflow_request_facts(
+            "Run event production for proton-proton collisions "
+            "at 13 TeV with 100 events."
+        )
+
+        self.assertFalse(
+            facts.final_state_present
+        )
+
     def test_missing_energy_is_detected(
         self,
     ) -> None:

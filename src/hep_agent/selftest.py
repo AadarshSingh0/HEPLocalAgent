@@ -6,12 +6,12 @@ installed and working end to end. No planner, repair, or model call is
 involved: the workflow is constructed in code.
 
 The agent does not bundle these tools; it orchestrates an existing MadGraph
-install, and MadGraph in turn provides Pythia8, Delphes, and MadAnalysis under
-its ``HEPTools`` directory. This self-test therefore first *detects* which of
-those tools the selected MadGraph actually has, and only exercises the ones
-present - so a tool that is simply not installed is reported distinctly from a
-tool that ran and failed, and a missing downstream tool cannot sabotage an
-installed one.
+install. MadGraph normally places Pythia8 and MadAnalysis under ``HEPTools``,
+while Delphes may be installed either at the MadGraph root or under
+``HEPTools``. This self-test therefore first *detects* which of those tools the
+selected MadGraph actually has, and only exercises the ones present - so a
+tool that is simply not installed is reported distinctly from a tool that ran
+and failed, and a missing downstream tool cannot sabotage an installed one.
 """
 
 from __future__ import annotations
@@ -99,7 +99,8 @@ def detect_tools(
 ) -> dict:
     """Detect which downstream tools the selected MadGraph provides."""
 
-    heptools = _mg5_root(mg5_executable) / "HEPTools"
+    mg5_root = _mg5_root(mg5_executable)
+    heptools = mg5_root / "HEPTools"
     ma5 = bool(madanalysis_executable) and Path(
         madanalysis_executable
     ).exists()
@@ -109,7 +110,10 @@ def detect_tools(
         "pythia8": _has_any(
             heptools, ["pythia8", "MG5aMC_PY8_interface"]
         ),
-        "delphes": _has_any(heptools, ["Delphes", "delphes"]),
+        "delphes": (
+            _has_any(mg5_root, ["Delphes", "delphes"])
+            or _has_any(heptools, ["Delphes", "delphes"])
+        ),
         "madanalysis": ma5,
         "heptools_found": heptools.exists(),
     }
@@ -346,7 +350,8 @@ def run_installation_selftest(
                 StageOutcome(
                     "Delphes",
                     MISSING,
-                    "Not installed in this MadGraph (HEPTools/Delphes). "
+                    "Not installed in this MadGraph (checked Delphes and "
+                    "HEPTools/Delphes). "
                     "Install from mg5_aMC with: install Delphes",
                 )
             )

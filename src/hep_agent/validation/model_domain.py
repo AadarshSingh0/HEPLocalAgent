@@ -29,6 +29,7 @@ one field without regenerating the whole workflow. For a glued token like
 from __future__ import annotations
 
 import ast
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -256,6 +257,66 @@ def _suggest_replacements(
     )
 
     return stem_matches
+
+
+def model_domain_repair_matches(
+    workflow: WorkflowIntent,
+    *,
+    requested_tokens: tuple[str, ...],
+    actual_tokens: tuple[str, ...],
+) -> bool:
+    """Whether ``actual_tokens`` are a proven repair of invalid tokens.
+
+    This is intentionally narrower than fuzzy semantic equivalence. A change
+    is accepted only when the selected model has an authoritative namespace,
+    at least one requested token is absent from it, and expanding each absent
+    token with this module's deterministic suggestions produces exactly the
+    actual token multiset. Order is ignored because MadGraph final-state order
+    does not change the process.
+
+    Examples for the Standard Model:
+
+    - ``("tt~",)`` -> ``("t", "t~")`` is accepted;
+    - ``("tt~",)`` -> ``("h",)`` is rejected;
+    - changes to already-valid explicit tokens are rejected.
+    """
+
+    namespace = namespace_for_model(workflow)
+
+    if not namespace.authoritative:
+        return False
+
+    expanded: list[str] = []
+    repaired_invalid_token = False
+
+    for token in requested_tokens:
+        normalized = token.strip().lower()
+
+        if namespace.contains(normalized):
+            expanded.append(normalized)
+            continue
+
+        suggestions = _suggest_replacements(
+            normalized,
+            namespace.labels,
+        )
+
+        if not suggestions:
+            return False
+
+        repaired_invalid_token = True
+        expanded.extend(suggestions)
+
+    normalized_actual = tuple(
+        token.strip().lower()
+        for token in actual_tokens
+    )
+
+    return (
+        repaired_invalid_token
+        and Counter(expanded)
+        == Counter(normalized_actual)
+    )
 
 
 def _iter_process_tokens(

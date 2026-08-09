@@ -108,7 +108,7 @@ class CouplingOrderSpec(StrictModel):
     """Structured coupling-order restriction."""
 
     value: int = Field(ge=0)
-    comparison: CouplingComparison = CouplingComparison.EXACT
+    comparison: CouplingComparison = CouplingComparison.MAXIMUM
 
 
 class ParticleNode(StrictModel):

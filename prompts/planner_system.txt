@@ -60,6 +60,11 @@ provided by the user. Such an inference will later require confirmation.
 15. If the request asks only to generate files, use generate_process.
 16. If the request asks to run or simulate events, use run_simulation.
 17. Keep notes short and factual.
+18. Never add a coupling-order restriction unless the user explicitly
+    requests it. For amplitude-level MadGraph syntax such as QED=2 or
+    QED<=2, use comparison "maximum": MadGraph treats both forms as an
+    upper bound. Do not use "exact" or "minimum" coupling comparisons in
+    this schema version.
 
 ======================================================================
 STRUCTURED MADANALYSIS PLANNING POLICY

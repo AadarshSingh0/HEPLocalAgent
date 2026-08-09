@@ -16,6 +16,7 @@ from hep_agent.orchestration import (
     PreExecutionStatus,
     run_preexecution_loop,
 )
+from hep_agent.orchestration.approval import ApprovalDecision
 
 
 # A request with no explicit final-state particles, so grounding stays silent
@@ -23,6 +24,17 @@ from hep_agent.orchestration import (
 REQUEST = (
     "Simulate proton-proton collisions at a total centre-of-mass energy "
     "of 13 TeV. Generate 100 events. Do not use Pythia8 or Delphes."
+)
+
+EXPLICIT_INVALID_REQUEST = (
+    "Using the Standard Model, simulate p p > tt~ at 13 TeV with "
+    "100 events. Do not use Pythia8, Delphes, or MadAnalysis."
+)
+
+EXPLICIT_Z_CHANNEL_REQUEST = (
+    "Using the Standard Model, use the exact MadGraph process "
+    "p p > z > e+ e-. Generate 100 events at 13 TeV. "
+    "Do not use Pythia8, Delphes, or MadAnalysis."
 )
 
 
@@ -87,6 +99,85 @@ class SequenceClient:
 
 
 class DomainRepairTests(unittest.TestCase):
+    def test_exact_process_drops_invented_coupling_orders(
+        self,
+    ) -> None:
+        planned = payload(["e+", "e-"])
+        process = planned["processes"][0]
+        process["required_intermediates"] = ["z"]
+        process["coupling_orders"] = {
+            "QCD": {"value": 1, "comparison": "exact"},
+            "QED": {"value": 1, "comparison": "exact"},
+        }
+
+        result = run_preexecution_loop(
+            EXPLICIT_Z_CHANNEL_REQUEST,
+            client=SequenceClient([planned]),
+            profile=AgentProfile(
+                primary_model="qwen",
+                primary_timeout_seconds=180,
+                max_repairs=2,
+            ),
+        )
+
+        self.assertEqual(
+            result.status,
+            PreExecutionStatus.READY_FOR_APPROVAL,
+        )
+        self.assertEqual(result.repair_attempts, 0)
+        self.assertEqual(
+            result.workflow.processes[0].coupling_orders,
+            {},
+        )
+        self.assertEqual(
+            result.artifact.commands[1],
+            "generate p p > z > e+ e-",
+        )
+
+    def test_invalid_explicit_token_is_repaired_and_requires_approval(
+        self,
+    ) -> None:
+        client = SequenceClient([
+            payload(["tt~"]),
+            payload(["t~", "t"]),
+        ])
+        profile = AgentProfile(
+            primary_model="qwen",
+            primary_timeout_seconds=180,
+            max_repairs=2,
+        )
+
+        result = run_preexecution_loop(
+            EXPLICIT_INVALID_REQUEST,
+            client=client,
+            profile=profile,
+        )
+
+        self.assertEqual(
+            result.status,
+            PreExecutionStatus.READY_FOR_APPROVAL,
+        )
+        self.assertEqual(result.repair_attempts, 1)
+        self.assertEqual(
+            {
+                node.particle
+                for node in result.workflow.processes[0].final_particles
+            },
+            {"t", "t~"},
+        )
+        self.assertTrue(result.artifact_report.is_valid)
+        self.assertEqual(
+            result.approval.decision,
+            ApprovalDecision.EXPLICIT_CONFIRMATION,
+        )
+        self.assertTrue(
+            any(
+                correction.previous_value == ("tt~",)
+                and set(correction.corrected_value) == {"t", "t~"}
+                for correction in result.corrections
+            )
+        )
+
     def test_invalid_particle_is_repaired(self) -> None:
         # Planner emits the glued token; repair returns the split form.
         client = SequenceClient([
