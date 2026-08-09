@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -44,3 +45,54 @@ def load_agent_profiles(
         name: AgentProfile.model_validate(profile)
         for name, profile in raw_profiles.items()
     }
+
+
+def profile_with_primary_model(
+    profile: AgentProfile,
+    model: str,
+    *,
+    known_profiles: Iterable[AgentProfile] = (),
+) -> AgentProfile:
+    """Return a routing profile whose primary is the UI-selected model."""
+
+    selected_model = model.strip()
+
+    if not selected_model:
+        raise ValueError("model cannot be blank.")
+
+    timeout_candidates = [
+        profile.primary_timeout_seconds,
+    ]
+
+    for candidate in known_profiles:
+        if candidate.primary_model == selected_model:
+            timeout_candidates.append(
+                candidate.primary_timeout_seconds
+            )
+
+        if (
+            candidate.fallback_model == selected_model
+            and candidate.fallback_timeout_seconds is not None
+        ):
+            timeout_candidates.append(
+                candidate.fallback_timeout_seconds
+            )
+
+    updates: dict[str, object] = {
+        "primary_model": selected_model,
+        "primary_timeout_seconds": max(
+            timeout_candidates
+        ),
+    }
+
+    if profile.fallback_model == selected_model:
+        updates.update(
+            {
+                "fallback_model": None,
+                "fallback_timeout_seconds": None,
+            }
+        )
+
+    return profile.model_copy(
+        update=updates
+    )

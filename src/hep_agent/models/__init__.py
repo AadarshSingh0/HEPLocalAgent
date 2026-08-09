@@ -21,7 +21,11 @@ from .repair import (
     load_repair_prompt,
     repair_workflow,
 )
-from .routing import AgentProfile, load_agent_profiles
+from .routing import (
+    AgentProfile,
+    load_agent_profiles,
+    profile_with_primary_model,
+)
 
 __all__ = [
     "AgentProfile",
@@ -40,5 +44,6 @@ __all__ = [
     "load_repair_prompt",
     "parse_planner_content",
     "plan_workflow",
+    "profile_with_primary_model",
     "repair_workflow",
 ]

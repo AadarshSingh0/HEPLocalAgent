@@ -32,7 +32,9 @@ from hep_agent.conversation import (
 )
 from hep_agent.models import (
     OllamaClient,
+    OllamaClientError,
     load_agent_profiles,
+    profile_with_primary_model,
 )
 from hep_agent.orchestration import (
     EndToEndResult,
@@ -62,6 +64,7 @@ from hep_agent.ui.web_support import (
     detect_hep_tool_status,
     failure_validation_issues,
     load_run_history,
+    ollama_model_options,
     read_text_tail,
     resolve_record_path,
     should_disable_request_input,
@@ -2832,7 +2835,7 @@ def _render_installation_check(
 def _render_sidebar(
     profiles: dict[str, Any],
     local_paths: dict[str, Any],
-) -> tuple[str, str, str, str | None]:
+) -> tuple[str, Any, str, str, str | None]:
     """Render compact controls with technical detail collapsed."""
 
     st.sidebar.markdown("## HEP Agent")
@@ -2860,18 +2863,140 @@ def _render_sidebar(
         )
     )
 
+    profile_name = st.session_state.get(
+        "hep_agent_routing_profile",
+        profile_names[default_index],
+    )
+
+    if profile_name not in profiles:
+        profile_name = profile_names[default_index]
+
+    selected_profile = profiles[
+        profile_name
+    ]
+
+    default_ollama_host = (
+        os.environ.get("OLLAMA_HOST")
+        or "http://localhost:11434"
+    )
+
+    ollama_host = str(
+        st.session_state.get(
+            "hep_agent_ollama_host",
+            default_ollama_host,
+        )
+    ).strip()
+
+    if not ollama_host:
+        ollama_host = default_ollama_host
+
+    installed_models: list[str] = []
+    discovery_error: str | None = None
+
+    try:
+        installed_models = OllamaClient(
+            ollama_host
+        ).list_models(
+            timeout_seconds=3
+        )
+    except OllamaClientError as exc:
+        discovery_error = str(exc)
+
+    configured_models = [
+        model
+        for profile in profiles.values()
+        for model in (
+            profile.primary_model,
+            profile.fallback_model,
+        )
+        if model is not None
+    ]
+
+    model_options = ollama_model_options(
+        installed_models,
+        configured_models,
+    )
+
+    if not model_options:
+        st.sidebar.error(
+            "No Ollama models are installed or configured."
+        )
+        st.stop()
+
+    preferred_model = os.environ.get(
+        "HEP_AGENT_DEFAULT_MODEL",
+        selected_profile.primary_model,
+    )
+
+    current_model = st.session_state.get(
+        "hep_agent_selected_model"
+    )
+
+    if current_model not in model_options:
+        st.session_state.pop(
+            "hep_agent_selected_model",
+            None,
+        )
+
+    model_index = (
+        model_options.index(preferred_model)
+        if preferred_model in model_options
+        else 0
+    )
+
+    selected_model = st.sidebar.selectbox(
+        "Ollama model (new requests)",
+        model_options,
+        index=model_index,
+        key="hep_agent_selected_model",
+        help=(
+            "Lists every model currently reported by the "
+            "configured Ollama host. The selected model is used "
+            "for both Chat and Build workflow requests."
+        ),
+    )
+
     profile_name = st.sidebar.selectbox(
-        "Model profile (new requests)",
+        "Routing profile",
         profile_names,
-        index=default_index,
+        index=profile_names.index(profile_name),
+        help=(
+            "Controls retry limits and the optional validated "
+            "repair fallback. The model selected above replaces "
+            "the profile's configured primary model."
+        ),
+        key="hep_agent_routing_profile",
     )
 
     selected_profile = profiles[
         profile_name
     ]
 
+    selected_profile = profile_with_primary_model(
+        selected_profile,
+        selected_model,
+        known_profiles=profiles.values(),
+    )
+
+    if discovery_error is None and installed_models:
+        st.sidebar.caption(
+            f"{len(installed_models)} installed Ollama "
+            "model(s) found."
+        )
+    elif discovery_error is not None:
+        st.sidebar.warning(
+            "Could not refresh installed Ollama models. "
+            "Showing configured models instead."
+        )
+        st.sidebar.caption(discovery_error)
+    else:
+        st.sidebar.warning(
+            "Ollama reported no installed models. Showing "
+            "configured models instead."
+        )
+
     st.sidebar.caption(
-        "Primary model: "
+        "Selected primary model: "
         f"`{selected_profile.primary_model}`"
     )
 
@@ -2941,15 +3066,21 @@ def _render_sidebar(
         "Runtime and tool details",
         expanded=False,
     ):
+        host_input_arguments: dict[str, Any] = {
+            "key": "hep_agent_ollama_host",
+        }
+
+        if "hep_agent_ollama_host" not in st.session_state:
+            host_input_arguments["value"] = ollama_host
+
         ollama_host = st.text_input(
             "Ollama host",
-            value=os.environ.get(
-                "OLLAMA_HOST",
-                (
-                    "http://"
-                    "localhost:11434"
-                ),
-            ),
+            **host_input_arguments,
+        )
+
+        ollama_host = (
+            ollama_host.strip()
+            or default_ollama_host
         )
 
         for tool in tool_statuses:
@@ -2983,6 +3114,7 @@ def _render_sidebar(
 
     return (
         profile_name,
+        selected_profile,
         ollama_host,
         mg5_executable,
         madanalysis_executable,
@@ -3271,6 +3403,7 @@ def main() -> None:
 
     (
         profile_name,
+        selected_profile,
         ollama_host,
         mg5_executable,
         madanalysis_executable,
@@ -3278,6 +3411,8 @@ def main() -> None:
         profiles,
         local_paths,
     )
+
+    profiles[profile_name] = selected_profile
 
     os.environ["OLLAMA_HOST"] = ollama_host
 

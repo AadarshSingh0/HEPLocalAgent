@@ -8,12 +8,42 @@ from pathlib import Path
 from hep_agent.ui.web_support import (
     archive_run_history,
     load_run_history,
+    ollama_model_options,
     read_text_tail,
     resolve_record_path,
 )
 
 
 class WebSupportTests(unittest.TestCase):
+    def test_installed_models_replace_config_only_fallbacks(
+        self,
+    ) -> None:
+        self.assertEqual(
+            ollama_model_options(
+                [
+                    "qwen3:8b",
+                    "llama3.3:70b",
+                    "qwen3:8b",
+                ],
+                ["configured:latest"],
+            ),
+            (
+                "llama3.3:70b",
+                "qwen3:8b",
+            ),
+        )
+
+    def test_configured_models_are_used_when_discovery_is_empty(
+        self,
+    ) -> None:
+        self.assertEqual(
+            ollama_model_options(
+                [],
+                ["qwen:latest", "llama:8b"],
+            ),
+            ("llama:8b", "qwen:latest"),
+        )
+
     def test_history_is_newest_first(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
