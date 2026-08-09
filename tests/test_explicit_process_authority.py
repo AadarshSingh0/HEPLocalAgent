@@ -2,10 +2,12 @@
 
 import unittest
 
+from hep_agent.builders import build_madgraph_artifact
 from hep_agent.orchestration.grounding_repair import (
     apply_safe_grounding_corrections,
 )
 from hep_agent.schemas import (
+    CouplingComparison,
     WorkflowIntent,
 )
 from hep_agent.validation.grounding import (
@@ -18,6 +20,8 @@ def make_wrong_workflow(
     incoming: list[str],
     final_particles: list[dict],
     required_intermediates: list[str] | None = None,
+    excluded_particles: list[str] | None = None,
+    coupling_orders: dict | None = None,
 ) -> WorkflowIntent:
     return WorkflowIntent.model_validate(
         {
@@ -56,8 +60,12 @@ def make_wrong_workflow(
                         required_intermediates
                         or []
                     ),
-                    "excluded_particles": [],
-                    "coupling_orders": {},
+                    "excluded_particles": (
+                        excluded_particles or []
+                    ),
+                    "coupling_orders": (
+                        coupling_orders or {}
+                    ),
                 }
             ],
             "run": {
@@ -306,6 +314,87 @@ class ExplicitProcessAuthorityTests(
             [
                 "z",
             ],
+        )
+
+    def test_unrequested_process_modifiers_are_removed(
+        self,
+    ) -> None:
+        workflow = make_wrong_workflow(
+            incoming=["p", "p"],
+            final_particles=[
+                {"particle": "e+"},
+                {"particle": "e-"},
+            ],
+            required_intermediates=["z"],
+            excluded_particles=["a"],
+            coupling_orders={
+                "QCD": {
+                    "value": 1,
+                    "comparison": "exact",
+                },
+                "QED": {
+                    "value": 1,
+                    "comparison": "exact",
+                },
+            },
+        )
+
+        result = apply_safe_grounding_corrections(
+            (
+                "Using the Standard Model, use the exact "
+                "MadGraph process p p > z > e+ e-. "
+                "Generate 100 events at 13 TeV."
+            ),
+            workflow,
+        )
+
+        process = result.workflow.processes[0]
+
+        self.assertEqual(process.excluded_particles, [])
+        self.assertEqual(process.coupling_orders, {})
+        self.assertEqual(
+            build_madgraph_artifact(result.workflow).commands[1],
+            "generate p p > z > e+ e-",
+        )
+
+    def test_explicit_process_modifiers_are_preserved(
+        self,
+    ) -> None:
+        workflow = make_wrong_workflow(
+            incoming=["p", "p"],
+            final_particles=[
+                {"particle": "e+"},
+                {"particle": "e-"},
+            ],
+            required_intermediates=["z"],
+        )
+
+        result = apply_safe_grounding_corrections(
+            (
+                "Use the exact MadGraph process "
+                "p p > z > e+ e- QED=2 QCD=0 / a "
+                "at 13 TeV with 100 events."
+            ),
+            workflow,
+        )
+
+        process = result.workflow.processes[0]
+
+        self.assertEqual(process.excluded_particles, ["a"])
+        self.assertEqual(
+            set(process.coupling_orders),
+            {"QCD", "QED"},
+        )
+        self.assertTrue(
+            all(
+                order.comparison
+                == CouplingComparison.MAXIMUM
+                for order in process.coupling_orders.values()
+            )
+        )
+        self.assertEqual(
+            build_madgraph_artifact(result.workflow).commands[1],
+            "generate p p > z > e+ e- QCD<=0 QED<=2 / a",
         )
 
 

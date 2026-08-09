@@ -22,6 +22,9 @@ from hep_agent.validation.analysis_request import (
 from hep_agent.validation.process_request import (
     extract_explicit_process_expression,
 )
+from hep_agent.validation.model_domain import (
+    model_domain_repair_matches,
+)
 from hep_agent.validation.core import (
     ValidationIssue,
     ValidationLevel,
@@ -506,6 +509,11 @@ def validate_request_grounding(
     if (
         expected_incoming is not None
         and actual_incoming != expected_incoming
+        and not model_domain_repair_matches(
+            grounded,
+            requested_tokens=expected_incoming,
+            actual_tokens=actual_incoming,
+        )
     ):
         issues.append(
             ValidationIssue(
@@ -526,7 +534,15 @@ def validate_request_grounding(
             for node in grounded.processes[0].final_particles
         )
 
-        if Counter(actual_final) != Counter(facts.final_particles):
+        if (
+            Counter(actual_final)
+            != Counter(facts.final_particles)
+            and not model_domain_repair_matches(
+                grounded,
+                requested_tokens=facts.final_particles,
+                actual_tokens=actual_final,
+            )
+        ):
             issues.append(
                 ValidationIssue(
                     code="explicit_final_state_mismatch",

@@ -1302,7 +1302,12 @@ def run_preexecution_loop(
         artifact_report,
         context=ApprovalContext(
             repair_changed_physics=(
-                repair_attempts > 0 or fallback_used
+                repair_attempts > 0
+                or fallback_used
+                or any(
+                    correction.requires_confirmation
+                    for correction in corrections
+                )
             ),
         ),
     )

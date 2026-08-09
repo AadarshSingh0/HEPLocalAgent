@@ -18,6 +18,7 @@ from .madgraph_workflow import (
 )
 from .model_domain import (
     ModelNamespace,
+    model_domain_repair_matches,
     namespace_for_model,
     validate_model_domain,
 )
@@ -30,6 +31,7 @@ __all__ = [
     "ValidationLevel",
     "ValidationReport",
     "extract_explicit_request_facts",
+    "model_domain_repair_matches",
     "namespace_for_model",
     "validate_madgraph_artifact",
     "validate_madgraph_workflow_artifact",

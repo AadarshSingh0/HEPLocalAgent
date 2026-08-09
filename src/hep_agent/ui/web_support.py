@@ -11,6 +11,34 @@ from pathlib import Path
 from typing import Any
 
 
+def ollama_model_options(
+    installed_models: list[str] | tuple[str, ...],
+    configured_models: list[str] | tuple[str, ...],
+) -> tuple[str, ...]:
+    """Prefer discovered Ollama models, with a config-only fallback."""
+
+    installed = {
+        model.strip()
+        for model in installed_models
+        if isinstance(model, str) and model.strip()
+    }
+
+    if installed:
+        return tuple(
+            sorted(installed, key=str.casefold)
+        )
+
+    configured = {
+        model.strip()
+        for model in configured_models
+        if isinstance(model, str) and model.strip()
+    }
+
+    return tuple(
+        sorted(configured, key=str.casefold)
+    )
+
+
 @dataclass(frozen=True)
 class RunHistoryEntry:
     """One persistent JSON run record available to the web UI."""
@@ -541,3 +569,30 @@ def approval_countdown_seconds(
             - current_timestamp
         ),
     )
+
+
+def failure_validation_issues(
+    result: Any,
+) -> list[dict[str, Any]]:
+    """Collect real grounding and artifact errors for failure display."""
+
+    issues: list[dict[str, Any]] = []
+
+    for stage, report in (
+        ("grounding", result.grounding_report),
+        ("artifact", result.artifact_report),
+    ):
+        if report is None:
+            continue
+
+        issues.extend(
+            {
+                "stage": stage,
+                "code": issue.code,
+                "message": issue.message,
+                "path": issue.path,
+            }
+            for issue in report.errors
+        )
+
+    return issues

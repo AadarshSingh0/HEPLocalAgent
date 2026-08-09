@@ -59,6 +59,20 @@ class DetectionTests(unittest.TestCase):
             self.assertTrue(detected["pythia8"])
             self.assertFalse(detected["delphes"])
 
+    def test_detects_delphes_at_madgraph_root(self) -> None:
+        """MG5 commonly installs Delphes beside HEPTools, not inside it."""
+
+        with tempfile.TemporaryDirectory() as d:
+            base = Path(d)
+            mg5 = make_mg5_tree(base, pythia=True, delphes=False)
+            delphes = base / "Delphes"
+            delphes.mkdir()
+            (delphes / "DelphesHepMC2").write_text("#!/bin/sh\n")
+
+            detected = detect_tools(mg5)
+
+            self.assertTrue(detected["delphes"])
+
 
 class WorkflowTests(unittest.TestCase):
     def test_stage_flags_flow_into_pipeline(self) -> None:

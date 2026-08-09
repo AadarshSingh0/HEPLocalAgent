@@ -24,7 +24,7 @@
     "max_planner_attempts": 2
   },
   "starter_local": {
-    "primary_model": "llama3.1:8b",
+    "primary_model": "qwen2.5-coder:7b",
     "fallback_model": null,
     "primary_timeout_seconds": 300,
     "fallback_timeout_seconds": null,

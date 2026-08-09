@@ -68,8 +68,8 @@ version mismatch). Point it at your tools with `--mg5` and `--ma5`, or create
       "madanalysis5_executable": "/path/to/madanalysis5/bin/ma5"
     }
 
-The same check is available in the web interface under **System doctor →
-Run installation self-test**.
+The same check is the primary action under the web interface's
+**Test installation** tab.
 
 ## Environment requirements
 

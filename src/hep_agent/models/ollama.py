@@ -71,6 +71,90 @@ class OllamaClient:
     def chat_url(self) -> str:
         return f"{self.host}/api/chat"
 
+    @property
+    def tags_url(self) -> str:
+        return f"{self.host}/api/tags"
+
+    def list_models(
+        self,
+        *,
+        timeout_seconds: int = 5,
+    ) -> list[str]:
+        """Return every model name reported by the Ollama host."""
+
+        request = urllib.request.Request(
+            self.tags_url,
+            headers={"Accept": "application/json"},
+            method="GET",
+        )
+
+        try:
+            with urllib.request.urlopen(
+                request,
+                timeout=timeout_seconds,
+            ) as response:
+                raw_body = response.read().decode("utf-8")
+
+        except urllib.error.HTTPError as exc:
+            raise OllamaClientError(
+                f"Ollama returned HTTP status {exc.code}.",
+                failure_type=ModelFailureType.HTTP,
+            ) from exc
+
+        except (TimeoutError, socket.timeout) as exc:
+            raise OllamaClientError(
+                "The Ollama model list request timed out.",
+                failure_type=ModelFailureType.TIMEOUT,
+            ) from exc
+
+        except urllib.error.URLError as exc:
+            reason = getattr(exc, "reason", exc)
+            raise OllamaClientError(
+                f"Could not connect to Ollama: {reason}",
+                failure_type=ModelFailureType.CONNECTION,
+            ) from exc
+
+        except UnicodeDecodeError as exc:
+            raise OllamaClientError(
+                "Ollama returned an invalid model-list response.",
+                failure_type=ModelFailureType.INVALID_RESPONSE,
+            ) from exc
+
+        try:
+            parsed = json.loads(raw_body)
+            models = parsed["models"]
+        except (
+            json.JSONDecodeError,
+            KeyError,
+            TypeError,
+        ) as exc:
+            raise OllamaClientError(
+                "Ollama returned an invalid model-list response.",
+                failure_type=ModelFailureType.INVALID_RESPONSE,
+            ) from exc
+
+        if not isinstance(models, list):
+            raise OllamaClientError(
+                "Ollama returned an invalid model-list response.",
+                failure_type=ModelFailureType.INVALID_RESPONSE,
+            )
+
+        names: set[str] = set()
+
+        for item in models:
+            if not isinstance(item, dict):
+                continue
+
+            name = item.get("name")
+
+            if not isinstance(name, str):
+                name = item.get("model")
+
+            if isinstance(name, str) and name.strip():
+                names.add(name.strip())
+
+        return sorted(names, key=str.casefold)
+
     def chat(
         self,
         *,

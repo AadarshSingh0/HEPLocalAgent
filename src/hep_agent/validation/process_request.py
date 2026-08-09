@@ -5,6 +5,8 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+from hep_agent.schemas import CouplingComparison
+
 
 # Preserve arbitrary MadGraph/UFO-style particle aliases such as:
 # e+, t~, j, zp, x1, n2, chi0, etc.
@@ -33,6 +35,14 @@ _ARROW_PATTERN = re.compile(
 
 _TOKEN_PATTERN = re.compile(
     _PARTICLE_TOKEN
+)
+
+_COUPLING_ORDER_PATTERN = re.compile(
+    r"(?<!\S)"
+    r"(?P<name>[A-Za-z][A-Za-z0-9_]*)"
+    r"(?P<operator><=|=)"
+    r"(?P<value>\d+)"
+    r"(?!\S)"
 )
 
 # These clauses mark the end of the physics process rather than
@@ -81,12 +91,23 @@ _TRAILING_CLAUSE_PATTERNS = (
 
 
 @dataclass(frozen=True)
+class ExplicitCouplingOrder:
+    """One amplitude-level MadGraph coupling-order restriction."""
+
+    name: str
+    value: int
+    comparison: CouplingComparison
+
+
+@dataclass(frozen=True)
 class ExplicitProcessExpression:
     """One explicit 2→N process expression."""
 
     incoming_particles: tuple[str, str]
     final_particles: tuple[str, ...]
     required_intermediates: tuple[str, ...]
+    excluded_particles: tuple[str, ...] = ()
+    coupling_orders: tuple[ExplicitCouplingOrder, ...] = ()
 
 
 def _strip_trailing_request_clauses(
@@ -169,8 +190,32 @@ def extract_explicit_process_expression(
     if not parts:
         return None
 
+    final_part = parts[-1]
+
+    coupling_orders = tuple(
+        ExplicitCouplingOrder(
+            name=order.group("name").upper(),
+            value=int(order.group("value")),
+            # MadGraph interprets both NAME=N and NAME<=N as
+            # amplitude-level upper bounds.
+            comparison=CouplingComparison.MAXIMUM,
+        )
+        for order in _COUPLING_ORDER_PATTERN.finditer(
+            final_part
+        )
+    )
+
+    final_part = _COUPLING_ORDER_PATTERN.sub(
+        " ",
+        final_part,
+    )
+
+    process_part, separator, excluded_part = (
+        final_part.partition("/")
+    )
+
     final_particles = _particle_tokens(
-        parts[-1]
+        process_part
     )
 
     if not final_particles:
@@ -191,4 +236,10 @@ def extract_explicit_process_expression(
         required_intermediates=tuple(
             required_intermediates
         ),
+        excluded_particles=(
+            _particle_tokens(excluded_part)
+            if separator
+            else ()
+        ),
+        coupling_orders=coupling_orders,
     )
