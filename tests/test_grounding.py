@@ -90,6 +90,46 @@ def make_workflow(
 
 
 class GroundingTests(unittest.TestCase):
+    def test_mixed_four_lepton_state_preserves_every_particle(
+        self,
+    ) -> None:
+        facts = extract_explicit_request_facts(
+            "Simulate proton-proton collisions producing a muon, "
+            "an antimuon, an electron, and a positron at 13 TeV "
+            "with 100 events."
+        )
+
+        self.assertEqual(
+            facts.final_particles,
+            ("mu-", "mu+", "e-", "e+"),
+        )
+
+    def test_charge_qualified_muon_is_not_duplicated(
+        self,
+    ) -> None:
+        facts = extract_explicit_request_facts(
+            "Simulate proton-proton collisions producing a positive "
+            "muon and a Higgs boson at 13 TeV with 100 events."
+        )
+
+        self.assertEqual(
+            facts.final_particles,
+            ("mu+", "h"),
+        )
+
+    def test_hyphenated_antitop_is_not_also_counted_as_top(
+        self,
+    ) -> None:
+        facts = extract_explicit_request_facts(
+            "Simulate proton-proton collisions producing an anti-top "
+            "quark and a Higgs boson at 13 TeV with 100 events."
+        )
+
+        self.assertEqual(
+            facts.final_particles,
+            ("t~", "h"),
+        )
+
     def test_multiline_analysis_facts_are_extracted(
         self,
     ) -> None:

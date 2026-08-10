@@ -1,274 +1,305 @@
-# HEPLocalAgent — Architecture Change Summary
+# HEPLocalAgent v0.1.0 — Architecture and Change Record
 
-**Baseline:** commit `878b69b` ("Make HEPLocalAgent fully standalone") — the
-version described in the current Paper B manuscript.
-**This change set:** 11 focused commits on top of the baseline.
-**Tests:** 295 (baseline) → **353**, all passing and model-free (no Ollama or
-HEP tools required to run the suite).
+This document is the release-candidate record for HEPLocalAgent v0.1.0.
+It replaces the earlier increment log, which stopped at an intermediate
+353-test state.
 
-This document explains, for each change: what the old agent did, what the new
-agent does, and why. It then lists new/modified files, states the agent's trust
-guarantees as explicit contracts, maps each change to the Paper B sections that
-need editing, and gives a `v0.1.0` release checklist.
+**Standalone baseline:** `878b69b` (`Make HEPLocalAgent fully standalone`)
 
----
+**Verified public base:** `baa88d6` (`Merge pull request #1 from
+AadarshSingh0/agent/workflow-grounding-20260809`)
 
-## 1. The guiding principle
+**History represented by that public base:** 19 commits reachable after the
+standalone baseline, including topic, consolidation, and merge commits.
 
-Every change follows one rule that separates two kinds of deterministic logic:
+**Test history:** 295 at the standalone baseline, 370 at `baa88d6`, and
+**379 in the final release-readiness change set**. The full unit suite is
+model-free and does not call Ollama or execute HEP software.
 
-- **Interpretation** — *what did the user mean?* (Pythia on or off; is 13 TeV
-  total or per-beam; what is the final state?). This should become **more
-  flexible** as the local model grows more capable.
-- **Containment** — *is the proposed thing real and safe to execute?* (Is `tt~`
-  a particle the loaded model defines; is the command shell-safe; will it run
-  the exact approved artifact?). This must **always hold**, regardless of model
-  capability, because the failure mode of every model — small or large — is
-  being confident and wrong.
-
-Short form: **relax interpretation as capability grows; never relax
-containment.** A bigger model buys freedom in what it is allowed to *mean*, not
-freedom to run unreal or unsafe commands.
-
----
-
-## 2. The three original problems (found in real macOS testing) — now fixed
-
-| # | Symptom (old behaviour) | Root cause | New behaviour |
-|---|---|---|---|
-| 1 | `p p > tt~` (a glued, non-existent token) passed validation and reached MadGraph, which then rejected it. | The particle validator only checked *characters* (`^[A-Za-z0-9_+\-~]+$`); it never checked whether the token exists in the selected model. | The token is caught inside the agent, with a suggested fix (`Did you mean 't', 't~'?`), and — since increment 4 — automatically repaired. |
-| 2 | An exact request using the Standard Model failed with *"A user UFO model requires model_path"* before MadGraph ever ran. | The model emitted `{"name":"StandardModel","source":"user_ufo"}`; the built-in-model rescue list did not contain `standardmodel` (no space), so Pydantic rejected the workflow at construction. | Any Standard Model / loop_sm spelling (`StandardModel`, `Standard Model`, `standard_model`, `SM`, …) is normalised to the canonical built-in name; a built-in mislabelled as a UFO is corrected. Genuine UFO names are untouched. |
-| 3 | "turn on Pythia" was silently ignored (Pythia stayed off), while "with Pythia8" worked. | On the natural-language route the LLM emitted only the process line; Pythia/Delphes were decided by a rigid regex that recognised only `with/use/enable/run` + the literal word "pythia". | The model now interprets stage intent. "turn on Pythia", "enable showering", "parton level only", "detector simulation", etc. are understood by the model, with explicit deterministic anchors kept as a high-confidence override. **Validated on real `qwen2.5-coder:7b`.** |
-
----
-
-## 3. Change-by-change summary
-
-### Increment 1 — Model-relative particle-domain validation (`15bbb80`)
-- **Old:** particle tokens were only checked for safe characters.
-- **New:** every particle/multiparticle token is validated against the
-  namespace of the *selected model*. For the built-in Standard Model this is the
-  SM particle set plus MadGraph's default multiparticles (`p`, `j`, `l+`, …).
-  When the namespace cannot be determined, validation is **permissive** (no
-  false blocks). Rejections carry split/stem suggestions for later repair.
-- **Why it matters:** this is the containment layer. It is model-relative, so a
-  richer model is not constrained to the Standard Model — the check only ever
-  fires when a token genuinely is not in the loaded model.
-
-### Increment 2 — Built-in model misclassification fix (`aa9370e`)
-- **Old:** only a hard-coded 4-entry allowlist of exact spellings was rescued.
-- **New:** a spelling-tolerant canonicaliser (case, spaces, underscores, hyphens
-  all ignored) maps Standard Model / loop_sm spellings to the canonical name and
-  repairs a built-in mislabelled as a UFO. Real UFO names are left alone.
-
-### Increment 3 — Model-led pipeline interpretation (`d1221b4`)
-- **Old:** on the natural-language route, the LLM emitted only a `generate` line;
-  Pythia/Delphes came 100% from regex; a miss silently defaulted to off and was
-  even tagged `validated_default` so approval did not flag it.
-- **New:** the semantic planner returns a small structured object
-  (`{process, pythia8, delphes}` with `on`/`off`/`unspecified`). The model
-  interprets stage intent from natural language; explicit deterministic anchors
-  still take precedence when present. Backward-compatible (a bare `generate`
-  line still parses). Provenance is recorded in `field_sources`.
-
-### Increment 4 — Repairable containment (`b531788`)
-- **Old:** a domain violation (e.g. `tt~`) surfaced only at the final artifact
-  check and *blocked* — the model never got a chance to fix it.
-- **New:** the repair loop now acts on grounding mismatches **and** model-domain
-  violations, so an invalid particle is fed back to the repair model with its
-  suggested correction. If repair cannot fix it, the final artifact validation
-  still blocks execution — containment is preserved. Applies to the primary and
-  fallback repair paths.
-
-### Increment 5 — Model-aware validation for UFO/BSM models (`5815e36`)
-- **Old:** domain validation was authoritative only for the Standard Model;
-  custom models were always permissive (unchecked).
-- **New:** a UFO model's `particles.py` is statically parsed (via `ast`, **never
-  executed**) to extract its particle set, and tokens are validated against
-  *that* model plus MadGraph's default multiparticles. Containment now covers
-  custom/BSM models; the namespace expands to whatever the loaded model defines.
-  Unparseable or missing models remain permissive.
-
-### Increment 6 — Data-driven acceptance harness with real-model recording (`c1b7c4c`)
-- **Old:** the 295 unit tests mocked the model and never exercised the semantic
-  route — they were blind to live-model language variation, which is exactly why
-  real macOS testing found bugs the suite missed.
-- **New:** a paraphrase battery (many phrasings → same workflow) and a negative
-  battery (invalid tokens repaired or blocked, never executed) run through the
-  real pipeline via replayed model outputs, covering both routes. Scenarios are
-  data (`tests/acceptance/scenarios.json`). `scripts/record_acceptance.py`
-  captures real local-model outputs so actual model behaviour can be validated
-  in CI (via `HEP_ACCEPTANCE_SCENARIOS`).
-
-### Increment 7 — Deterministic installation self-test (`4b37a32`)
-- **New capability:** a no-LLM cross-check that runs a fixed trial process
-  (`p p > e+ e-`) with Pythia8 + Delphes + MadAnalysis all enabled, through the
-  real deterministic execution/analysis stages, and reports per-tool health.
-  Exposed as `python -m hep_agent.selftest` (and a `hep-local-agent-selftest`
-  entry point) and as a button in the web app's **System doctor** section.
-  Verifies the toolchain is installed and working end to end, with no planner or
-  model involved.
-
-### Increment 8 — Test-suite hardening (`2e35712`)
-- **Bootstrap tests made hermetic:** they no longer inherit `OLLAMA_HOST` from
-  the developer's shell. The bootstrap script changes its install decisions
-  based on `OLLAMA_HOST`, so a configured remote Ollama could previously make
-  the macOS-rejection tests fail spuriously.
-- **Acceptance scenarios made robust:** the two injected-invalid scenarios are
-  marked `synthetic` so the recorder never overwrites them with a real model's
-  (valid) output, and the detector-simulation expectation requires only Delphes
-  (enabling showering for detector simulation is reasonable model behaviour).
-
----
-
-## 4. What the agent can do now that it could not before
-
-- **Catch non-existent particles before execution** — for the Standard Model and
-  for any parseable UFO/BSM model, an invalid or glued particle token is stopped
-  inside the agent instead of failing in MadGraph.
-- **Auto-correct invalid particles** — a bad token is fed back to the model with
-  a concrete suggestion and repaired within budget.
-- **Understand pipeline intent in natural language** — Pythia/Delphes are decided
-  by model interpretation, not a fixed phrase list; "magic phrase" rigidity is
-  gone.
-- **Validate against custom physics models** — load your own UFO model and the
-  containment guarantee expands to that model's particle set.
-- **Verify its own installation** — one command (or button) runs the full
-  toolchain on a fixed process and reports per-tool health, no model involved.
-- **Stay correct under refactoring and across models** — a data-driven acceptance
-  suite plus a real-model recording workflow guard against regressions and
-  live-model drift.
-
----
-
-## 5. Trust guarantees (state these as contracts in the paper and README)
-
-1. **The model never writes an executable script or launch commands.** It
-   proposes a typed intent (and, on the natural-language route, a single process
-   line plus stage intent). All MadGraph/Pythia/Delphes/MadAnalysis command-file
-   construction is deterministic.
-2. **Every particle is validated against the loaded model.** A token that the
-   selected model does not define cannot reach MadGraph.
-3. **Invalid never executes.** If validation fails and repair cannot fix it, the
-   workflow is blocked, not run.
-4. **Execution is sandboxed by construction.** Commands run as non-shell
-   subprocess argument lists (`shell=True` is never used) under explicit
-   timeouts; the exact approved artifact is executed with no further model call.
-5. **Every run is reproducible.** A JSON provenance record captures prompt
-   hashes, model, profile, and artifact.
-6. **Everything is local.** Any Ollama-served model works; no data leaves the
-   machine.
-
-> Note for accuracy: the earlier manuscript phrasing "the LLM performs exactly
-> one job / never writes MadGraph syntax" should be replaced by contract (1)
-> above, which is precise about what the model does and does not produce.
-
----
-
-## 6. Files
-
-### New files (12)
-| File | Purpose |
-|---|---|
-| `src/hep_agent/validation/model_domain.py` | Model-relative particle-domain validation; SM namespace; UFO `particles.py` parser; canonical built-in names. |
-| `src/hep_agent/selftest.py` | Deterministic installation self-test (function + `python -m hep_agent.selftest` CLI). |
-| `scripts/record_acceptance.py` | Records real local-model outputs for the acceptance scenarios. |
-| `tests/acceptance/scenarios.json` | Acceptance scenarios (representative outputs; CI-green). |
-| `tests/acceptance/scenarios.template.json` | Recording template (recordable scenarios have no outputs; synthetic keep theirs). |
-| `tests/test_acceptance.py` | Data-driven acceptance harness (both routes). |
-| `tests/test_model_domain_validation.py` | Tests for SM domain validation. |
-| `tests/test_model_classification.py` | Tests for tolerant built-in model classification. |
-| `tests/test_semantic_pipeline_intent.py` | Tests for model-led pipeline interpretation. |
-| `tests/test_domain_repair.py` | Tests that invalid particles are repaired, not just blocked. |
-| `tests/test_ufo_domain_validation.py` | Tests for UFO/BSM domain validation. |
-| `tests/test_selftest.py` | Tests for the installation self-test reporting logic. |
-
-### Modified files (8)
-| File | Change |
-|---|---|
-| `src/hep_agent/validation/core.py` | Wire model-domain validation into `validate_workflow`. |
-| `src/hep_agent/validation/__init__.py` | Export the new domain validators. |
-| `src/hep_agent/models/planner.py` | Spelling-tolerant built-in model canonicalisation. |
-| `src/hep_agent/models/semantic_process.py` | Structured semantic output (`process` + `pythia8` + `delphes`); precedence logic. |
-| `src/hep_agent/orchestration/preexecution.py` | Fold domain violations into the repair loop. |
-| `src/hep_agent/ui/web_app.py` | Installation self-test button in the System doctor section. |
-| `pyproject.toml` | `hep-local-agent-selftest` entry point. |
-| `tests/test_bootstrap_scripts.py` | Hermetic subprocess environment (strip `OLLAMA_HOST`). |
-
----
-
-## 7. Paper B — sections to update
-
-- **Abstract / architecture overview and Figure 1.** Replace "the LLM performs
-  exactly one job / never writes MadGraph syntax" with trust contract (1). The
-  validation box now includes **model-aware domain validation** (particles
-  checked against the loaded model, including UFO/BSM); the repair loop now also
-  repairs **domain violations**.
-- **Planner / interpretation section.** Describe model-led pipeline
-  interpretation on the natural-language route (structured `process` + stage
-  intent), with deterministic anchors as a high-confidence override — replacing
-  the previous regex-only pipeline description.
-- **Validation section.** Add the model-relative domain validator and the UFO
-  `particles.py` parsing (static, non-executing).
-- **Repair section.** State that invalid particles are fed back with suggestions
-  and repaired within budget; unresolved cases are blocked.
-- **Test count.** Update "273 tests" (or "295") to **346**, and describe the
-  acceptance harness and real-model recording as a distinct validation layer.
-- **Installation / features.** Add the deterministic installation self-test
-  (CLI + web button).
-- **Limitations.** The "magic phrase" rigidity is resolved; note remaining items
-  (e.g. the deterministic anchor regex can still over-trigger on unusual
-  phrasings; UFO models whose particles are not declared via `Particle(...)` in
-  `particles.py` fall back to permissive validation).
-
----
-
-## 8. How to verify on your system
+Verified with:
 
 ```bash
-# 1. Full suite (model-free). Should print: Ran 346 tests ... OK
-python -m unittest discover -s tests -p 'test_*.py'
-
-# 2. Real-model acceptance (records your local model, then replays it)
-python scripts/record_acceptance.py \
-    --in tests/acceptance/scenarios.template.json \
-    --out tests/acceptance/scenarios.qwen7b.json \
-    --model qwen2.5-coder:7b            # add --ollama-host http://HOST:11434 if remote
-HEP_ACCEPTANCE_SCENARIOS=tests/acceptance/scenarios.qwen7b.json \
-    python -m unittest tests.test_acceptance -v
-
-# 3. Installation self-test (runs the full toolchain; no model involved)
-python -m hep_agent.selftest \
-    --mg5 /path/to/MG5_aMC/bin/mg5_aMC \
-    --ma5 /path/to/madanalysis5/bin/ma5 \
-    --events 1000
-# or create configs/local_paths.json and run:  python -m hep_agent.selftest
-
-# 4. Web button: launch the web app -> System doctor -> "Run installation self-test"
+PYTHONPATH=src python -m unittest discover -s tests -p 'test_*.py'
 ```
 
-If you use a remote Ollama, set a full URL: `export OLLAMA_HOST=http://HOST:11434`
-(scheme and port are required).
+Latest result:
+
+```text
+Ran 379 tests
+OK
+```
 
 ---
 
-## 9. `v0.1.0` release checklist
+## 1. Design principle
 
-- [ ] Apply all 8 increments; `python -m unittest discover -s tests` → **346 OK**.
-- [ ] Run the real-model acceptance suite against `qwen2.5-coder:7b` and confirm
-      green (or record any model-specific expectation adjustments).
-- [ ] Run the installation self-test on the release machine and confirm all four
-      tools pass.
-- [ ] Update Paper B per section 7 above.
-- [ ] Update the README trust guarantees per section 5.
-- [ ] Reconcile model naming across paper, installer, `configs/agent_profiles.json`,
-      and the UI (installer default `qwen2.5-coder:7b` vs `starter_local` profile
-      model — see note below).
-- [ ] Confirm `pyproject.toml` version and the git tag agree, then tag `v0.1.0`.
+HEPLocalAgent separates model-assisted interpretation from deterministic
+containment.
 
-> **Known naming inconsistency to resolve before tagging:** the bootstrap
-> installer's default starter model is `qwen2.5-coder:7b`, but the
-> `starter_local` profile in `configs/agent_profiles.json` currently points at a
-> different model. Align these (and the paper's starter/primary/fallback
-> terminology) so a clean default install and the default profile use the same
-> model.
+- **Interpretation:** a selected Ollama model translates ordinary language
+  into either a compact semantic process proposal or a full typed workflow
+  proposal.
+- **Containment:** ordinary Python code checks supported request facts,
+  selected-model particle names, schema consistency, the constructed artifact,
+  approval policy, and execution provenance.
+
+A more capable model can improve what the agent understands. It does not gain
+permission to bypass validation, approval, or the deterministic artifact
+builder.
+
+---
+
+## 2. Current request flow
+
+1. The web or terminal interface checks that the request contains a collider or
+   incoming state, a physics target, an energy, and an event count.
+2. The agent selects one planning route:
+   - the **thin semantic LLM route** for ordinary process language; or
+   - the **full structured LLM route** for richer workflow requirements.
+3. Exact MadGraph-style process syntax supplied by the user is parsed
+   deterministically and treated as authoritative.
+4. Deterministic grounding checks supported explicit facts against the proposed
+   workflow.
+5. Particle and multiparticle tokens are checked against the selected Standard
+   Model or a statically parseable UFO model.
+6. Eligible grounding or model-domain errors may enter a bounded repair path.
+   Every repair is revalidated. Unsupported or unresolved cases are blocked.
+7. The deterministic builder constructs the complete MG5 command artifact.
+8. Final artifact validation checks the built commands and pipeline
+   consistency.
+9. Approval policy returns one of:
+   - `AUTO_CONFIRM`: cancellable five-second countdown;
+   - `EXPLICIT_CONFIRMATION`: no countdown and a required user action; or
+   - `BLOCKED`: execution is unavailable.
+10. The exact approved artifact is executed without another planner call.
+11. MadGraph manages requested Pythia8 and Delphes stages. MadAnalysis is a
+    separate post-processing stage when usable event output exists.
+12. Commands, decisions, corrections, outputs, timings, and failures are
+    recorded for inspection.
+
+The two planners are alternatives. Their outputs are not generated and compared
+against each other.
+
+---
+
+## 3. Major changes since the standalone baseline
+
+### 3.1 Model-relative particle-domain validation
+
+- Standard Model particle names and MadGraph default multiparticles are checked
+  before execution.
+- Invalid glued tokens such as `tt~` are caught inside the agent.
+- Parseable UFO `particles.py` files are inspected statically with Python's AST;
+  the model file is not imported or executed.
+- Missing or unparseable UFO namespaces fall back to permissive domain
+  validation to avoid false claims about an unknown model.
+
+### 3.2 Built-in model classification
+
+Standard Model and `loop_sm` spellings are canonicalized across case, spaces,
+underscores, and hyphens. A built-in model incorrectly labelled as a user UFO is
+corrected, while genuine UFO names remain user models.
+
+### 3.3 Model-led pipeline interpretation
+
+The thin semantic planner returns a restricted object containing a process
+expression plus Pythia8 and Delphes intent. This supports phrasings such as
+"turn on showering" while deterministic anchors preserve explicit on/off
+instructions.
+
+The model does not freely write a complete executable MG5 launch script. The
+full artifact remains deterministic.
+
+### 3.4 Repairable containment
+
+Eligible request-grounding and model-domain failures may be sent to the bounded
+repair model with deterministic feedback. Repairs that cannot be justified or
+validated are rejected. Builder, final-artifact, and runtime failures do not
+enter an unrestricted LLM retry loop.
+
+### 3.5 Exact-process authority
+
+When the user supplies syntax such as:
+
+```text
+generate p p > z > e+ e-
+```
+
+the explicit process is authoritative. Planner additions that change incoming
+particles, final particles, required intermediates, exclusions, or coupling
+orders are removed or rejected according to the implemented rules.
+
+At amplitude level, both `QED=2` and `QED<=2` are represented as maximum-order
+restrictions and emitted as `QED<=2`. Unsupported internal claims of exact or
+minimum amplitude-level coupling order are rejected.
+
+### 3.6 Request recognition and grounding
+
+The minimum request gate recognizes named physics targets such as top-pair,
+Drell--Yan, and Higgs production while rejecting generic phrases such as
+"event production" as a final-state specification.
+
+Natural-language particle grounding now preserves mixed multiparticle clauses.
+For example, a stated `mu- mu+ e- e+` final state is no longer truncated to the
+first recognized particle--antiparticle pair. Overlapping phrases such as
+`positive muon` and `anti-top` are counted once rather than as two tokens.
+
+This deterministic vocabulary remains intentionally conservative; arbitrary
+natural-language particle descriptions still rely on model interpretation or
+exact MadGraph syntax.
+
+### 3.7 Installed-model selection and routing profiles
+
+The web interface queries the configured Ollama host at `/api/tags`,
+deduplicates and sorts installed models, and lets the user choose the actual
+primary model independently of the routing profile.
+
+- **Ollama model:** model used for the new request.
+- **Routing profile:** timeout, retry budget, and optional fallback behavior.
+
+If discovery fails, configured models remain available with a warning. A
+selected primary model is not redundantly reused as its own fallback. The
+starter installer and `starter_local` profile both use
+`qwen2.5-coder:7b`.
+
+### 3.8 Approval enforcement across interfaces
+
+The core and terminal interfaces already distinguished automatic, explicit,
+and blocked decisions. The web interface now enforces the same distinction for
+both ordinary workflows and complete energy scans.
+
+An expired countdown can start execution only for `AUTO_CONFIRM`. A workflow
+marked `EXPLICIT_CONFIRMATION` has no deadline and requires a button click. A
+blocked or missing approval decision cannot start external software.
+
+### 3.9 Installation self-test and diagnosis
+
+The deterministic self-test is available through:
+
+```bash
+python -m hep_agent.selftest
+hep-local-agent-selftest
+```
+
+It builds a fixed `p p > e+ e-` workflow without an LLM and reports MadGraph,
+Pythia8, Delphes, and MadAnalysis separately. It distinguishes missing tools
+from installed tools that failed and diagnoses recognized Python-version,
+LHAPDF/Pythia8, segmentation-fault, core-dump, shower-disable, and interface
+loading patterns.
+
+Delphes is discovered in both common layouts:
+
+```text
+MG5_ROOT/Delphes
+MG5_ROOT/HEPTools/Delphes
+```
+
+### 3.10 Web interface and failure reporting
+
+The web interface separates Chat, workflow building, installation testing, and
+run history. It exposes the interpreted workflow, generated artifact,
+corrections, model calls, repair count, fallback use, and provenance.
+
+Failure details now combine request-grounding and artifact/model-domain issues,
+including stage, error code, message, and schema path. Clearing the browser
+conversation does not delete persistent run records or scientific outputs.
+
+### 3.11 Acceptance and regression testing
+
+The repository includes replayable acceptance scenarios for both planning
+routes, natural-language paraphrases, and negative cases that must repair or
+block. `scripts/record_acceptance.py` can record outputs from an actual Ollama
+model without committing machine-specific recordings.
+
+Installer tests are hermetic: they do not inherit the developer's
+`OLLAMA_HOST`, and simulated macOS tests do not reuse an unrelated local virtual
+environment.
+
+### 3.12 Repository and installer hardening
+
+- Python requirement: 3.10 or newer.
+- Console entry points: `hep-local-agent`, `hep-local-agent-web`,
+  `hep-local-agent-doctor`, and `hep-local-agent-selftest`.
+- Supported installer targets: Ubuntu/Debian-family x86-64 and macOS on Intel or
+  Apple Silicon, with the documented remote-Ollama path for unsupported local
+  Ollama configurations.
+- `--dry-run` previews installation and uninstallation plans.
+- Full-stack installer validation uses a fixed 10-event trial.
+- Uninstallation is guarded and does not implicitly remove unrelated Ollama
+  models, the Ollama application, Homebrew, Apple command-line tools, Linux
+  system packages, or scientific results unless the corresponding explicit
+  option is selected.
+- Temporary patch scripts, patch files, generated package metadata, and
+  machine-specific acceptance recordings are excluded from releases.
+
+---
+
+## 4. Trust contracts and boundaries
+
+1. **Model output is a proposal.** The LLM interprets language and may emit a
+   constrained process expression or typed workflow proposal; it does not have
+   unrestricted authority over the complete executable artifact.
+2. **Artifact construction is deterministic.** The complete MG5 workflow and
+   supported MA5 commands are built by fixed code.
+3. **Exact user syntax is authoritative.** Explicit process syntax is preserved
+   within the supported schema and coupling-order semantics.
+4. **Validation is evidence-bounded.** Particle-domain validation is
+   authoritative only when the selected model namespace is known. Unknown UFO
+   namespaces are reported as permissive rather than falsely certified.
+5. **Repair is bounded and revalidated.** No repair is accepted merely because
+   an LLM proposed it.
+6. **Approval is policy-controlled.** Physics-changing repair, unresolved
+   ambiguity, warnings, overwrite risk, unsupported features, or
+   physics-critical model inference require explicit confirmation.
+7. **Execution uses the approved artifact.** The planner is not called again
+   after approval.
+8. **Subprocess use is constrained.** External tools are invoked without shell
+   interpolation and under timeouts. This is not an operating-system sandbox.
+9. **Provenance is recorded.** Run records include the request, profile, model
+   calls, prompt hashes, approval, artifact, corrections, and observed results.
+10. **Deployment may be local or configured remote.** Ollama defaults to a
+    local host, but a user-configured remote Ollama host receives the model
+    request; the software does not claim that data always remains on one
+    physical machine.
+
+---
+
+## 5. Current limitations
+
+- Passing agent validation does not prove that MadGraph has viable diagrams,
+  that the cross section is nonzero, or that the requested analysis is
+  scientifically useful.
+- The natural-language particle vocabulary used for deterministic grounding is
+  deliberately limited. Exact MadGraph syntax is the most authoritative path
+  for uncommon particles or complex final states.
+- Schema version 1 supports only limited required-intermediate structure.
+- Unparseable UFO namespaces use permissive domain validation.
+- Exact and minimum amplitude-level coupling-order comparisons are
+  intentionally unsupported; maximum restrictions are supported.
+- External HEP tools can still fail because of installation, compilation,
+  environment, physics, or runtime problems.
+- Non-shell subprocess execution and timeouts reduce command risk but do not
+  provide OS-level sandboxing.
+
+---
+
+## 6. Release verification
+
+- [x] Public base `baa88d6` independently verified at 370 tests.
+- [x] Mixed natural-language multiparticle grounding fixed and regression
+      tested.
+- [x] Web explicit-confirmation behavior fixed for workflows and scans.
+- [x] Unit suite increased to 379 and passes without Ollama or HEP tools.
+- [x] This change record updated to the current architecture and limitations.
+- [x] Installer and `starter_local` model naming aligned to
+      `qwen2.5-coder:7b`.
+- [ ] Record and replay the optional live-model acceptance suite on the release
+      machine.
+- [ ] Run the deterministic installation self-test on the final release
+      toolchain.
+- [ ] Push the release-readiness branch and merge it into `main`.
+- [ ] Create the `v0.1.0` tag after the final host checks.
+
+The unchecked host-dependent items are release operations, not missing unit
+implementation. They require the actual Ollama and HEP installations that will
+be used for the release.
