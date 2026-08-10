@@ -600,6 +600,25 @@ def _render_record(
     else:
         st.info(f"Run status: {status}")
 
+    missing_requested_outputs = payload.get(
+        "missing_requested_outputs"
+    )
+
+    if (
+        isinstance(
+            missing_requested_outputs,
+            list,
+        )
+        and missing_requested_outputs
+    ):
+        st.error(
+            "Missing requested outputs: "
+            + ", ".join(
+                str(item)
+                for item in missing_requested_outputs
+            )
+        )
+
     cross_section = _value(
         payload,
         "cross_section_pb",

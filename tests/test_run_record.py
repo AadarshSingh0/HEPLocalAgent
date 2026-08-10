@@ -1,5 +1,6 @@
 """Tests for reproducible pre-execution run records."""
 
+import hashlib
 import json
 import tempfile
 import unittest
@@ -14,6 +15,9 @@ from hep_agent.models import (
 from hep_agent.orchestration import (
     FailureCategory,
     run_preexecution_and_record,
+)
+from hep_agent.models.semantic_process import (
+    SEMANTIC_PROCESS_PROMPT,
 )
 
 
@@ -161,6 +165,14 @@ class RunRecordTests(unittest.TestCase):
                 len(record.repair_prompt_sha256),
                 64,
             )
+            self.assertEqual(
+                record.semantic_prompt_sha256,
+                hashlib.sha256(
+                    SEMANTIC_PROCESS_PROMPT.encode(
+                        "utf-8"
+                    )
+                ).hexdigest(),
+            )
 
     def test_infrastructure_failure_is_recorded(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -206,7 +218,7 @@ class RunRecordTests(unittest.TestCase):
 
             self.assertEqual(
                 parsed["record_version"],
-                "1.0",
+                "1.1",
             )
 
 

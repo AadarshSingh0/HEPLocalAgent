@@ -232,6 +232,31 @@ environment.
 - Temporary patch scripts, patch files, generated package metadata, and
   machine-specific acceptance recordings are excluded from releases.
 
+### 3.13 Requested-output verification and complete prompt provenance
+
+Normal event-generation execution no longer treats a parsed cross section
+and event count as sufficient evidence that every requested stage succeeded.
+The controller now requires:
+
+- a parton-level LHE file for every event-generation run;
+- a showered HepMC file when Pythia8 was requested;
+- a detector-level ROOT file when Delphes was requested.
+
+Missing requested artifacts produce `execution_failed`, use the existing
+`execution_output_validation_failure` category, and are listed explicitly in
+the run record under `missing_requested_outputs`. Energy-scan points inherit
+the same behavior because they execute through the ordinary prepared-workflow
+controller.
+
+Run-record format `1.1` adds the SHA-256 hash of the built-in thin semantic
+planner prompt. Together with the existing full-planner and repair-prompt
+hashes, this covers every prompt implementation used by the two planning
+routes and bounded repair.
+
+The MadAnalysis package remains capable of consuming a discovered LHE or
+HepMC path internally, but release `v0.1.0` does not expose a user-selected
+existing-event-file rerun entry point in the terminal or web interface.
+
 ---
 
 ## 4. Trust contracts and boundaries
@@ -256,7 +281,9 @@ environment.
 8. **Subprocess use is constrained.** External tools are invoked without shell
    interpolation and under timeouts. This is not an operating-system sandbox.
 9. **Provenance is recorded.** Run records include the request, profile, model
-   calls, prompt hashes, approval, artifact, corrections, and observed results.
+   calls, hashes of the full-planner, thin-semantic, and repair prompts,
+   approval, artifact, corrections, requested-output verification, and
+   observed results.
 10. **Deployment may be local or configured remote.** Ollama defaults to a
     local host, but a user-configured remote Ollama host receives the model
     request; the software does not claim that data always remains on one
@@ -286,10 +313,14 @@ environment.
 ## 6. Release verification
 
 - [x] Public base `baa88d6` independently verified at 370 tests.
+- [x] Merged pre-patch `main` at `2025a38` verified at 379 tests.
 - [x] Mixed natural-language multiparticle grounding fixed and regression
       tested.
 - [x] Web explicit-confirmation behavior fixed for workflows and scans.
-- [x] Unit suite increased to 379 and passes without Ollama or HEP tools.
+- [x] Ordinary execution verifies every requested stage output and records
+      missing LHE, HepMC, or ROOT artifacts explicitly.
+- [x] Thin semantic-planner prompt hash added to run-record format `1.1`.
+- [x] Unit suite increased to 389 and passes without Ollama or HEP tools.
 - [x] This change record updated to the current architecture and limitations.
 - [x] Installer and `starter_local` model naming aligned to
       `qwen2.5-coder:7b`.
@@ -297,7 +328,7 @@ environment.
       machine.
 - [ ] Run the deterministic installation self-test on the final release
       toolchain.
-- [ ] Push the release-readiness branch and merge it into `main`.
+- [ ] Push and merge the requested-output/provenance release patch.
 - [ ] Create the `v0.1.0` tag after the final host checks.
 
 The unchecked host-dependent items are release operations, not missing unit

@@ -15,7 +15,7 @@ from hep_agent.execution import (
     run_madgraph_workflow,
 )
 from hep_agent.execution.outcome import (
-    execution_has_valid_physics_output,
+    validate_execution_outputs,
 )
 from hep_agent.models import AgentProfile, OllamaClient
 from hep_agent.orchestration.analysis_stage import (
@@ -232,12 +232,14 @@ def execute_prepared(
             execution_directory=execution_directory,
         )
 
-    validated_execution_success = (
-        execution_has_valid_physics_output(
-            execution,
-            physics,
-        )
+    output_validation = validate_execution_outputs(
+        execution,
+        physics,
+        require_lhe=True,
+        require_hepmc=workflow.pipeline.pythia8,
+        require_root=workflow.pipeline.delphes,
     )
+    validated_execution_success = output_validation.is_valid
 
     analysis: AnalysisStageResult | None = None
 
@@ -288,6 +290,10 @@ def execute_prepared(
         execution=execution,
         physics=physics,
         analysis=analysis,
+        output_validation=output_validation,
+        analysis_was_requested=(
+            workflow.pipeline.madanalysis
+        ),
         execution_directory=execution_directory,
         project_root=project_root,
         end_to_end_wall_time_seconds=active_total,
