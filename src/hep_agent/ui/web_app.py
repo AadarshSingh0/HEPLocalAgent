@@ -61,6 +61,7 @@ from hep_agent.ui.web_support import (
     archive_run_history,
     RunHistoryEntry,
     approval_countdown_seconds,
+    approval_uses_automatic_countdown,
     detect_hep_tool_status,
     failure_validation_issues,
     load_run_history,
@@ -68,6 +69,7 @@ from hep_agent.ui.web_support import (
     read_text_tail,
     resolve_record_path,
     should_disable_request_input,
+    should_start_web_execution,
 )
 from hep_agent.selftest import (
     run_installation_selftest,
@@ -806,18 +808,37 @@ def _store_execution_result(
 
 
 @st.fragment(run_every=1)
-def _render_auto_approval(
+def _render_workflow_approval(
     prepared: PreparedEndToEnd,
     *,
     mg5_executable: str,
     madanalysis_executable: str | None,
 ) -> None:
-    """Render a cancellable five-second automatic approval."""
+    """Render the policy-selected workflow approval interaction."""
 
     if st.session_state.final_result is not None:
         return
 
     run_id = prepared.record.run_id
+    approval = prepared.result.approval
+
+    if approval is None:
+        st.error(
+            "The prepared workflow is missing its approval decision."
+        )
+        return
+
+    if not approval.may_execute:
+        st.error(
+            "This workflow is blocked and cannot be executed."
+        )
+        return
+
+    automatic_countdown = (
+        approval_uses_automatic_countdown(
+            approval
+        )
+    )
 
     if (
         st.session_state.approval_run_id
@@ -825,23 +846,32 @@ def _render_auto_approval(
     ):
         st.session_state.approval_run_id = run_id
         st.session_state.approval_deadline = (
-            time.time()
-            + AUTO_APPROVAL_SECONDS
+            (
+                time.time()
+                + AUTO_APPROVAL_SECONDS
+            )
+            if automatic_countdown
+            else None
         )
         st.session_state.execution_in_progress = False
 
     deadline = st.session_state.approval_deadline
 
-    if deadline is None:
+    if automatic_countdown and deadline is None:
         deadline = (
             time.time()
             + AUTO_APPROVAL_SECONDS
         )
         st.session_state.approval_deadline = deadline
 
-    remaining = approval_countdown_seconds(
-        deadline_timestamp=float(deadline),
-        current_timestamp=time.time(),
+    remaining = (
+        approval_countdown_seconds(
+            deadline_timestamp=float(deadline),
+            current_timestamp=time.time(),
+        )
+        if automatic_countdown
+        and deadline is not None
+        else None
     )
 
     if st.session_state.execution_in_progress:
@@ -850,7 +880,11 @@ def _render_auto_approval(
         )
         return
 
-    if remaining > 0:
+    if (
+        automatic_countdown
+        and remaining is not None
+        and remaining > 0
+    ):
         st.warning(
             "Validated workflow ready. "
             f"Automatic execution begins in "
@@ -869,11 +903,19 @@ def _render_auto_approval(
                 "immediately."
             ),
         )
-    else:
+    elif automatic_countdown:
         st.info(
             "Approval countdown completed. "
             "Starting execution..."
         )
+    else:
+        st.warning(
+            "Explicit confirmation is required. "
+            "This workflow will not start automatically."
+        )
+
+        for reason in approval.reasons:
+            st.caption(f"• {reason}")
 
     execute_column, cancel_column = st.columns(
         [2, 1]
@@ -881,10 +923,17 @@ def _render_auto_approval(
 
     with execute_column:
         execute_now = st.button(
-            "Execute immediately",
+            (
+                "Execute immediately"
+                if automatic_countdown
+                else "Confirm and execute"
+            ),
             type="primary",
             help=(
-                "Run the exact validated artifact "
+                "Run the exact validated artifact after "
+                "this explicit confirmation."
+                if not automatic_countdown
+                else "Run the exact validated artifact "
                 "without waiting for the countdown."
             ),
             use_container_width=True,
@@ -935,7 +984,11 @@ def _render_auto_approval(
         _clear_approval_countdown()
         st.rerun()
 
-    if execute_now or remaining <= 0:
+    if should_start_web_execution(
+        approval,
+        execute_requested=execute_now,
+        countdown_remaining=remaining,
+    ):
         st.session_state.execution_in_progress = True
 
         status = st.status(
@@ -1532,7 +1585,7 @@ def _render_prepared(
                 )
             )
 
-    _render_auto_approval(
+    _render_workflow_approval(
         prepared,
         mg5_executable=mg5_executable,
         madanalysis_executable=(
@@ -2032,7 +2085,7 @@ def _render_scan_result(
 
 
 @st.fragment(run_every=1)
-def _render_auto_scan_approval(
+def _render_scan_approval(
     prepared: PreparedEnergyScan,
     *,
     profile_name: str,
@@ -2040,7 +2093,7 @@ def _render_auto_scan_approval(
     mg5_executable: str,
     madanalysis_executable: str | None,
 ) -> None:
-    """Render one approval countdown for the complete scan."""
+    """Render the policy-selected approval for the complete scan."""
 
     if st.session_state.scan_result is not None:
         return
@@ -2050,6 +2103,26 @@ def _render_auto_scan_approval(
             "The prepared scan has no expanded points."
         )
         return
+
+    approval = prepared.base_result.approval
+
+    if approval is None:
+        st.error(
+            "The prepared scan is missing its approval decision."
+        )
+        return
+
+    if not approval.may_execute:
+        st.error(
+            "This energy scan is blocked and cannot be executed."
+        )
+        return
+
+    automatic_countdown = (
+        approval_uses_automatic_countdown(
+            approval
+        )
+    )
 
     if st.session_state.scan_run_id is None:
         st.session_state.scan_run_id = (
@@ -2066,8 +2139,12 @@ def _render_auto_scan_approval(
             scan_id
         )
         st.session_state.approval_deadline = (
-            time.time()
-            + AUTO_APPROVAL_SECONDS
+            (
+                time.time()
+                + AUTO_APPROVAL_SECONDS
+            )
+            if automatic_countdown
+            else None
         )
         st.session_state.execution_in_progress = (
             False
@@ -2077,7 +2154,7 @@ def _render_auto_scan_approval(
         st.session_state.approval_deadline
     )
 
-    if deadline is None:
+    if automatic_countdown and deadline is None:
         deadline = (
             time.time()
             + AUTO_APPROVAL_SECONDS
@@ -2086,9 +2163,14 @@ def _render_auto_scan_approval(
             deadline
         )
 
-    remaining = approval_countdown_seconds(
-        deadline_timestamp=float(deadline),
-        current_timestamp=time.time(),
+    remaining = (
+        approval_countdown_seconds(
+            deadline_timestamp=float(deadline),
+            current_timestamp=time.time(),
+        )
+        if automatic_countdown
+        and deadline is not None
+        else None
     )
 
     if (
@@ -2099,7 +2181,11 @@ def _render_auto_scan_approval(
         )
         return
 
-    if remaining > 0:
+    if (
+        automatic_countdown
+        and remaining is not None
+        and remaining > 0
+    ):
         st.warning(
             "Validated energy scan ready. "
             "All points will execute sequentially "
@@ -2118,11 +2204,19 @@ def _render_auto_scan_approval(
                 "scan, or execute immediately."
             ),
         )
-    else:
+    elif automatic_countdown:
         st.info(
             "Approval countdown completed. "
             "Starting the energy scan..."
         )
+    else:
+        st.warning(
+            "Explicit confirmation is required. "
+            "This energy scan will not start automatically."
+        )
+
+        for reason in approval.reasons:
+            st.caption(f"• {reason}")
 
     execute_column, cancel_column = (
         st.columns([2, 1])
@@ -2130,7 +2224,11 @@ def _render_auto_scan_approval(
 
     with execute_column:
         execute_now = st.button(
-            "Execute complete scan",
+            (
+                "Execute complete scan"
+                if automatic_countdown
+                else "Confirm and execute complete scan"
+            ),
             type="primary",
             use_container_width=True,
             key=f"execute_scan_{scan_id}",
@@ -2161,7 +2259,11 @@ def _render_auto_scan_approval(
         _clear_approval_countdown()
         st.rerun()
 
-    if execute_now or remaining <= 0:
+    if should_start_web_execution(
+        approval,
+        execute_requested=execute_now,
+        countdown_remaining=remaining,
+    ):
         st.session_state.execution_in_progress = (
             True
         )
@@ -2441,12 +2543,12 @@ def _render_prepared_scan(
             )
 
     st.caption(
-        "One approval covers the complete displayed grid. "
-        "Execution is sequential, and no point triggers "
-        "another planner call."
+        "One policy-controlled approval covers the complete "
+        "displayed grid. Execution is sequential, and no "
+        "point triggers another planner call."
     )
 
-    _render_auto_scan_approval(
+    _render_scan_approval(
         prepared,
         profile_name=profile_name,
         profile=profile,
@@ -3108,8 +3210,9 @@ def _render_sidebar(
         )
 
     st.sidebar.info(
-        "Validated workflows execute after a "
-        "cancellable review window."
+        "Validated workflows either use a cancellable "
+        "review countdown or wait for explicit confirmation, "
+        "as selected by the approval policy."
     )
 
     return (

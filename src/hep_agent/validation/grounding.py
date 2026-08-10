@@ -200,49 +200,11 @@ def _extract_final_particles(
 
     tail = marker.group(1)
 
-    # Explicitly handle common charged particle-antiparticle pairs.
-    electron = re.search(
-        r"\belectron\b",
-        tail,
-    )
-    positron = re.search(
-        r"\bpositron\b",
-        tail,
-    )
+    matches: list[
+        tuple[int, int, int, str]
+    ] = []
 
-    if (
-        electron is not None
-        and positron is not None
-    ):
-        if electron.start() < positron.start():
-            return ("e-", "e+")
-
-        return ("e+", "e-")
-
-    negative_muon = re.search(
-        r"\b(?:negative\s+)?muon\b",
-        tail,
-    )
-    positive_muon = re.search(
-        r"\b(?:anti[- ]?muon|positive\s+muon)\b",
-        tail,
-    )
-
-    if (
-        negative_muon is not None
-        and positive_muon is not None
-    ):
-        if (
-            negative_muon.start()
-            < positive_muon.start()
-        ):
-            return ("mu-", "mu+")
-
-        return ("mu+", "mu-")
-
-    matches: list[tuple[int, str]] = []
-
-    for pattern, particle in (
+    for priority, (pattern, particle) in enumerate(
         FINAL_PARTICLE_PATTERNS
     ):
         for match in re.finditer(
@@ -252,6 +214,8 @@ def _extract_final_particles(
             matches.append(
                 (
                     match.start(),
+                    match.end(),
+                    priority,
                     particle,
                 )
             )
@@ -259,13 +223,47 @@ def _extract_final_particles(
     if not matches:
         return None
 
+    # Specific phrases such as ``anti-top`` and ``positive muon``
+    # contain shorter particle words that also match later patterns.
+    # Keep the first, more specific span and discard only overlapping
+    # aliases. Non-overlapping repeated particles remain intact.
     matches.sort(
+        key=lambda item: (
+            item[0],
+            item[2],
+            -(item[1] - item[0]),
+        )
+    )
+
+    accepted: list[
+        tuple[int, int, str]
+    ] = []
+
+    for start, end, _, particle in matches:
+        overlaps = any(
+            start < accepted_end
+            and end > accepted_start
+            for (
+                accepted_start,
+                accepted_end,
+                _,
+            ) in accepted
+        )
+
+        if overlaps:
+            continue
+
+        accepted.append(
+            (start, end, particle)
+        )
+
+    accepted.sort(
         key=lambda item: item[0]
     )
 
     return tuple(
         particle
-        for _, particle in matches
+        for _, _, particle in accepted
     )
 
 
