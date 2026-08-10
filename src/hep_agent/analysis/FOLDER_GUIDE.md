@@ -10,7 +10,10 @@ MadAnalysis is deliberately separate from MadGraph execution:
     -> optional Delphes
     -> MadAnalysis post-processing
 
-This means an analysis can be rerun without regenerating events.
+The analysis layer can operate on a previously discovered event file. The
+current terminal and web interfaces do not yet expose a user-selected
+existing-file-only rerun workflow; they invoke this layer after event
+generation in the same agent run.
 
 ## madanalysis.py
 
@@ -42,7 +45,7 @@ More labels and process classes will be added after they have been
 tested against real MA5 samples.
 
 The MA5 runner must not trust process return code alone. A valid run
-will later require:
+requires:
 
 - return code zero;
 - no MA5-ERROR log messages;

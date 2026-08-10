@@ -83,11 +83,15 @@ class FakeClient:
         )
 
 
-def make_fake_mg5(root: Path) -> Path:
+def make_fake_mg5(
+    root: Path,
+    *,
+    write_lhe: bool = True,
+) -> Path:
     path = root / "fake_mg5.py"
 
     path.write_text(
-        '''#!/usr/bin/env python3
+        f'''#!/usr/bin/env python3
 from pathlib import Path
 
 run_root = Path.cwd()
@@ -99,7 +103,9 @@ lhe = (
     / "unweighted_events.lhe.gz"
 )
 lhe.parent.mkdir(parents=True, exist_ok=True)
-lhe.write_bytes(b"fake")
+
+if {write_lhe!r}:
+    lhe.write_bytes(b"fake")
 
 print("Cross-section : 12.5 +- 0.5 pb")
 print("Nb of events : 10")
@@ -259,6 +265,39 @@ class EndToEndMadAnalysisTests(unittest.TestCase):
                 record.final_status,
                 "analysis_failed",
             )
+
+    def test_missing_event_output_records_unstarted_ma5(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+
+            result = run_end_to_end(
+                REQUEST,
+                client=FakeClient(),
+                profile_name="test",
+                profile=self.profile,
+                mg5_executable=make_fake_mg5(
+                    root,
+                    write_lhe=False,
+                ),
+                madanalysis_executable=make_fake_ma5(root),
+                approval_resolver=lambda approval: True,
+                records_directory=root / "records",
+                executions_directory=root / "executions",
+                analyses_directory=root / "analyses",
+                project_root=root,
+            )
+
+            record = result.final_record
+
+            self.assertEqual(
+                result.status,
+                EndToEndStatus.EXECUTION_FAILED,
+            )
+            self.assertTrue(record.analysis_requested)
+            self.assertFalse(record.analysis_started)
+            self.assertIsNone(record.analysis_success)
 
 
 if __name__ == "__main__":

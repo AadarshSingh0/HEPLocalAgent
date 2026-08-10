@@ -40,9 +40,10 @@ The file:
 
 saves a JSON record for every agent run.
 
-The record includes model timings, corrections, validation results,
-repair attempts, fallback use, approval decisions, and generated MG5
-commands.
+The record includes model timings, corrections, validation results, repair
+attempts, fallback use, approval decisions, generated MG5 commands, hashes of
+the full, thin-semantic, and repair prompts, and exact missing requested
+runtime outputs.
 
 The default location is:
 

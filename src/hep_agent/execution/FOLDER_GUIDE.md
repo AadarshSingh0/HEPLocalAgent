@@ -48,8 +48,13 @@ It currently records:
 - cross-section uncertainty in pb;
 - generated event count;
 - the primary unweighted LHE file;
+- Pythia8 HepMC output when present;
+- Delphes ROOT output when present;
 - nonfatal warnings such as a missing LHAPDF Python interface.
 
-A successful subprocess and a successful physics-result parse are
-recorded separately. This prevents a parser problem from being mistaken
-for a MadGraph or model failure.
+A normal event-generation run succeeds only when the subprocess succeeds,
+the physics summary is parsed, the parton-level LHE file exists, and every
+requested later-stage artifact exists: HepMC for Pythia8 and ROOT for
+Delphes. Missing requested artifacts are recorded explicitly in the run
+record. This prevents a printed cross section from masking a failed requested
+stage.
