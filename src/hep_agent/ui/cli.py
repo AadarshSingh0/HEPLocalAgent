@@ -232,6 +232,16 @@ def print_final_summary(
         "Detector-level ROOT:",
         record.detector_root_file,
     )
+    print(
+        "Missing requested outputs:",
+        (
+            ", ".join(
+                record.missing_requested_outputs
+            )
+            if record.missing_requested_outputs
+            else "None"
+        ),
+    )
 
     print("Warnings:")
 

@@ -19,8 +19,8 @@ from hep_agent.execution import (
     MadGraphPhysicsResult,
 )
 from hep_agent.execution.outcome import (
+    ExecutionOutputValidation,
     OUTPUT_VALIDATION_FAILURE,
-    execution_has_valid_physics_output,
 )
 from hep_agent.orchestration.analysis_stage import (
     AnalysisStageResult,
@@ -30,6 +30,9 @@ from hep_agent.models import (
     OllamaClient,
     default_planner_prompt_path,
     default_repair_prompt_path,
+)
+from hep_agent.models.semantic_process import (
+    SEMANTIC_PROCESS_PROMPT,
 )
 from hep_agent.orchestration.preexecution import (
     PreExecutionResult,
@@ -43,7 +46,7 @@ class PreExecutionRunRecord(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    record_version: str = "1.0"
+    record_version: str = "1.1"
     run_id: str
     created_at_utc: str
 
@@ -53,6 +56,7 @@ class PreExecutionRunRecord(BaseModel):
 
     planner_prompt_sha256: str
     repair_prompt_sha256: str
+    semantic_prompt_sha256: str
 
     user_request: str
     status: str
@@ -104,6 +108,9 @@ class PreExecutionRunRecord(BaseModel):
     primary_lhe_file: str | None = None
     showered_hepmc_file: str | None = None
     detector_root_file: str | None = None
+    missing_requested_outputs: list[str] = Field(
+        default_factory=list
+    )
     execution_warnings: list[str] = Field(default_factory=list)
 
     analysis_requested: bool = False
@@ -148,6 +155,12 @@ def sha256_file(path: str | Path) -> str:
     """Calculate the SHA-256 hash of one file."""
 
     return _sha256_bytes(Path(path).read_bytes())
+
+
+def sha256_text(content: str) -> str:
+    """Calculate the SHA-256 hash of one exact text string."""
+
+    return _sha256_bytes(content.encode("utf-8"))
 
 
 def _profile_sha256(profile: AgentProfile) -> str:
@@ -280,6 +293,9 @@ def build_preexecution_run_record(
         repair_prompt_sha256=sha256_file(
             default_repair_prompt_path()
         ),
+        semantic_prompt_sha256=sha256_text(
+            SEMANTIC_PROCESS_PROMPT
+        ),
         user_request=result.user_request,
         status=result.status.value,
         failure_category=failure_category,
@@ -400,18 +416,15 @@ def update_record_after_execution(
     execution: MadGraphExecutionResult,
     physics: MadGraphPhysicsResult | None,
     analysis: AnalysisStageResult | None,
+    output_validation: ExecutionOutputValidation,
+    analysis_was_requested: bool,
     execution_directory: str | Path,
     project_root: str | Path = ".",
     end_to_end_wall_time_seconds: float | None = None,
 ) -> PreExecutionRunRecord:
     """Add execution and parsed physics results to one run record."""
 
-    validated_execution_success = (
-        execution_has_valid_physics_output(
-            execution,
-            physics,
-        )
-    )
+    validated_execution_success = output_validation.is_valid
 
     failure_category = (
         execution.failure_category.value
@@ -438,11 +451,7 @@ def update_record_after_execution(
         )
     )
 
-    analysis_requested = (
-        analysis.requested
-        if analysis is not None
-        else False
-    )
+    analysis_requested = analysis_was_requested
     analysis_execution = (
         analysis.execution
         if analysis is not None
@@ -562,10 +571,24 @@ def update_record_after_execution(
                 ),
                 project_root=project_root,
             ),
-            "execution_warnings": (
-                list(physics.warnings)
-                if physics is not None
-                else []
+            "missing_requested_outputs": list(
+                output_validation.missing_requested_outputs
+            ),
+            "execution_warnings": list(
+                dict.fromkeys(
+                    (
+                        list(physics.warnings)
+                        if physics is not None
+                        else []
+                    )
+                    + [
+                        f"requested_output_not_found:{name}"
+                        for name in (
+                            output_validation
+                            .missing_requested_outputs
+                        )
+                    ]
+                )
             ),
             "analysis_requested": analysis_requested,
             "analysis_started": (

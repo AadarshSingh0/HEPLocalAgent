@@ -47,6 +47,7 @@ from .run_record import (
     run_preexecution_and_record,
     save_run_record,
     sha256_file,
+    sha256_text,
     update_record_after_execution,
 )
 
@@ -85,6 +86,7 @@ __all__ = [
     "save_run_record",
     "select_madanalysis_input",
     "sha256_file",
+    "sha256_text",
     "update_record_after_execution",
     "ProcessReconciliationResult",
     "remove_redundant_inclusive_subprocesses",

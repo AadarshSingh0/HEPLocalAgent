@@ -18,8 +18,24 @@ REQUEST = (
     "Generate 10 events. Do not use Pythia8 or Delphes."
 )
 
+PYTHIA_REQUEST = (
+    "Simulate proton-proton collisions producing an electron and a "
+    "positron at a total centre-of-mass energy of 13 TeV. "
+    "Generate 10 events with Pythia8 and without Delphes."
+)
 
-def planner_payload() -> dict:
+DELPHES_REQUEST = (
+    "Simulate proton-proton collisions producing an electron and a "
+    "positron at a total centre-of-mass energy of 13 TeV. "
+    "Generate 10 events with Pythia8 and Delphes."
+)
+
+
+def planner_payload(
+    *,
+    pythia8: bool = False,
+    delphes: bool = False,
+) -> dict:
     return {
         "schema_version": "1.0",
         "task_type": "run_simulation",
@@ -66,8 +82,8 @@ def planner_payload() -> dict:
         },
         "pipeline": {
             "madgraph": True,
-            "pythia8": False,
-            "delphes": False,
+            "pythia8": pythia8,
+            "delphes": delphes,
             "madanalysis": False,
         },
         "field_sources": {},
@@ -76,15 +92,36 @@ def planner_payload() -> dict:
 
 
 class FakeClient:
+    def __init__(
+        self,
+        *,
+        pythia8: bool = False,
+        delphes: bool = False,
+    ) -> None:
+        self.pythia8 = pythia8
+        self.delphes = delphes
+
     def chat(self, **kwargs):
         return ModelResponse(
             model=kwargs["model"],
-            content=json.dumps(planner_payload()),
+            content=json.dumps(
+                planner_payload(
+                    pythia8=self.pythia8,
+                    delphes=self.delphes,
+                )
+            ),
             total_duration_ns=1_000_000_000,
         )
 
 
-def make_fake_mg5(root: Path, *, returncode: int = 0) -> Path:
+def make_fake_mg5(
+    root: Path,
+    *,
+    returncode: int = 0,
+    write_lhe: bool = True,
+    write_hepmc: bool = False,
+    write_root: bool = False,
+) -> Path:
     path = root / "fake_mg5.py"
 
     body = f'''#!/usr/bin/env python3
@@ -92,15 +129,22 @@ from pathlib import Path
 import sys
 
 run_root = Path.cwd()
-lhe = (
+events = (
     run_root
     / "test_process"
     / "Events"
     / "run_01"
-    / "unweighted_events.lhe.gz"
 )
-lhe.parent.mkdir(parents=True, exist_ok=True)
-lhe.write_bytes(b"fake")
+events.mkdir(parents=True, exist_ok=True)
+
+if {write_lhe!r}:
+    (events / "unweighted_events.lhe.gz").write_bytes(b"fake")
+
+if {write_hepmc!r}:
+    (events / "tag_1_pythia8_events.hepmc.gz").write_bytes(b"fake")
+
+if {write_root!r}:
+    (events / "tag_1_delphes_events.root").write_bytes(b"fake")
 
 print("Cross-section : 12.5 +- 0.5 pb")
 print("Nb of events : 10")
@@ -223,6 +267,134 @@ class EndToEndTests(unittest.TestCase):
                 result.final_record
                 .execution_failure_category,
                 "nonzero_exit",
+            )
+
+    def test_missing_lhe_fails_normal_execution(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+
+            result = run_end_to_end(
+                REQUEST,
+                client=FakeClient(),
+                profile_name="test",
+                profile=self.profile,
+                mg5_executable=make_fake_mg5(
+                    root,
+                    write_lhe=False,
+                ),
+                approval_resolver=lambda approval: True,
+                records_directory=root / "records",
+                executions_directory=root / "executions",
+                project_root=root,
+            )
+
+            self.assertEqual(
+                result.status,
+                EndToEndStatus.EXECUTION_FAILED,
+            )
+            self.assertEqual(
+                result.final_record.missing_requested_outputs,
+                ["parton_level_lhe"],
+            )
+            self.assertIn(
+                "requested_output_not_found:parton_level_lhe",
+                result.final_record.execution_warnings,
+            )
+
+    def test_requested_pythia_requires_hepmc(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+
+            result = run_end_to_end(
+                PYTHIA_REQUEST,
+                client=FakeClient(pythia8=True),
+                profile_name="test",
+                profile=self.profile,
+                mg5_executable=make_fake_mg5(root),
+                approval_resolver=lambda approval: True,
+                records_directory=root / "records",
+                executions_directory=root / "executions",
+                project_root=root,
+            )
+
+            self.assertEqual(
+                result.status,
+                EndToEndStatus.EXECUTION_FAILED,
+            )
+            self.assertEqual(
+                result.final_record.missing_requested_outputs,
+                ["showered_hepmc"],
+            )
+
+    def test_requested_delphes_requires_root(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+
+            result = run_end_to_end(
+                DELPHES_REQUEST,
+                client=FakeClient(
+                    pythia8=True,
+                    delphes=True,
+                ),
+                profile_name="test",
+                profile=self.profile,
+                mg5_executable=make_fake_mg5(
+                    root,
+                    write_hepmc=True,
+                ),
+                approval_resolver=lambda approval: True,
+                records_directory=root / "records",
+                executions_directory=root / "executions",
+                project_root=root,
+            )
+
+            self.assertEqual(
+                result.status,
+                EndToEndStatus.EXECUTION_FAILED,
+            )
+            self.assertEqual(
+                result.final_record.missing_requested_outputs,
+                ["detector_root"],
+            )
+
+    def test_all_requested_stage_outputs_complete(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+
+            result = run_end_to_end(
+                DELPHES_REQUEST,
+                client=FakeClient(
+                    pythia8=True,
+                    delphes=True,
+                ),
+                profile_name="test",
+                profile=self.profile,
+                mg5_executable=make_fake_mg5(
+                    root,
+                    write_hepmc=True,
+                    write_root=True,
+                ),
+                approval_resolver=lambda approval: True,
+                records_directory=root / "records",
+                executions_directory=root / "executions",
+                project_root=root,
+            )
+
+            self.assertEqual(
+                result.status,
+                EndToEndStatus.COMPLETED,
+            )
+            self.assertEqual(
+                result.final_record.missing_requested_outputs,
+                [],
             )
 
 
