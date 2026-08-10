@@ -10,6 +10,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from hep_agent.orchestration.approval import (
+    ApprovalDecision,
+    ApprovalResult,
+)
+
 
 def ollama_model_options(
     installed_models: list[str] | tuple[str, ...],
@@ -568,6 +573,46 @@ def approval_countdown_seconds(
             deadline_timestamp
             - current_timestamp
         ),
+    )
+
+
+def approval_uses_automatic_countdown(
+    approval: ApprovalResult | None,
+) -> bool:
+    """Whether the web UI may start an automatic countdown."""
+
+    return bool(
+        approval is not None
+        and approval.decision
+        == ApprovalDecision.AUTO_CONFIRM
+    )
+
+
+def should_start_web_execution(
+    approval: ApprovalResult | None,
+    *,
+    execute_requested: bool,
+    countdown_remaining: int | None,
+) -> bool:
+    """Apply the approval decision to one web execution attempt.
+
+    A button click may approve either an automatic or explicit decision.
+    Countdown expiry is authoritative only for ``AUTO_CONFIRM``. Blocked
+    or missing approval state can never start external software.
+    """
+
+    if approval is None or not approval.may_execute:
+        return False
+
+    if execute_requested:
+        return True
+
+    return bool(
+        approval_uses_automatic_countdown(
+            approval
+        )
+        and countdown_remaining is not None
+        and countdown_remaining <= 0
     )
 
 
