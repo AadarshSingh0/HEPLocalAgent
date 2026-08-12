@@ -50,7 +50,7 @@ MadAnalysis is deliberately not enabled inside the MG5 launch block. When reques
 
 Run all tests with:
 
-    cd ~/Benchmark/HEPLocalAgent
+    cd HEPLocalAgent
     PYTHONPATH=src python -m unittest discover -s tests -v
 
 Never add unrestricted raw MadGraph commands as a shortcut.

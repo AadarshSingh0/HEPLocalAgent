@@ -15,7 +15,7 @@ can represent:
 
 Run the current tests with:
 
-    cd ~/Benchmark/HEPLocalAgent
+    cd HEPLocalAgent
     PYTHONPATH=src python -m unittest discover -s tests -v
 
 A successful run ends with:

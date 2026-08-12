@@ -14,6 +14,7 @@ import re
 from typing import Any
 import requests
 
+from config import DEFAULT_OLLAMA_HOST, DEFAULT_OPENAI_BASE_URL
 from core.tree_builder import ProcessParams, build_launch_script, build_proc_card
 from typing import Any, Dict
 # ─────────────────────────────────────────────────
@@ -156,7 +157,11 @@ def json_to_params(data: Dict[str, Any]) -> ProcessParams:
 # Ollama backend (local Llama3 8B)
 # ─────────────────────────────────────────────────
 
-def call_ollama(user_input: str, model: str = "llama3:8b", host: str = "http://10.42.106.85:11434/v1") -> str:
+def call_ollama(
+    user_input: str,
+    model: str = "llama3:8b",
+    host: str = DEFAULT_OLLAMA_HOST,
+) -> str:
     """Call a local Ollama instance."""
     payload = {
         "model": model,
@@ -182,7 +187,7 @@ def call_ollama(user_input: str, model: str = "llama3:8b", host: str = "http://1
 def call_openai_compat(
     user_input: str,
     model: str = "llama3:8b",
-    base_url: str = "http://10.42.106.85:11434/v1",
+    base_url: str = DEFAULT_OPENAI_BASE_URL,
     api_key: str = "none"
 ) -> str:
     """Call any OpenAI-compatible endpoint."""
@@ -230,7 +235,12 @@ def extract_params(
     return params
 
 # ------------- Self-Healing Loop for LLM Syntax Errors (Bonus) -------------
-def fix_syntax_error(query, error_log, model="llama3:8b", host="http://10.42.106.85:11434"):
+def fix_syntax_error(
+    query,
+    error_log,
+    model="llama3:8b",
+    host=DEFAULT_OLLAMA_HOST,
+):
     """Ask the AI to fix a specific MadGraph error."""
     # Only send the last few lines of the error to save tokens
     clean_error = error_log[-800:] if len(error_log) > 800 else error_log
@@ -262,7 +272,12 @@ def fix_syntax_error(query, error_log, model="llama3:8b", host="http://10.42.106
     
 
 # ADD THIS REPAIR FUNCTION AT THE BOTTOM:
-def fix_syntax_error(query, error_log, model="llama3:8b", host="http://10.42.106.85:11434"):
+def fix_syntax_error(
+    query,
+    error_log,
+    model="llama3:8b",
+    host=DEFAULT_OLLAMA_HOST,
+):
     clean_error = error_log[-800:]
     
     repair_prompt = f"""

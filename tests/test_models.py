@@ -31,12 +31,12 @@ class FakeResponse:
 class ModelLayerTests(unittest.TestCase):
     def test_native_chat_endpoint_is_used(self) -> None:
         client = OllamaClient(
-            "http://10.42.106.85:11434/v1"
+            "http://ollama.example.test:11434/v1"
         )
 
         self.assertEqual(
             client.chat_url,
-            "http://10.42.106.85:11434/api/chat",
+            "http://ollama.example.test:11434/api/chat",
         )
 
     @patch("hep_agent.models.ollama.urllib.request.urlopen")

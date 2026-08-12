@@ -1,7 +1,8 @@
 # core/agents/confirmation.py
 import requests
+from config import DEFAULT_OLLAMA_HOST
 
-def get_confirmation_summary(params, query, host="http://10.42.106.85:11434"):
+def get_confirmation_summary(params, query, host=DEFAULT_OLLAMA_HOST):
     """
     Turns the technical ProcessParams into a friendly confirmation message.
     """

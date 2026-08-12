@@ -79,6 +79,21 @@ python main.py "p p > t t~ at 14 TeV with 50000 events, run pythia8 and delphes"
 python main.py "e+ e- collision at 250 GeV, produce Higgs, 100k events, full sim"
 ```
 
+### Portable tool and model-server configuration
+
+The retained baseline reuses the main package's machine-local
+`configs/local_paths.json`. It reads the `mg5_executable` and
+`madanalysis5_executable` keys, then falls back to finding `mg5_aMC`/`mg5` and
+`ma5` on `PATH`. The environment variables `HEP_AGENT_MG5_EXECUTABLE` and
+`HEP_AGENT_MADANALYSIS5_EXECUTABLE` take precedence over both mechanisms.
+Paths supplied by environment or JSON may use a home-directory shorthand;
+the configuration module expands it before the consuming subprocess code runs.
+
+The Ollama endpoint uses `OLLAMA_HOST` and defaults to
+`http://localhost:11434`. OpenAI-compatible calls use `OPENAI_BASE_URL` and
+otherwise default to the local Ollama-compatible `/v1` endpoint. Explicit
+`--host` and `--base-url` arguments still take precedence.
+
 ### With vLLM / LM Studio (OpenAI-compat)
 ```bash
 python main.py --backend openai --base-url http://localhost:8000/v1 "p p > h at LHC"

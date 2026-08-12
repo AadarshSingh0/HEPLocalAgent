@@ -1,5 +1,6 @@
 # core/bootstrap.py
 import os
+import shutil
 import subprocess
 from config import MA5_PATH
 
@@ -8,9 +9,17 @@ def heal_environment():
     Checks if MadAnalysis5 has Python 3.9 syntax errors and fixes them
     for Python 3.8 compatibility.
     """
-    # 1. Calculate the path to the problematic file based on MA5_PATH
+    # 1. Calculate the path to the problematic file based on MA5_PATH.
+    # A bare fallback command is safe for subprocess execution, but must be
+    # discovered before deriving a filesystem location from it.
+    ma5_executable = (
+        MA5_PATH if os.path.dirname(MA5_PATH) else shutil.which(MA5_PATH)
+    )
+    if not ma5_executable:
+        return "⚠️ MadAnalysis5 executable not found. Skipping auto-repair."
+
     # MA5_PATH is .../bin/ma5, we need .../madanalysis/misc/theoretical_error_setup.py
-    ma5_root = os.path.dirname(os.path.dirname(MA5_PATH))
+    ma5_root = os.path.dirname(os.path.dirname(ma5_executable))
     target_file = os.path.join(ma5_root, "madanalysis", "misc", "theoretical_error_setup.py")
 
     if not os.path.exists(target_file):

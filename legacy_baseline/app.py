@@ -6,7 +6,12 @@ from core.validator import validate_and_normalize
 from core.tree_builder import write_madgraph_files
 from core.runner import run_mg5_script
 from core.result_parser import parse_cross_section
-from config import MG5_PATH, DEFAULT_OUTPUT_DIR, DEFAULT_LOG_DIR
+from config import (
+    DEFAULT_LOG_DIR,
+    DEFAULT_OLLAMA_HOST,
+    DEFAULT_OUTPUT_DIR,
+    MG5_PATH,
+)
 from core.bootstrap import heal_environment
 
 # Run the environment check once when the app starts
@@ -57,7 +62,7 @@ with st.sidebar:
 
     st.divider()
     model_name = st.text_input("LLM Model", value="llama3:8b")
-    ollama_host = st.text_input("Ollama Host", value="http://10.42.106.85:11434")
+    ollama_host = st.text_input("Ollama Host", value=DEFAULT_OLLAMA_HOST)
     num_events = st.number_input("Events", value=10000, step=1000)
 
 # --- MAIN UI ---

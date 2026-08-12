@@ -29,7 +29,7 @@ Validation errors always block execution.
 
 Run all tests with:
 
-    cd ~/Benchmark/HEPLocalAgent
+    cd HEPLocalAgent
     PYTHONPATH=src python -m unittest discover -s tests -v
 
 ## Run records

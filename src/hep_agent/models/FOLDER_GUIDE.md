@@ -10,9 +10,10 @@ The Ollama client uses the native endpoint:
 The host is taken from the OLLAMA_HOST environment variable when one is
 available.
 
-For the current remote Ollama server, set:
+For an Ollama server running on another computer, replace the illustrative
+hostname and set:
 
-    export OLLAMA_HOST=http://10.42.106.85:11434
+    export OLLAMA_HOST=http://OTHER-COMPUTER:11434
 
 The model profiles are stored in:
 
@@ -29,7 +30,7 @@ response.
 
 Run all tests with:
 
-    cd ~/Benchmark/HEPLocalAgent
+    cd HEPLocalAgent
     PYTHONPATH=src python -m unittest discover -s tests -v
 
 Important:

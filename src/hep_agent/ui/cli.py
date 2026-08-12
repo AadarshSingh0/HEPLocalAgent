@@ -370,7 +370,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help=(
             "Optional Ollama host override, for example "
-            "http://10.42.106.85:11434"
+            "http://OTHER-COMPUTER:11434"
         ),
     )
 

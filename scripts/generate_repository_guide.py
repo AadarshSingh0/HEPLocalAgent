@@ -457,7 +457,7 @@ def build_manifest(files: list[Path]) -> dict[str, Any]:
         "generated_at_utc": datetime.now(
             timezone.utc
         ).isoformat(),
-        "repository_root": str(ROOT),
+        "repository_root": ".",
         "git_branch": run_git(
             "branch",
             "--show-current",

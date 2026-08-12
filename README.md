@@ -25,12 +25,47 @@ The repository includes:
 No API keys, model weights, personal paths, or private environment files
 should be committed.
 
+## Package structure
+
+- `src/hep_agent/`: installable agent, validation, orchestration, execution,
+  model-routing, command-line, and web-interface source;
+- `configs/` and `prompts/`: portable example configuration, profiles, and
+  planner/repair prompt templates;
+- `tests/` and `evaluation/`: model-free regression/acceptance tests and
+  compact evaluation scenarios;
+- `scripts/`, `install.sh`, `run_agent.sh`, and `uninstall.sh`: installation,
+  launch, validation, maintenance, and removal commands;
+- `docs/`: installation, architecture, schema, manifest, and release
+  documentation;
+- `legacy_baseline/`: retained original baseline implementation used for the
+  controlled comparison.
+
 ## Repository documentation
 
 See [`docs/REPOSITORY_GUIDE.md`](docs/REPOSITORY_GUIDE.md) for the
 current architecture, directory responsibilities, complete source-file
 inventory, common commands, and stability boundaries. The guide is generated
 from the repository by `scripts/generate_repository_guide.py`.
+
+## CPC sample input and output
+
+The replayable acceptance suite in
+[`tests/acceptance/scenarios.json`](tests/acceptance/scenarios.json) contains
+paired sample inputs and outputs for comprehensive model-free pipeline tests.
+Each scenario records the natural-language sample input in `request`, the
+corresponding representative raw planner output in `model_outputs`, and the
+verified pipeline result in `expect`. For example,
+`full_explicit_top_pair` covers a complete 13 TeV top-pair request, its
+structured planner response, and the expected validated MadGraph command and
+run settings.
+
+Run the complete replay suite without Ollama or HEP software with:
+
+    PYTHONPATH=src python -m unittest tests.test_acceptance -v
+
+The harness passes those recorded outputs through the real validation and
+workflow-construction pipeline. These compact JSON fixtures are program test
+data and expected outputs; generated event files are intentionally excluded.
 
 
 ## Beginner installation

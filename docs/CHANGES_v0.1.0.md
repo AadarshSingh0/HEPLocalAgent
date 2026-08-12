@@ -13,7 +13,7 @@ AadarshSingh0/agent/workflow-grounding-20260809`)
 standalone baseline, including topic, consolidation, and merge commits.
 
 **Test history:** 295 at the standalone baseline, 370 at `baa88d6`, and
-**379 in the final release-readiness change set**. The full unit suite is
+**396 in the final release-readiness change set**. The full unit suite is
 model-free and does not call Ollama or execute HEP software.
 
 Verified with:

@@ -30,7 +30,13 @@ from core.tree_builder import ProcessParams, write_madgraph_files, build_proc_ca
 from core.extractor    import extract_params, json_to_params
 from core.validator import validate_and_normalize
 from core.runner import run_mg5_script
-from config import MG5_PATH, DEFAULT_OUTPUT_DIR, DEFAULT_LOG_DIR
+from config import (
+    DEFAULT_LOG_DIR,
+    DEFAULT_OLLAMA_HOST,
+    DEFAULT_OPENAI_BASE_URL,
+    DEFAULT_OUTPUT_DIR,
+    MG5_PATH,
+)
 from core.result_parser import parse_cross_section
 from typing import Dict
 
@@ -47,8 +53,12 @@ def main():
     parser.add_argument("query", nargs="?", help="Physics process description")
     parser.add_argument("--backend",  default="ollama",                   help="ollama | openai")
     parser.add_argument("--model",    default="llama3:8b",                   help="LLM model name")
-    parser.add_argument("--host",     default="http://10.42.106.85:11434",   help="Ollama host")
-    parser.add_argument("--base-url", default="http://10.42.106.85:11434", help="OpenAI-compat URL")
+    parser.add_argument("--host", default=DEFAULT_OLLAMA_HOST, help="Ollama host")
+    parser.add_argument(
+        "--base-url",
+        default=DEFAULT_OPENAI_BASE_URL,
+        help="OpenAI-compat URL",
+    )
     parser.add_argument("--out-dir",  default=DEFAULT_OUTPUT_DIR, help="Output directory")
     parser.add_argument("--json",     default=None,                       help="Skip LLM, pass raw JSON")
     parser.add_argument("--dry-run",  action="store_true",                help="Print files to stdout only")
