@@ -6,6 +6,7 @@ module deliberately does not discover ROOT or other HEP programs from PATH.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import platform
@@ -197,6 +198,33 @@ def load_stack_manifest(
             f"{current_python}; expected {python_executable}."
         )
 
+    runtime_provider = python.get("runtime_provider")
+    if runtime_provider is not None:
+        provider = _mapping(runtime_provider, "python.runtime_provider")
+        if provider.get("external_discovery") is not False:
+            raise StackConfigurationError("Managed runtime must disable external discovery.")
+        provider_prefix = _absolute_path(provider.get("prefix"), "python.runtime_provider.prefix")
+        if not _inside(provider_prefix, stack_root):
+            raise StackConfigurationError("Managed runtime provider escapes the clone-owned stack.")
+        if recorded_platform.get("system") == "Darwin":
+            if provider.get("kind") != "clone-owned-miniforge":
+                raise StackConfigurationError("Darwin runtime must use clone-owned Miniforge.")
+            manager_prefix = _absolute_path(
+                provider.get("manager_prefix"), "python.runtime_provider.manager_prefix"
+            )
+            if manager_prefix != stack_root / "miniforge":
+                raise StackConfigurationError("Darwin Miniforge prefix is not clone-owned.")
+            packages = provider.get("packages")
+            if not isinstance(packages, list) or not any(
+                isinstance(item, dict)
+                and item.get("name") == "root_base"
+                and item.get("version") == "6.40.02"
+                for item in packages
+            ):
+                raise StackConfigurationError(
+                    "Darwin runtime does not record the pinned ROOT base package."
+                )
+
     runtime = _mapping(payload.get("runtime"), "runtime")
     root_prefix = _absolute_path(runtime.get("root_prefix"), "runtime.root_prefix")
     root_config = _absolute_path(runtime.get("root_config"), "runtime.root_config")
@@ -243,6 +271,26 @@ def load_stack_manifest(
                     f"runnable: {managed_executable}."
                 )
         primary = _absolute_path(component_executables["primary"], "primary")
+        launcher_hash = component.get("launcher_sha256")
+        if primary.parent == stack_root / "launchers":
+            if require_files:
+                expected_shebang = f"#!{repository_root / '.venv/bin/python'}"
+                first_line = primary.read_text(encoding="utf-8").splitlines()[0]
+                if first_line != expected_shebang:
+                    raise StackConfigurationError(
+                        f"Clone-local launcher for {name!r} references a stale Python environment."
+                    )
+            if launcher_hash is not None:
+                if not isinstance(launcher_hash, str) or len(launcher_hash) != 64:
+                    raise StackConfigurationError(
+                        f"Component {name!r} has an invalid clone launcher hash."
+                    )
+                if require_files:
+                    actual_hash = hashlib.sha256(primary.read_bytes()).hexdigest()
+                    if actual_hash != launcher_hash:
+                        raise StackConfigurationError(
+                            f"Clone-local launcher for {name!r} was altered or is stale."
+                        )
         source = _mapping(component.get("source"), f"components.{name}.source")
         checksum = source.get("sha256")
         if (
@@ -312,6 +360,24 @@ def load_stack_manifest(
             raise StackConfigurationError(
                 f"Linkage output for {name!r} must be a list of strings."
             )
+        resolved_paths = result.get("resolved_paths", [])
+        if not isinstance(resolved_paths, list) or not all(
+            isinstance(item, str) for item in resolved_paths
+        ):
+            raise StackConfigurationError(
+                f"Resolved linkage paths for {name!r} must be a list of strings."
+            )
+        for resolved in resolved_paths:
+            if not _inside(Path(resolved), stack_root):
+                raise StackConfigurationError(
+                    f"Native HEP library for {name!r} resolves outside managed stack: {resolved}"
+                )
+        if recorded_platform.get("system") == "Darwin":
+            expected_tool = "ar" if target.suffix == ".a" else "otool"
+            if result.get("tool") != expected_tool:
+                raise StackConfigurationError(
+                    f"Darwin linkage for {name!r} was not validated with {expected_tool}."
+                )
         for line in output:
             lowered = line.lower()
             hep_library = any(

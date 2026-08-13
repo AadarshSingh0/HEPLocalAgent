@@ -6,7 +6,11 @@ import os
 from pathlib import Path
 
 from hep_agent.doctor.models import CheckStatus, DoctorCheck
-from hep_agent.runtime import StackConfigurationError, load_configured_stack
+from hep_agent.runtime import (
+    StackConfigurationError,
+    audit_managed_linkage,
+    load_configured_stack,
+)
 
 
 def managed_stack_checks(project_root: Path) -> list[DoctorCheck]:
@@ -49,10 +53,16 @@ def managed_stack_checks(project_root: Path) -> list[DoctorCheck]:
     ]
 
     linkage = manifest.payload.get("linkage_validation")
-    linkage_ok = isinstance(linkage, dict) and bool(linkage) and all(
+    recorded_linkage_ok = isinstance(linkage, dict) and bool(linkage) and all(
         isinstance(item, dict) and item.get("passed") is True
         for item in linkage.values()
     )
+    try:
+        live_linkage, live_linkage_failures = audit_managed_linkage(manifest)
+    except (OSError, ValueError) as exc:
+        live_linkage = {}
+        live_linkage_failures = [str(exc)]
+    linkage_ok = recorded_linkage_ok and not live_linkage_failures
 
     for name in ("madgraph", "pythia8", "root", "delphes", "madanalysis5"):
         component = manifest.components[name]
@@ -82,6 +92,8 @@ def managed_stack_checks(project_root: Path) -> list[DoctorCheck]:
                     "installation_ownership": owned,
                     "manifest_agreement": runnable,
                     "root_runtime_linkage": linkage_ok,
+                    "live_linkage": live_linkage,
+                    "live_linkage_failures": live_linkage_failures,
                     "smoke_test": smoke,
                 },
                 remediation=None if passed else "Rebuild only the failed clone-owned stack component and regenerate the manifest.",

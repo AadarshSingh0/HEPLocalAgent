@@ -12,6 +12,10 @@ BUILD_ROOT="${STACK_ROOT}/build"
 LOG_ROOT="${STACK_ROOT}/logs"
 JOBS="${HEP_AGENT_BUILD_JOBS:-4}"
 
+if [[ "$(uname -s)" == "Darwin" ]]; then
+    exec /bin/bash "${PROJECT_ROOT}/scripts/install_managed_hep_stack_macos.sh"
+fi
+
 if [[ "$(uname -s)" != "Linux" || "$(uname -m)" != "x86_64" ]]; then
     echo "This installer implementation supports Linux x86-64 only." >&2
     echo "The manifest/runtime contract is cross-platform; macOS installation uses its managed Miniforge path." >&2

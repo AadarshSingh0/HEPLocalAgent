@@ -70,6 +70,7 @@ class BootstrapScriptTests(unittest.TestCase):
             ROOT / "uninstall.sh",
             ROOT / "scripts" / "bootstrap_independent_hep_agent.sh",
             ROOT / "scripts" / "install_managed_hep_stack.sh",
+            ROOT / "scripts" / "install_managed_hep_stack_macos.sh",
             ROOT / "scripts" / "run_managed_agent.sh",
             ROOT / "scripts" / "uninstall_independent_hep_agent.sh",
         )

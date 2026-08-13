@@ -85,38 +85,26 @@ Remove the project-managed environment and HEP tools with:
 
 ## Installation self-test
 
-To verify that the physics toolchain is installed and working end to end,
-without involving any model, run the deterministic self-test:
+To verify the clone-owned physics toolchain end to end without involving any
+model, run:
 
-    python -m hep_agent.selftest --events 1000
+    .venv/bin/python -m hep_agent.selftest --events 1000
 
-It runs a fixed trial process (`p p > e+ e-`) with Pythia8, Delphes, and
-MadAnalysis, detects which of those tools the selected MadGraph actually
-provides, and reports each one as `OK` (ran and produced output), `MISS` (not
-installed), or `FAIL` (installed but did not produce output). It reads the
-MadGraph log and explains common failures (for example a Python/library
-version mismatch). Point it at your tools with `--mg5` and `--ma5`, or create
-`configs/local_paths.json`:
-
-    {
-      "mg5_executable": "/path/to/MG5_aMC/bin/mg5_aMC",
-      "madanalysis5_executable": "/path/to/madanalysis5/bin/ma5"
-    }
-
-The same check is the primary action under the web interface's
-**Test installation** tab.
+The self-test reads this clone's `.hep-stack/manifest.json` and uses the same
+controlled environment builder as normal CLI and web/UI execution. It runs
+MadGraph, Pythia8, Delphes, and MadAnalysis and fails closed if an executable,
+XML-data directory, ROOT runtime, or native dependency escapes `.hep-stack`.
+External-tool overrides are not part of the publication-default workflow.
 
 ## Environment requirements
 
-The agent is a Python package that orchestrates an existing MadGraph install;
-MadGraph in turn provides Pythia8, Delphes, and MadAnalysis under its
-`HEPTools` directory. A common pitfall is a **Python version mismatch**: if
-MadGraph's Pythia8/LHAPDF were compiled against one Python version but the
-agent is run under a different one, MadGraph's shower probe can crash silently
-and fall back to `shower = OFF`, so Pythia8 produces no output. Run the agent
-in the same Python environment the HEP tools were compiled against (or rebuild
-LHAPDF/Pythia8 for your current Python). The installation self-test detects and
-reports this condition explicitly.
+Each clone owns its Python environment in `.venv` and its complete native HEP
+stack in `.hep-stack`. Linux installs ROOT directly under the stack. macOS
+installs a private Miniforge bootstrap and ROOT runtime under the same stack,
+then builds MG5, Pythia8, HepMC2, Delphes, MA5, and the MG5–Pythia interface
+against it with Apple Clang. User Conda, Homebrew, Snap, system HEP packages,
+old clones, and shared HEPLocalAgent tools are never selected by normal
+installation or execution.
 
 ## AI-assisted development
 
@@ -132,6 +120,7 @@ The public project and command are named `HEPLocalAgent` and
 `hep-local-agent`. A small number of internal maintenance-script filenames
 still contain `local_hep_agent`, including
 `scripts/bootstrap_local_hep_agent.sh` and
-`scripts/uninstall_local_hep_agent.sh`. These filenames are retained in the
-initial release to preserve the already validated Linux and macOS installation
-paths. They do not change the public package name or Python module name.
+`scripts/uninstall_local_hep_agent.sh`. They are retained only as explicitly
+unsupported compatibility paths and are not called by the publication-default
+installer. They do not change the public package name, Python module name, or
+clone-owned stack contract.

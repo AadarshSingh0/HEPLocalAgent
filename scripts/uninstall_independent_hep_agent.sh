@@ -52,7 +52,16 @@ if (( REMOVE_STACK )) && [[ -e "${STACK_ROOT}" ]]; then
         exit 2
     }
     python_command="${VENV_DIR}/bin/python"
-    [[ -x "${python_command}" ]] || python_command="python3"
+    if [[ ! -x "${python_command}" && -x "${STACK_ROOT}/runtime/bin/python" ]]; then
+        python_command="${STACK_ROOT}/runtime/bin/python"
+    fi
+    if [[ ! -x "${python_command}" && -x /usr/bin/python3 ]]; then
+        python_command=/usr/bin/python3
+    fi
+    [[ -x "${python_command}" ]] || {
+        echo "Refusing stack deletion: no clone-owned or OS Python for ownership verification." >&2
+        exit 2
+    }
     "${python_command}" - "${PROJECT_ROOT}" <<'PY'
 import json, sys
 from pathlib import Path

@@ -6,7 +6,10 @@ The publication-default installer creates one repository-owned installation:
 HEPLocalAgent/
 ├── .venv/                 agent Python and UI dependencies
 ├── .hep-stack/
-│   ├── root/              ROOT 6.40.02
+│   ├── root/              ROOT 6.40.02 on Linux
+│   ├── miniforge/         clone-owned macOS bootstrap (Darwin only)
+│   ├── runtime/           clone-owned Python/ROOT runtime (Darwin only)
+│   ├── conda-pkgs/        clone-owned package cache (Darwin only)
 │   ├── madgraph/          MG5_aMC 3.5.13
 │   ├── pythia8/           Pythia 8.317
 │   ├── hepmc2/            HepMC 2.06.11 support library
@@ -22,13 +25,20 @@ Pythia, Delphes, or MadAnalysis from the caller's `PATH`, Conda, Homebrew,
 Snap, `/opt`, another clone, or a shared tools directory. System compilers and
 ordinary operating-system libraries remain build prerequisites.
 
-## Supported and validated platform
+## Supported code paths and validation status
 
-Fresh installation is currently implemented and validated on Ubuntu 24.04
-x86-64. The manifest and runtime-environment contract is shared by Linux and
-macOS, but publication remains blocked until fresh installations pass on Apple
-Silicon and Intel macOS. The installer fails clearly on an unvalidated platform
-instead of falling back to external HEP packages.
+Fresh installation is physically validated on Ubuntu 24.04 x86-64. The same
+manifest, runtime builder, fail-closed linkage audit, launchers, doctor, and
+self-test contract now has hermetic coverage for Darwin arm64 and Darwin
+x86-64. The Darwin installer places Miniforge and its ROOT/Python runtime
+inside this clone's `.hep-stack`, then builds every HEP component there with
+Apple Clang.
+
+No physical macOS installation is claimed by this Linux-side change.
+Publication remains blocked until a fresh Apple Silicon installation and
+poisoned-environment pipeline pass. Intel macOS remains explicitly unverified
+until the same test is performed on real Intel hardware. Unsupported platforms
+fail clearly rather than selecting external HEP packages.
 
 ## Preview and install
 
@@ -90,8 +100,8 @@ Homebrew, Snap, Ollama, or system installation.
 
 ## Legacy non-hermetic installer
 
-The previous mixed-stack installer is retained temporarily only to preserve
-the already-merged macOS work while the platform branches are reconciled. It
-is not called by `install.sh` and refuses to run without the explicit expert
-flag `--unsupported-nonhermetic-external-stack`. It is unsupported and must
-not be used for publication validation.
+The previous mixed-stack installer remains only as an explicitly unsupported
+compatibility path. It is not called by `install.sh`, refuses to run without
+`--unsupported-nonhermetic-external-stack`, and must not be used for
+publication validation. It cannot supply or override the default clone-owned
+stack.

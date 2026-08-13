@@ -201,6 +201,29 @@ class StackRuntimeTests(unittest.TestCase):
                 ):
                     load_stack_manifest(path, expected_repository_root=repository)
 
+    def test_clone_launcher_with_previous_venv_shebang_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            repository = Path(temporary) / "clone"
+            path = create_manifest(repository)
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            launcher = executable(repository / ".hep-stack/launchers/madgraph")
+            launcher.write_text(
+                "#!/previous/clone/.venv/bin/python\nexit 0\n",
+                encoding="utf-8",
+            )
+            launcher.chmod(0o755)
+            payload["components"]["madgraph"]["executables"]["primary"] = str(launcher)
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            with patch(
+                "hep_agent.runtime.stack.sys.executable",
+                str(repository / ".venv/bin/python"),
+            ):
+                with self.assertRaisesRegex(
+                    StackConfigurationError,
+                    "stale Python environment",
+                ):
+                    load_stack_manifest(path, expected_repository_root=repository)
+
     def test_altered_schema_and_failed_smoke_are_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             repository = Path(temporary) / "clone"
@@ -315,6 +338,9 @@ printf '%s\n' "$PATH|$ROOTSYS|$PYTHIA8DATA|$LD_LIBRARY_PATH|${CONDA_PREFIX-unset
             "src/hep_agent/doctor/checks.py": (
                 "build_stack_environment(",
                 "if managed_environment is None:",
+            ),
+            "src/hep_agent/doctor/managed_stack.py": (
+                "audit_managed_linkage(",
             ),
             "scripts/finalize_managed_stack.py": (
                 "build_controlled_environment(",

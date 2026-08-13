@@ -79,7 +79,15 @@ def configure_runtime(
             delphes / "modules/ParticlePropagator.h",
             "Delphes header",
         )
-        _validated_file(delphes / "libDelphes.so", "Delphes library")
+        delphes_libraries = (
+            delphes / "libDelphes.dylib",
+            delphes / "libDelphes.so",
+        )
+        if not any(path.is_file() for path in delphes_libraries):
+            raise ValueError(
+                "Delphes library does not exist: expected one of "
+                + ", ".join(str(path) for path in delphes_libraries)
+            )
         options.update(
             {
                 "delphes_veto": "0",
