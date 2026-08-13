@@ -19,6 +19,11 @@ from hep_agent.analysis.runtime import (
     load_madanalysis_runtime,
     verify_root_metadata,
 )
+from hep_agent.runtime import (
+    StackConfigurationError,
+    build_stack_environment,
+    load_stack_manifest,
+)
 
 
 class MadAnalysisFailureCategory(str, Enum):
@@ -147,6 +152,7 @@ def run_madanalysis_artifact(
     madanalysis_executable: str | Path,
     analysis_directory: str | Path,
     timeout_seconds: float = 300,
+    stack_manifest: str | Path | None = None,
 ) -> MadAnalysisExecutionResult:
     """Execute one validated MA5 artifact without using a shell."""
 
@@ -259,13 +265,27 @@ def run_madanalysis_artifact(
         )
 
     try:
-        runtime = load_madanalysis_runtime(executable)
-        if runtime is not None:
-            verify_root_metadata(runtime)
-        process_environment = build_madanalysis_environment(
-            executable
-        )
-    except MadAnalysisRuntimeConfigurationError as exc:
+        if stack_manifest is not None:
+            manifest_root = (
+                Path(stack_manifest).expanduser().absolute().parent.parent
+            )
+            manifest = load_stack_manifest(
+                stack_manifest,
+                expected_repository_root=manifest_root,
+            )
+            expected = manifest.executable("madanalysis5").resolve()
+            if executable.resolve() != expected:
+                raise StackConfigurationError(
+                    "Configured MadAnalysis executable disagrees with the "
+                    f"managed stack manifest: {executable}; expected {expected}."
+                )
+            process_environment = build_stack_environment(manifest)
+        else:
+            runtime = load_madanalysis_runtime(executable)
+            if runtime is not None:
+                verify_root_metadata(runtime)
+            process_environment = build_madanalysis_environment(executable)
+    except (MadAnalysisRuntimeConfigurationError, StackConfigurationError) as exc:
         _write_text(stdout_path, "")
         _write_text(stderr_path, str(exc))
         return MadAnalysisExecutionResult(

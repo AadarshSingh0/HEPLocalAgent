@@ -56,11 +56,20 @@ class AnalysisStageResult:
 def select_madanalysis_input(
     physics: MadGraphPhysicsResult,
 ) -> AnalysisInputSelection | None:
-    """Choose the highest currently supported MA5 input level.
+    """Choose the highest available MA5 input level.
 
-    Reconstructed Delphes ROOT input is deliberately not selected yet
-    because the installed MA5 instance has its Delphes reader disabled.
+    A managed Delphes ROOT file is preferred so the analysis stage validates
+    the same detector output and ROOT/Delphes linkage as the simulation.
     """
+
+    if (
+        physics.detector_root_file is not None
+        and physics.detector_root_file.is_file()
+    ):
+        return AnalysisInputSelection(
+            input_file=physics.detector_root_file,
+            level=MadAnalysisLevel.RECONSTRUCTED,
+        )
 
     if (
         physics.showered_hepmc_file is not None
@@ -90,6 +99,7 @@ def run_madanalysis_stage(
     madanalysis_executable: str | Path | None,
     analysis_directory: str | Path,
     timeout_seconds: float = 300,
+    stack_manifest: str | Path | None = None,
 ) -> AnalysisStageResult:
     """Build and execute a separate deterministic MA5 quick-look."""
 
@@ -190,6 +200,7 @@ def run_madanalysis_stage(
         madanalysis_executable=madanalysis_executable,
         analysis_directory=analysis_dir,
         timeout_seconds=timeout_seconds,
+        stack_manifest=stack_manifest,
     )
 
     if not execution.success:

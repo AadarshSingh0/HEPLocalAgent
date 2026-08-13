@@ -13,6 +13,7 @@ from hep_agent.models import (
     OllamaClient,
     load_agent_profiles,
 )
+from hep_agent.runtime import load_configured_stack
 from hep_agent.orchestration import (
     EndToEndResult,
     PreExecutionResult,
@@ -425,19 +426,13 @@ def run_command(args: argparse.Namespace) -> int:
         local_paths_path
     )
 
-    mg5_executable = local_paths.get(
-        "mg5_executable"
+    manifest = load_configured_stack(
+        local_paths_path,
+        expected_repository_root=project_root,
     )
-
-    if not mg5_executable:
-        raise ValueError(
-            "configs/local_paths.json does not define "
-            "'mg5_executable'."
-        )
-
-    madanalysis_executable = local_paths.get(
-        "madanalysis5_executable"
-    )
+    stack_manifest = manifest.path
+    mg5_executable = str(manifest.executable("madgraph"))
+    madanalysis_executable = str(manifest.executable("madanalysis5"))
 
     print("=== LOCAL HEP AGENT ===")
     print("Request:", request)
@@ -476,6 +471,7 @@ def run_command(args: argparse.Namespace) -> int:
         executions_directory=executions_directory,
         analyses_directory=analyses_directory,
         project_root=project_root,
+        stack_manifest=stack_manifest,
     )
 
     print_final_summary(

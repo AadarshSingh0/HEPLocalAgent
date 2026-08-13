@@ -1,2 +1,4 @@
 #!/usr/bin/env bash
-"$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/scripts/bootstrap_local_hep_agent.sh" "$@"
+set -Eeuo pipefail
+ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+exec "${ROOT}/scripts/bootstrap_independent_hep_agent.sh" "$@"

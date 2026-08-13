@@ -75,6 +75,7 @@ class ExistingPipelinePointExecutor:
 
     project_root: str | Path = "."
     analysis_timeout_seconds: float = 300
+    stack_manifest: str | Path | None = None
 
     def __post_init__(self) -> None:
         """Reject incomplete or unsafe adapter construction."""
@@ -328,6 +329,7 @@ class ExistingPipelinePointExecutor:
             analysis_timeout_seconds=(
                 self.analysis_timeout_seconds
             ),
+            stack_manifest=self.stack_manifest,
         )
 
         final_record = (

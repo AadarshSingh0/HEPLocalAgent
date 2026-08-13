@@ -29,6 +29,7 @@ from hep_agent.execution.outcome import (
 )
 from hep_agent.execution.result_parser import parse_madgraph_result
 from hep_agent.orchestration.analysis_stage import run_madanalysis_stage
+from hep_agent.runtime import load_configured_stack, load_stack_manifest
 from hep_agent.schemas import (
     BeamSpec,
     ColliderSpec,
@@ -273,6 +274,7 @@ def run_installation_selftest(
     pythia8: str = "auto",
     delphes: str = "auto",
     madanalysis: str = "auto",
+    stack_manifest: str | Path | None = None,
 ) -> SelfTestResult:
     """Run the fixed trial workflow and report per-tool installation health.
 
@@ -280,7 +282,13 @@ def run_installation_selftest(
     forced on); missing tools are reported as warnings, not failures.
     """
 
-    detected = detect_tools(mg5_executable, madanalysis_executable)
+    if stack_manifest is not None:
+        manifest = load_stack_manifest(stack_manifest)
+        mg5_executable = manifest.executable("madgraph")
+        madanalysis_executable = manifest.executable("madanalysis5")
+        detected = {"pythia8": True, "delphes": True, "madanalysis": True}
+    else:
+        detected = detect_tools(mg5_executable, madanalysis_executable)
     py_req, py_reason = _resolve(pythia8, detected["pythia8"])
     dl_req, dl_reason = _resolve(delphes, detected["delphes"])
     ma_req, ma_reason = _resolve(madanalysis, detected["madanalysis"])
@@ -305,6 +313,7 @@ def run_installation_selftest(
         mg5_executable=mg5_executable,
         run_directory=run_dir,
         timeout_seconds=timeout_seconds,
+        stack_manifest=stack_manifest,
     )
 
     physics = None
@@ -439,6 +448,7 @@ def run_installation_selftest(
             madanalysis_executable=madanalysis_executable,
             analysis_directory=run_dir / "analysis",
             timeout_seconds=analysis_timeout_seconds,
+            stack_manifest=stack_manifest,
         )
         if analysis is not None and analysis.success:
             stages.append(
@@ -480,7 +490,6 @@ def main(argv: list[str] | None = None) -> int:
     import argparse
     import json
 
-    _prepare_macos_runtime_environment()
 
     parser = argparse.ArgumentParser(
         description=(
@@ -494,6 +503,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--events", type=int, default=1000)
     parser.add_argument("--run-dir", default="results/selftest")
     parser.add_argument("--local-paths", default="configs/local_paths.json")
+    parser.add_argument("--stack-manifest", default=None)
     for stage in ("pythia8", "delphes", "madanalysis"):
         parser.add_argument(
             f"--{stage}",
@@ -505,13 +515,20 @@ def main(argv: list[str] | None = None) -> int:
 
     mg5 = args.mg5
     ma5 = args.ma5
+    stack_manifest = args.stack_manifest
     if mg5 is None or ma5 is None:
         try:
             config = json.loads(Path(args.local_paths).read_text())
         except OSError:
             config = {}
-        mg5 = mg5 or config.get("mg5_executable")
-        ma5 = ma5 or config.get("madanalysis5_executable")
+        if stack_manifest is None:
+            manifest = load_configured_stack(args.local_paths)
+            stack_manifest = manifest.path
+            mg5 = mg5 or str(manifest.executable("madgraph"))
+            ma5 = ma5 or str(manifest.executable("madanalysis5"))
+        else:
+            mg5 = mg5 or config.get("mg5_executable")
+            ma5 = ma5 or config.get("madanalysis5_executable")
 
     if not mg5:
         print(
@@ -521,7 +538,13 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 2
 
-    detected = detect_tools(mg5, ma5)
+    if stack_manifest is not None:
+        manifest = load_stack_manifest(stack_manifest)
+        mg5 = str(manifest.executable("madgraph"))
+        ma5 = str(manifest.executable("madanalysis5"))
+        detected = {"pythia8": True, "delphes": True, "madanalysis": True}
+    else:
+        detected = detect_tools(mg5, ma5)
     print("=== HEP Local Agent installation self-test ===")
     print("Trial process : generate p p > e+ e-")
     print(f"Events        : {args.events}")
@@ -542,6 +565,7 @@ def main(argv: list[str] | None = None) -> int:
         pythia8=args.pythia8,
         delphes=args.delphes,
         madanalysis=args.madanalysis,
+        stack_manifest=stack_manifest,
     )
 
     labels = {OK: "OK  ", FAILED: "FAIL", MISSING: "MISS", SKIPPED: "SKIP"}

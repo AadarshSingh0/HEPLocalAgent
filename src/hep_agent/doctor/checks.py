@@ -16,6 +16,8 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
+from hep_agent.doctor.managed_stack import managed_stack_checks
+from hep_agent.runtime import build_stack_environment, load_configured_stack
 from hep_agent.doctor.models import (
     CheckStatus,
     DoctorCheck,
@@ -523,6 +525,7 @@ def _pythia_installation_check(
 def _delphes_installation_check(
     executable: Path | None,
     searched: list[Path],
+    environment: dict[str, str] | None = None,
 ) -> DoctorCheck:
     if executable is None:
         return _check(
@@ -567,6 +570,7 @@ def _delphes_installation_check(
                 capture_output=True,
                 text=True,
                 timeout=30,
+                env=environment,
             )
             report = "\n".join(
                 part
@@ -633,6 +637,7 @@ def _delphes_installation_check(
 def _check_integrated_tools(
     mg5_executable: Path | None,
     paths_payload: dict[str, Any],
+    environment: dict[str, str] | None = None,
 ) -> list[DoctorCheck]:
     checks: list[DoctorCheck] = []
     root = _mg5_root(mg5_executable)
@@ -712,6 +717,7 @@ def _check_integrated_tools(
         _delphes_installation_check(
             delphes,
             searched_delphes,
+            environment=environment,
         )
     )
 
@@ -722,6 +728,7 @@ def _mg5_deep_smoke(
     executable: Path,
     *,
     timeout_seconds: int,
+    environment: dict[str, str] | None = None,
 ) -> tuple[bool, str, dict[str, Any]]:
     with tempfile.TemporaryDirectory(
         prefix="hep_agent_doctor_mg5_"
@@ -747,6 +754,7 @@ def _mg5_deep_smoke(
                 capture_output=True,
                 timeout=timeout_seconds,
                 check=False,
+                env=environment,
             )
         except subprocess.TimeoutExpired:
             return (
@@ -829,6 +837,16 @@ def run_doctor(
     ).rstrip("/")
 
     checks: list[DoctorCheck] = []
+    checks.extend(managed_stack_checks(root))
+    try:
+        managed_environment = build_stack_environment(
+            load_configured_stack(
+                root / "configs/local_paths.json",
+                expected_repository_root=root,
+            )
+        )
+    except ValueError:
+        managed_environment = None
 
     # -----------------------------------------------------
     # Python and dependencies
@@ -1294,6 +1312,11 @@ def run_doctor(
     # HEP tools
     # -----------------------------------------------------
 
+    # A missing or invalid authoritative manifest is a hard execution boundary.
+    # Report configured paths below, but never probe or launch them.
+    if managed_environment is None:
+        paths_payload = {}
+
     mg5_executable = _normalise_path(
         paths_payload.get(
             "mg5_executable"
@@ -1343,6 +1366,7 @@ def run_doctor(
         _check_integrated_tools(
             mg5_executable,
             paths_payload,
+            environment=managed_environment,
         )
     )
 
@@ -1364,6 +1388,7 @@ def run_doctor(
             timeout_seconds=(
                 timeout_seconds
             ),
+            environment=managed_environment,
         )
 
         checks.append(

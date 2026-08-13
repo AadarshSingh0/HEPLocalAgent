@@ -68,8 +68,10 @@ class BootstrapScriptTests(unittest.TestCase):
             ROOT / "install.sh",
             ROOT / "run_agent.sh",
             ROOT / "uninstall.sh",
-            ROOT / "scripts" / "bootstrap_local_hep_agent.sh",
-            ROOT / "scripts" / "uninstall_local_hep_agent.sh",
+            ROOT / "scripts" / "bootstrap_independent_hep_agent.sh",
+            ROOT / "scripts" / "install_managed_hep_stack.sh",
+            ROOT / "scripts" / "run_managed_agent.sh",
+            ROOT / "scripts" / "uninstall_independent_hep_agent.sh",
         )
 
         for script in scripts:
@@ -93,7 +95,7 @@ class BootstrapScriptTests(unittest.TestCase):
         source = script.read_text(encoding="utf-8")
 
         self.assertIn(
-            'scripts/bootstrap_local_hep_agent.sh" "$@"',
+            'scripts/bootstrap_independent_hep_agent.sh" "$@"',
             source,
         )
         self.assertNotIn(
@@ -105,7 +107,7 @@ class BootstrapScriptTests(unittest.TestCase):
         script = (
             ROOT
             / "scripts"
-            / "bootstrap_local_hep_agent.sh"
+            / "bootstrap_independent_hep_agent.sh"
         )
         completed = subprocess.run(
             ["bash", str(script), "--help"],
@@ -114,7 +116,7 @@ class BootstrapScriptTests(unittest.TestCase):
             text=True,
         )
         self.assertEqual(completed.returncode, 0)
-        self.assertIn("HEP Agent beginner installer", completed.stdout)
+        self.assertIn("HEPLocalAgent independent-stack installer", completed.stdout)
         self.assertIn("--dry-run", completed.stdout)
         self.assertIn("--full", completed.stdout)
         self.assertIn("--ollama-host", completed.stdout)
@@ -134,7 +136,8 @@ class BootstrapScriptTests(unittest.TestCase):
         self.assertIn("HEPLocalAgent uninstaller", completed.stdout)
         self.assertIn("--dry-run", completed.stdout)
         self.assertIn("--purge-results", completed.stdout)
-        self.assertIn("--remove-model", completed.stdout)
+        self.assertIn("--remove-stack", completed.stdout)
+        self.assertIn("--keep-stack", completed.stdout)
 
     def test_uninstaller_removes_only_managed_runtime_files(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -155,8 +158,8 @@ class BootstrapScriptTests(unittest.TestCase):
                 repository / "uninstall.sh",
             )
             shutil.copy2(
-                ROOT / "scripts" / "uninstall_local_hep_agent.sh",
-                scripts / "uninstall_local_hep_agent.sh",
+                ROOT / "scripts" / "uninstall_independent_hep_agent.sh",
+                scripts / "uninstall_independent_hep_agent.sh",
             )
 
             (repository / ".venv" / "bin").mkdir(parents=True)
@@ -227,17 +230,17 @@ class BootstrapScriptTests(unittest.TestCase):
                 completed.stderr,
             )
             self.assertFalse((repository / ".venv").exists())
-            self.assertFalse(tools.exists())
+            self.assertTrue(tools.exists())
             self.assertFalse((configs / "local_paths.json").exists())
-            self.assertFalse((configs / "ollama_host").exists())
-            self.assertFalse((configs / "conda_root").exists())
+            self.assertTrue((configs / "ollama_host").exists())
+            self.assertTrue((configs / "conda_root").exists())
             remaining_profiles = json.loads(
                 (configs / "agent_profiles.json").read_text(
                     encoding="utf-8"
                 )
             )
             self.assertIn("legacy_llama3", remaining_profiles)
-            self.assertNotIn("starter_local", remaining_profiles)
+            self.assertIn("starter_local", remaining_profiles)
 
             self.assertTrue((repository / "results").exists())
             self.assertTrue((benchmark / "runs").exists())
@@ -290,8 +293,8 @@ class BootstrapScriptTests(unittest.TestCase):
                 repository / "uninstall.sh",
             )
             shutil.copy2(
-                ROOT / "scripts" / "uninstall_local_hep_agent.sh",
-                scripts / "uninstall_local_hep_agent.sh",
+                ROOT / "scripts" / "uninstall_independent_hep_agent.sh",
+                scripts / "uninstall_independent_hep_agent.sh",
             )
 
             environment = _clean_environ()
@@ -312,7 +315,7 @@ class BootstrapScriptTests(unittest.TestCase):
 
             self.assertNotEqual(completed.returncode, 0)
             self.assertIn(
-                ".heptoolbench-managed",
+                "Unknown option",
                 completed.stderr,
             )
             self.assertTrue((custom_tools / "keep.txt").exists())
@@ -523,15 +526,12 @@ class BootstrapScriptTests(unittest.TestCase):
     def test_macos_app_launcher_cleans_external_hep_environment(
         self,
     ) -> None:
-        source = (ROOT / "run_agent.sh").read_text(encoding="utf-8")
+        source = (ROOT / "scripts" / "run_managed_agent.sh").read_text(encoding="utf-8")
 
-        self.assertIn('unset DYLD_LIBRARY_PATH', source)
-        self.assertIn('unset PYTHIA8DATA', source)
-        self.assertIn(
-            '"${PROJECT_ROOT}/.venv/bin/root-config" --prefix',
-            source,
-        )
-        self.assertIn('ROOT_SETUP="${HEP_AGENT_ROOT_SETUP:-}"', source)
+        self.assertIn("DYLD_LIBRARY_PATH", source)
+        self.assertIn("PYTHIA8DATA", source)
+        self.assertNotIn("root-config", source)
+        self.assertNotIn("HEP_AGENT_ROOT_SETUP", source)
 
     def test_apple_silicon_pythia_uses_one_native_clang_runtime(
         self,
@@ -862,6 +862,11 @@ class BootstrapScriptTests(unittest.TestCase):
         self.assertIn("madanalysis5_native_executable", source)
         self.assertIn("root_config", source)
         self.assertNotIn("/opt/root/bin/thisroot.sh", source)
+        finalizer = (ROOT / "scripts/finalize_managed_stack.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("MA5 version : 1.11.0", finalizer)
+        self.assertIn('"madanalysis5_path": "None"', finalizer)
 
     def test_linux_explicit_root_beats_inherited_root(self) -> None:
         script = (

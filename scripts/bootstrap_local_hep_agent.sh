@@ -1,4 +1,13 @@
 #!/usr/bin/env bash
+
+if [[ "${1:-}" == "--unsupported-nonhermetic-external-stack" ]]; then
+    shift
+elif [[ -z "${HEP_AGENT_TEST_LINUX_ID:-}" ]]; then
+    echo "This legacy mixed-stack installer is unsupported and non-hermetic." >&2
+    echo "Use ./install.sh. Experts may opt in with --unsupported-nonhermetic-external-stack." >&2
+    exit 2
+fi
+
 # Beginner-friendly installer for the local HEP agent.
 # Supports Ubuntu/Debian Linux on x86_64 and macOS.
 
