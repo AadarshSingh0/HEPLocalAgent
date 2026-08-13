@@ -28,11 +28,37 @@ def _clean_environ() -> dict:
     """
 
     environment = dict(os.environ)
-    environment.pop("OLLAMA_HOST", None)
+    for variable in (
+        "OLLAMA_HOST",
+        "CONDA_PREFIX",
+        "CONDA_DEFAULT_ENV",
+        "CONDA_PROMPT_MODIFIER",
+        "CONDA_PYTHON_EXE",
+        "_CE_CONDA",
+        "_CE_M",
+        "ROOTSYS",
+        "PYTHIA8DATA",
+        "DYLD_LIBRARY_PATH",
+        "LD_LIBRARY_PATH",
+        "CPATH",
+        "C_INCLUDE_PATH",
+        "CPLUS_INCLUDE_PATH",
+        "LIBRARY_PATH",
+        "ROOT_INCLUDE_PATH",
+    ):
+        environment.pop(variable, None)
+    environment["PATH"] = os.defpath
+    temporary_root = Path(tempfile.gettempdir()).resolve()
     environment["HEP_AGENT_TEST_VENV_DIR"] = str(
-        Path(tempfile.gettempdir())
+        temporary_root
         / f"hep-agent-test-venv-{os.getpid()}-{id(environment)}"
     )
+    environment["HEP_AGENT_TEST_CONDA_ROOT_FILE"] = str(
+        temporary_root
+        / f"hep-agent-test-conda-root-{os.getpid()}-{id(environment)}"
+    )
+    environment["HEP_AGENT_TEST_LINUX_ID"] = "ubuntu"
+    environment["HEP_AGENT_TEST_LINUX_VERSION_ID"] = "24.04"
     return environment
 
 
@@ -465,9 +491,46 @@ class BootstrapScriptTests(unittest.TestCase):
             source,
         )
         self.assertIn(
+            "verify_macos_delphes_runtime",
+            source,
+        )
+        self.assertIn(
+            'root_config="${VENV_DIR}/bin/root-config"',
+            source,
+        )
+        self.assertIn(
+            "Rebuilding Delphes against the managed Conda ROOT",
+            source,
+        )
+        self.assertIn(
+            'find_managed_pythia_data',
+            source,
+        )
+        self.assertIn(
+            '/usr/bin/env -u DYLD_LIBRARY_PATH PYTHIA8DATA=%q',
+            source,
+        )
+        self.assertIn(
+            "matching Pythia8 XML path",
+            completed.stdout,
+        )
+        self.assertIn(
             "Installing MadAnalysis5 through MadGraph",
             completed.stdout,
         )
+
+    def test_macos_app_launcher_cleans_external_hep_environment(
+        self,
+    ) -> None:
+        source = (ROOT / "run_agent.sh").read_text(encoding="utf-8")
+
+        self.assertIn('unset DYLD_LIBRARY_PATH', source)
+        self.assertIn('unset PYTHIA8DATA', source)
+        self.assertIn(
+            '"${PROJECT_ROOT}/.venv/bin/root-config" --prefix',
+            source,
+        )
+        self.assertIn('ROOT_SETUP="${HEP_AGENT_ROOT_SETUP:-}"', source)
 
     def test_apple_silicon_pythia_uses_one_native_clang_runtime(
         self,
@@ -516,13 +579,15 @@ class BootstrapScriptTests(unittest.TestCase):
             "CXX=/usr/bin/clang++ without Conda compiler/linker flags",
             completed.stdout,
         )
+        tools_root = Path(
+            "/tmp/hep-agent-apple-silicon-pythia-dry-run"
+        ).resolve()
         self.assertIn(
             "set hepmc_path = "
-            "/tmp/hep-agent-apple-silicon-pythia-dry-run/"
-            "MG5_aMC/HEPTools/hepmc2-native-2.06.11 "
+            f"{tools_root}/MG5_aMC/HEPTools/"
+            "hepmc2-native-2.06.11 "
             "and pythia8_path = "
-            "/tmp/hep-agent-apple-silicon-pythia-dry-run/"
-            "MG5_aMC/HEPTools/pythia8",
+            f"{tools_root}/MG5_aMC/HEPTools/pythia8",
             completed.stdout,
         )
         self.assertNotIn(

@@ -16,6 +16,7 @@ and failed, and a missing downstream tool cannot sabotage an installed one.
 
 from __future__ import annotations
 
+import os
 import re
 import sys
 from dataclasses import dataclass, field
@@ -49,6 +50,49 @@ OK = "ok"
 FAILED = "failed"
 MISSING = "missing"
 SKIPPED = "skipped"
+
+
+def _prepare_macos_runtime_environment(
+    *,
+    python_prefix: str | Path | None = None,
+    platform_name: str | None = None,
+) -> None:
+    """Select the managed macOS ROOT without leaking Conda-base tools.
+
+    The self-test is commonly launched as ``.venv/bin/python -m ...`` rather
+    than through ``run_agent.sh``.  In that case the interpreter is correct,
+    but the inherited PATH can still select Homebrew ROOT and Conda-base can
+    provide XML for a different Pythia version.  Normalize only when this
+    Python prefix actually contains the managed ROOT installation.
+    """
+
+    active_platform = platform_name or sys.platform
+    if active_platform != "darwin":
+        return
+
+    prefix = Path(python_prefix or sys.prefix).expanduser().resolve()
+    root_config = prefix / "bin" / "root-config"
+    if not root_config.is_file() or not os.access(root_config, os.X_OK):
+        return
+
+    os.environ["ROOTSYS"] = str(prefix)
+    existing_path = os.environ.get("PATH", "")
+    os.environ["PATH"] = (
+        f"{prefix / 'bin'}:{existing_path}"
+        if existing_path
+        else str(prefix / "bin")
+    )
+
+    for variable in (
+        "DYLD_LIBRARY_PATH",
+        "PYTHIA8DATA",
+        "CPATH",
+        "C_INCLUDE_PATH",
+        "CPLUS_INCLUDE_PATH",
+        "LIBRARY_PATH",
+        "ROOT_INCLUDE_PATH",
+    ):
+        os.environ.pop(variable, None)
 
 
 @dataclass(frozen=True)
@@ -435,6 +479,8 @@ def main(argv: list[str] | None = None) -> int:
 
     import argparse
     import json
+
+    _prepare_macos_runtime_environment()
 
     parser = argparse.ArgumentParser(
         description=(

@@ -43,7 +43,26 @@ if [[ -r "${CONDA_ROOT_FILE}" ]]; then
     fi
 fi
 
-ROOT_SETUP="${HEP_AGENT_ROOT_SETUP:-${HOME}/.local/share/hep-agent-tools/root/bin/thisroot.sh}"
+if [[ "$(uname -s)" == "Darwin" ]]; then
+    # Keep Homebrew/Conda-base headers and libraries out of the managed HEP
+    # runtime. The MG5 launcher supplies the XML data matching its own Pythia.
+    unset DYLD_LIBRARY_PATH
+    unset PYTHIA8DATA
+    unset CPATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH LIBRARY_PATH
+    unset ROOT_INCLUDE_PATH
+
+    if [[ -x "${PROJECT_ROOT}/.venv/bin/root-config" ]]; then
+        export ROOTSYS="$(
+            "${PROJECT_ROOT}/.venv/bin/root-config" --prefix
+        )"
+    fi
+fi
+
+if [[ "$(uname -s)" == "Darwin" ]]; then
+    ROOT_SETUP="${HEP_AGENT_ROOT_SETUP:-}"
+else
+    ROOT_SETUP="${HEP_AGENT_ROOT_SETUP:-${HOME}/.local/share/hep-agent-tools/root/bin/thisroot.sh}"
+fi
 
 if [[ -f "${ROOT_SETUP}" ]]; then
     ROOT_SOURCE_STATUS=0

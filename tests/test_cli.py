@@ -61,7 +61,7 @@ class CliTests(unittest.TestCase):
 
             self.assertEqual(
                 resolved,
-                root / "configs" / "test.json",
+                root.resolve() / "configs" / "test.json",
             )
 
     def test_json_configuration_must_be_object(

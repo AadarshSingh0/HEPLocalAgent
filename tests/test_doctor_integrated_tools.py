@@ -45,10 +45,14 @@ class IntegratedToolDoctorTests(unittest.TestCase):
                 / "Delphes"
             ).mkdir(parents=True)
 
-            checks = _check_integrated_tools(
-                mg5,
-                {},
-            )
+            with mock.patch(
+                "hep_agent.doctor.checks.platform.system",
+                return_value="Linux",
+            ):
+                checks = _check_integrated_tools(
+                    mg5,
+                    {},
+                )
 
             statuses = {
                 check.check_id: check.status
@@ -84,10 +88,16 @@ class IntegratedToolDoctorTests(unittest.TestCase):
                 / "DelphesHepMC2"
             )
 
-            checks = _check_integrated_tools(
-                mg5,
-                {},
-            )
+            # This is the platform-neutral runnable-files case. Dedicated
+            # tests below exercise Apple-Silicon's native-build marker.
+            with mock.patch(
+                "hep_agent.doctor.checks.platform.system",
+                return_value="Linux",
+            ):
+                checks = _check_integrated_tools(
+                    mg5,
+                    {},
+                )
 
             statuses = {
                 check.check_id: check.status
