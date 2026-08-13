@@ -345,11 +345,16 @@ log ""
 
 case "${PLATFORM}" in
     Linux)
-        [[ -r /etc/os-release ]] || \
-            die "Linux installation currently supports Ubuntu/Debian-family distributions only."
+        if [[ -n "${HEP_AGENT_TEST_LINUX_ID:-}" ]]; then
+            ID="${HEP_AGENT_TEST_LINUX_ID}"
+            VERSION_ID="${HEP_AGENT_TEST_LINUX_VERSION_ID:-}"
+        else
+            [[ -r /etc/os-release ]] || \
+                die "Linux installation currently supports Ubuntu/Debian-family distributions only."
 
-        # shellcheck disable=SC1091
-        source /etc/os-release
+            # shellcheck disable=SC1091
+            source /etc/os-release
+        fi
         case "${ID:-}" in
             ubuntu|debian|linuxmint|pop)
                 ;;

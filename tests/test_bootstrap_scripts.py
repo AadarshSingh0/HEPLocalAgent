@@ -57,6 +57,8 @@ def _clean_environ() -> dict:
         temporary_root
         / f"hep-agent-test-conda-root-{os.getpid()}-{id(environment)}"
     )
+    environment["HEP_AGENT_TEST_LINUX_ID"] = "ubuntu"
+    environment["HEP_AGENT_TEST_LINUX_VERSION_ID"] = "24.04"
     return environment
 
 
