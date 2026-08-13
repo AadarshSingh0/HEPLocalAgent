@@ -667,6 +667,86 @@ MG5_LINK="${TOOLS_ROOT}/MG5_aMC"
 MG5_NATIVE_EXECUTABLE="${MG5_LINK}/bin/mg5_aMC"
 MG5_EXECUTABLE="${MG5_LINK}/bin/hep-agent-mg5"
 
+find_managed_pythia_data() {
+    local pythia_config
+    local pythia_prefix
+    local candidate
+
+    pythia_config="$(
+        find -L "${MG5_LINK}" \
+            -type f \
+            -name "pythia8-config" \
+            -perm -u+x \
+            -print \
+            -quit \
+            2>/dev/null ||
+            true
+    )"
+    [[ -n "${pythia_config}" ]] || return 0
+
+    pythia_prefix="$(
+        cd -- "$(dirname -- "${pythia_config}")/.." && pwd
+    )" || return 0
+
+    for candidate in \
+        "${pythia_prefix}/share/Pythia8/xmldoc" \
+        "${pythia_prefix}/share/PYTHIA8/xmldoc"; do
+        if [[ -d "${candidate}" ]]; then
+            printf '%s\n' "${candidate}"
+            return 0
+        fi
+    done
+}
+
+write_mg5_launcher() {
+    local pythia_data="${1:-}"
+
+    if (( DRY_RUN )); then
+        log "+ create ${MG5_EXECUTABLE} using isolated Python ${VENV_PYTHON}"
+        return 0
+    fi
+
+    {
+        printf '%s\n' '#!/usr/bin/env bash'
+
+        if (( USING_CONDA_ENVIRONMENT )); then
+            if [[ "${PLATFORM}" == "Darwin" && -n "${pythia_data}" ]]; then
+                # Conda activation may set PYTHIA8DATA to the XML shipped with
+                # Conda's own Pythia package.  MG5's interface is compiled
+                # against the separately managed Pythia installation, so set
+                # its matching XML only after `conda run` has activated the
+                # environment.  Also prevent DYLD_LIBRARY_PATH from replacing
+                # MG5's native Pythia library with Conda's copy.
+                printf 'exec %q run --no-capture-output --prefix %q /usr/bin/env -u DYLD_LIBRARY_PATH PYTHIA8DATA=%q python %q "$@"\n' \
+                    "${CONDA_EXECUTABLE}" \
+                    "${VENV_DIR}" \
+                    "${pythia_data}" \
+                    "${MG5_NATIVE_EXECUTABLE}"
+            elif [[ "${PLATFORM}" == "Darwin" ]]; then
+                printf 'exec %q run --no-capture-output --prefix %q /usr/bin/env -u DYLD_LIBRARY_PATH python %q "$@"\n' \
+                    "${CONDA_EXECUTABLE}" \
+                    "${VENV_DIR}" \
+                    "${MG5_NATIVE_EXECUTABLE}"
+            else
+                printf 'exec %q run --no-capture-output --prefix %q python %q "$@"\n' \
+                    "${CONDA_EXECUTABLE}" \
+                    "${VENV_DIR}" \
+                    "${MG5_NATIVE_EXECUTABLE}"
+            fi
+        elif [[ "${PLATFORM}" == "Darwin" && -n "${pythia_data}" ]]; then
+            printf 'exec /usr/bin/env -u DYLD_LIBRARY_PATH PYTHIA8DATA=%q %q %q "$@"\n' \
+                "${pythia_data}" \
+                "${VENV_PYTHON}" \
+                "${MG5_NATIVE_EXECUTABLE}"
+        else
+            printf 'exec %q %q "$@"\n' \
+                "${VENV_PYTHON}" \
+                "${MG5_NATIVE_EXECUTABLE}"
+        fi
+    } > "${MG5_EXECUTABLE}"
+    chmod +x "${MG5_EXECUTABLE}"
+}
+
 if [[ ! -x "${MG5_NATIVE_EXECUTABLE}" ]]; then
     ARCHIVE_PATH="${DOWNLOADS_DIR}/${MG5_ARCHIVE}"
 
@@ -735,24 +815,10 @@ if (( ! DRY_RUN )); then
     [[ -x "${MG5_NATIVE_EXECUTABLE}" ]] || \
         die "MadGraph executable is unavailable after installation."
 
-    {
-        printf '%s\n' '#!/usr/bin/env bash'
-
-        if (( USING_CONDA_ENVIRONMENT )); then
-            printf 'exec %q run --no-capture-output --prefix %q python %q "$@"\n' \
-                "${CONDA_EXECUTABLE}" \
-                "${VENV_DIR}" \
-                "${MG5_NATIVE_EXECUTABLE}"
-        else
-            printf 'exec %q %q "$@"\n' \
-                "${VENV_PYTHON}" \
-                "${MG5_NATIVE_EXECUTABLE}"
-        fi
-    } > "${MG5_EXECUTABLE}"
-    chmod +x "${MG5_EXECUTABLE}"
+    write_mg5_launcher "$(find_managed_pythia_data)"
     log "Pinned MadGraph launcher: ${MG5_EXECUTABLE}"
 else
-    log "+ create ${MG5_EXECUTABLE} using isolated Python ${VENV_PYTHON}"
+    write_mg5_launcher
 fi
 
 if (( DRY_RUN )); then
@@ -876,13 +942,90 @@ verify_linux_delphes_runtime() {
     return 0
 }
 
+verify_macos_delphes_runtime() {
+    local candidate="$1"
+    local linked_libraries
+    local linked_path
+    local root_libdir
+    local root_version
+    local root_series
+    local rpaths
+
+    [[ "${PLATFORM}" == "Darwin" ]] || return 0
+    [[ -x "${candidate}" ]] || return 1
+    command -v otool >/dev/null 2>&1 || return 1
+    activate_root || return 1
+
+    root_libdir="$(root-config --libdir)" || return 1
+    root_version="$(root-config --version)" || return 1
+    root_series="${root_version%.*}"
+    linked_libraries="$(otool -L "${candidate}")" || return 1
+
+    # A Delphes binary linked to a different ROOT installation can start and
+    # still crash later while loading ROOT dictionaries.  Reject every
+    # absolute ROOT library outside the selected Conda prefix.
+    while IFS= read -r linked_path; do
+        [[ -n "${linked_path}" ]] || continue
+        case "${linked_path}" in
+            @rpath/*|@loader_path/*|@executable_path/*)
+                ;;
+            "${root_libdir}"/*)
+                ;;
+            /*)
+                return 1
+                ;;
+        esac
+    done < <(
+        awk '
+            /lib(Core|RIO|Hist|Tree|TreePlayer)[.]/ {
+                gsub(/^[[:space:]]+/, "")
+                print $1
+            }
+        ' <<< "${linked_libraries}"
+    )
+
+    # Conda ROOT records its ABI series in the ROOT library names.  Catch a
+    # stale 6.38 build before it is run with (for example) ROOT 6.40.
+    if grep -Eq 'libCore\.[0-9]+\.[0-9]+' <<< "${linked_libraries}" &&
+        ! grep -Fq "libCore.${root_series}" <<< "${linked_libraries}"; then
+        return 1
+    fi
+
+    if grep -Fq '@rpath/libCore' <<< "${linked_libraries}"; then
+        rpaths="$(
+            otool -l "${candidate}" |
+                awk '
+                    $1 == "cmd" && $2 == "LC_RPATH" {
+                        want_path = 1
+                        next
+                    }
+                    want_path && $1 == "path" {
+                        print $2
+                        want_path = 0
+                    }
+                '
+        )" || return 1
+        grep -Fxq "${root_libdir}" <<< "${rpaths}" || return 1
+    fi
+
+    return 0
+}
+
 find_delphes_install() {
     local candidate
 
     candidate="$(find_delphes_hepmc2)"
     if [[ -n "${candidate}" ]]; then
-        if [[ "${PLATFORM}" != "Linux" ]] ||
-            verify_linux_delphes_runtime "${candidate}"; then
+        case "${PLATFORM}" in
+            Linux)
+                verify_linux_delphes_runtime "${candidate}" || candidate=""
+                ;;
+            Darwin)
+                verify_macos_delphes_runtime "${candidate}" || candidate=""
+                ;;
+        esac
+
+        if [[ -n "${candidate}" ]]; then
             printf '%s\n' "${candidate}"
             return
         fi
@@ -898,7 +1041,8 @@ find_delphes_install() {
         "${MG5_LINK}/Delphes/DelphesHepMC3" \
         "${MG5_LINK}/Delphes/DelphesSTDHEP" \
         "${MG5_LINK}/Delphes/DelphesPythia8"; do
-        if [[ -x "${candidate}" ]]; then
+        if [[ -x "${candidate}" ]] &&
+            verify_macos_delphes_runtime "${candidate}"; then
             printf '%s\n' "${candidate}"
             return
         fi
@@ -931,6 +1075,11 @@ root_config_is_supported() {
     [[ -n "${root_config}" && -x "${root_config}" ]] || return 1
     root_prefix="$("${root_config}" --prefix 2>/dev/null)" || return 1
 
+    if [[ "${PLATFORM}" == "Darwin" ]]; then
+        [[ "${root_config}" == "${VENV_DIR}/bin/root-config" ]] || return 1
+        [[ "${root_prefix}" == "${VENV_DIR}" ]] || return 1
+    fi
+
     if [[ "${PLATFORM}" == "Linux" ]]; then
         case "${root_config}" in
             /snap/*)
@@ -954,11 +1103,13 @@ activate_root() {
     local root_setup_candidate=""
     local source_status
 
-    if [[ -f "${ROOT_DIR}/bin/thisroot.sh" && ! -e "${ROOT_LINK}" ]]; then
+    if [[ "${PLATFORM}" == "Linux" &&
+        -f "${ROOT_DIR}/bin/thisroot.sh" &&
+        ! -e "${ROOT_LINK}" ]]; then
         ln -sfn "${ROOT_DIR}" "${ROOT_LINK}"
     fi
 
-    if [[ -f "${ROOT_SETUP}" ]]; then
+    if [[ "${PLATFORM}" == "Linux" && -f "${ROOT_SETUP}" ]]; then
         root_setup_candidate="${ROOT_SETUP}"
     elif [[ "${PLATFORM}" == "Linux" &&
         -f "/opt/root/bin/thisroot.sh" ]]; then
@@ -978,7 +1129,11 @@ activate_root() {
         (( source_status == 0 )) || return 1
     fi
 
-    root_config="$(command -v root-config 2>/dev/null || true)"
+    if [[ "${PLATFORM}" == "Darwin" ]]; then
+        root_config="${VENV_DIR}/bin/root-config"
+    else
+        root_config="$(command -v root-config 2>/dev/null || true)"
+    fi
     root_config_is_supported "${root_config}" || return 1
 
     root_prefix="$("${root_config}" --prefix)" || return 1
@@ -989,7 +1144,10 @@ activate_root() {
     export ROOTSYS="${root_prefix}"
     export PATH="$(dirname -- "${root_config}"):${PATH}"
     if [[ "${PLATFORM}" == "Darwin" ]]; then
-        export DYLD_LIBRARY_PATH="${root_libdir}${DYLD_LIBRARY_PATH:+:${DYLD_LIBRARY_PATH}}"
+        # Conda ROOT and the rebuilt Delphes executables carry their own
+        # rpaths.  A global DYLD_LIBRARY_PATH can make MG5's Pythia interface
+        # load Conda's unrelated libpythia8, so keep it out of the runtime.
+        unset DYLD_LIBRARY_PATH
     else
         export LD_LIBRARY_PATH="${root_libdir}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
     fi
@@ -1020,6 +1178,29 @@ verify_root_runtime() {
     fi
 
     root-config --version >/dev/null 2>&1 || return 1
+
+    if [[ "${PLATFORM}" == "Darwin" ]]; then
+        local smoke_directory
+        local smoke_png
+        local smoke_status=0
+
+        smoke_directory="$(mktemp -d)" || return 1
+        smoke_png="${smoke_directory}/root-smoke.png"
+
+        root -l -b -q \
+            -e "TH1F h(\"h\",\"ROOT smoke\",10,0,1); h.Fill(0.5); TCanvas c; h.Draw(); c.SaveAs(\"${smoke_png}\");" \
+            >/dev/null 2>&1 || smoke_status=$?
+
+        if (( smoke_status != 0 )) || [[ ! -s "${smoke_png}" ]]; then
+            rm -f "${smoke_png}"
+            rmdir "${smoke_directory}" 2>/dev/null || true
+            return 1
+        fi
+
+        rm -f "${smoke_png}"
+        rmdir "${smoke_directory}" 2>/dev/null || true
+    fi
+
     return 0
 }
 
@@ -1662,7 +1843,12 @@ PY
 repair_macos_delphes_build() {
     local delphes_dir="${MG5_LINK}/Delphes"
     local build_jobs="${HEP_AGENT_BUILD_JOBS:-2}"
+    local root_config
+    local root_bindir
+    local root_prefix
+    local clean_path
     local installed_path
+    local -a clean_environment=()
 
     [[ "${PLATFORM}" == "Darwin" ]] || return 1
     [[ -f "${delphes_dir}/Makefile" ]] || return 1
@@ -1671,7 +1857,35 @@ repair_macos_delphes_build() {
         return 1
     }
 
-    log "Repairing the downloaded Delphes build for conda-forge libc++."
+    if ! activate_root; then
+        warn "Cannot rebuild Delphes because the managed Conda ROOT is not active."
+        return 1
+    fi
+
+    root_config="$(command -v root-config)"
+    root_bindir="$(dirname -- "${root_config}")"
+    root_prefix="$(root-config --prefix)"
+    clean_path="${root_bindir}:${VENV_DIR}/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+    clean_environment=(
+        env
+        -u CFLAGS
+        -u CXXFLAGS
+        -u CPPFLAGS
+        -u LDFLAGS
+        -u CPATH
+        -u C_INCLUDE_PATH
+        -u CPLUS_INCLUDE_PATH
+        -u LIBRARY_PATH
+        -u PKG_CONFIG_PATH
+        -u ROOT_INCLUDE_PATH
+        -u DYLD_LIBRARY_PATH
+        "ROOTSYS=${root_prefix}"
+        "PATH=${clean_path}"
+    )
+
+    log "Rebuilding Delphes against the managed Conda ROOT installation."
+    log "ROOT configuration: ${root_config}"
+    log "ROOT prefix:        ${root_prefix}"
 
     if ! patch_macos_delphes_makefile; then
         warn "Could not add the libc++ compatibility flag to the Delphes Makefile."
@@ -1682,6 +1896,7 @@ repair_macos_delphes_build() {
     # required definition. Clean first so every translation unit is rebuilt.
     if ! run_timed_command \
         "${MG5_TOOL_TIMEOUT_SECONDS}" \
+        "${clean_environment[@]}" \
         make -C "${delphes_dir}" clean; then
         warn "Could not clean the partial Delphes build."
         return 1
@@ -1689,6 +1904,7 @@ repair_macos_delphes_build() {
 
     if ! run_timed_command \
         "${MG5_TOOL_TIMEOUT_SECONDS}" \
+        "${clean_environment[@]}" \
         make -C "${delphes_dir}" -j"${build_jobs}"; then
         warn "The repaired Delphes build failed."
         return 1
@@ -1855,6 +2071,19 @@ if (( WITH_PYTHIA8 )); then
     else
         OPTIONAL_FAILURES+=("Pythia8")
     fi
+
+    if (( DRY_RUN )); then
+        log "+ update ${MG5_EXECUTABLE} with MG5's matching Pythia8 XML path"
+    else
+        MANAGED_PYTHIA_DATA="$(find_managed_pythia_data)"
+        if [[ -n "${MANAGED_PYTHIA_DATA}" ]]; then
+            write_mg5_launcher "${MANAGED_PYTHIA_DATA}"
+            log "Pinned matching Pythia8 XML data in the MadGraph launcher: ${MANAGED_PYTHIA_DATA}"
+        else
+            warn "Pythia8's matching XML data directory was not found."
+            OPTIONAL_FAILURES+=("Pythia8 data")
+        fi
+    fi
 fi
 
 if (( WITH_DELPHES )); then
@@ -1871,10 +2100,7 @@ if (( WITH_DELPHES )); then
             log "Using the conda-forge libc++ compatibility flag for Delphes."
         fi
 
-        DELPHES_ALREADY_READY=""
-        if [[ "${PLATFORM}" == "Linux" ]]; then
-            DELPHES_ALREADY_READY="$(find_delphes_install)"
-        fi
+        DELPHES_ALREADY_READY="$(find_delphes_install)"
 
         if [[ -n "${DELPHES_ALREADY_READY}" ]]; then
             log "DelphesHepMC2 ROOT runtime is already verified: ${DELPHES_ALREADY_READY}"

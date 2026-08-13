@@ -465,9 +465,46 @@ class BootstrapScriptTests(unittest.TestCase):
             source,
         )
         self.assertIn(
+            "verify_macos_delphes_runtime",
+            source,
+        )
+        self.assertIn(
+            'root_config="${VENV_DIR}/bin/root-config"',
+            source,
+        )
+        self.assertIn(
+            "Rebuilding Delphes against the managed Conda ROOT",
+            source,
+        )
+        self.assertIn(
+            'find_managed_pythia_data',
+            source,
+        )
+        self.assertIn(
+            '/usr/bin/env -u DYLD_LIBRARY_PATH PYTHIA8DATA=%q',
+            source,
+        )
+        self.assertIn(
+            "matching Pythia8 XML path",
+            completed.stdout,
+        )
+        self.assertIn(
             "Installing MadAnalysis5 through MadGraph",
             completed.stdout,
         )
+
+    def test_macos_app_launcher_cleans_external_hep_environment(
+        self,
+    ) -> None:
+        source = (ROOT / "run_agent.sh").read_text(encoding="utf-8")
+
+        self.assertIn('unset DYLD_LIBRARY_PATH', source)
+        self.assertIn('unset PYTHIA8DATA', source)
+        self.assertIn(
+            '"${PROJECT_ROOT}/.venv/bin/root-config" --prefix',
+            source,
+        )
+        self.assertIn('ROOT_SETUP="${HEP_AGENT_ROOT_SETUP:-}"', source)
 
     def test_apple_silicon_pythia_uses_one_native_clang_runtime(
         self,

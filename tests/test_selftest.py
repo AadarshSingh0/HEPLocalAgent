@@ -7,6 +7,7 @@ and analysis stages to verify the per-tool reporting logic.
 
 from __future__ import annotations
 
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -16,6 +17,7 @@ from unittest import mock
 from hep_agent.builders import build_madgraph_workflow_artifact
 from hep_agent.selftest import (
     _diagnose_from_log,
+    _prepare_macos_runtime_environment,
     build_selftest_workflow,
     detect_tools,
     run_installation_selftest,
@@ -72,6 +74,55 @@ class DetectionTests(unittest.TestCase):
             detected = detect_tools(mg5)
 
             self.assertTrue(detected["delphes"])
+
+
+class RuntimeEnvironmentTests(unittest.TestCase):
+    def test_macos_selftest_selects_managed_root_and_cleans_conflicts(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            prefix = Path(temporary) / ".venv"
+            root_config = prefix / "bin" / "root-config"
+            root_config.parent.mkdir(parents=True)
+            root_config.write_text("#!/bin/sh\n", encoding="utf-8")
+            root_config.chmod(0o755)
+
+            contaminated = {
+                "PATH": "/opt/homebrew/bin:/usr/bin:/bin",
+                "DYLD_LIBRARY_PATH": "/opt/homebrew/lib",
+                "PYTHIA8DATA": "/wrong/Pythia8/xmldoc",
+                "CPATH": "/wrong/include",
+                "CPLUS_INCLUDE_PATH": "/wrong/c++/include",
+                "ROOT_INCLUDE_PATH": "/wrong/root/include",
+            }
+            with mock.patch.dict(os.environ, contaminated, clear=True):
+                _prepare_macos_runtime_environment(
+                    python_prefix=prefix,
+                    platform_name="darwin",
+                )
+
+                self.assertEqual(os.environ["ROOTSYS"], str(prefix))
+                self.assertEqual(
+                    os.environ["PATH"].split(":", 1)[0],
+                    str(prefix / "bin"),
+                )
+                for variable in (
+                    "DYLD_LIBRARY_PATH",
+                    "PYTHIA8DATA",
+                    "CPATH",
+                    "CPLUS_INCLUDE_PATH",
+                    "ROOT_INCLUDE_PATH",
+                ):
+                    self.assertNotIn(variable, os.environ)
+
+    def test_non_macos_selftest_leaves_environment_unchanged(self) -> None:
+        original = {"PATH": "/custom/bin", "PYTHIA8DATA": "/custom/xml"}
+        with mock.patch.dict(os.environ, original, clear=True):
+            _prepare_macos_runtime_environment(
+                python_prefix="/unused",
+                platform_name="linux",
+            )
+            self.assertEqual(dict(os.environ), original)
 
 
 class WorkflowTests(unittest.TestCase):
