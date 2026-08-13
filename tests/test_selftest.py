@@ -101,10 +101,13 @@ class RuntimeEnvironmentTests(unittest.TestCase):
                     platform_name="darwin",
                 )
 
-                self.assertEqual(os.environ["ROOTSYS"], str(prefix))
+                self.assertEqual(
+                    os.environ["ROOTSYS"],
+                    str(prefix.resolve()),
+                )
                 self.assertEqual(
                     os.environ["PATH"].split(":", 1)[0],
-                    str(prefix / "bin"),
+                    str(prefix.resolve() / "bin"),
                 )
                 for variable in (
                     "DYLD_LIBRARY_PATH",

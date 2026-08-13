@@ -36,7 +36,7 @@ PROFILE_NAME="starter_local"
 MODEL_NAME="qwen2.5-coder:7b"
 OLLAMA_HOST_VALUE="${OLLAMA_HOST:-http://localhost:11434}"
 OLLAMA_HOST_FILE="${PROJECT_ROOT}/configs/ollama_host"
-CONDA_ROOT_FILE="${PROJECT_ROOT}/configs/conda_root"
+CONDA_ROOT_FILE="${HEP_AGENT_TEST_CONDA_ROOT_FILE:-${PROJECT_ROOT}/configs/conda_root}"
 PYTHON_REQUESTED="${HEP_AGENT_PYTHON:-}"
 export OLLAMA_HOST="${OLLAMA_HOST_VALUE}"
 
