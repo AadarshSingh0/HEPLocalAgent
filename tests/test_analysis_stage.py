@@ -214,6 +214,7 @@ class AnalysisStageTests(unittest.TestCase):
                 ),
                 madanalysis_executable=None,
                 analysis_directory=root,
+                unsupported_nonhermetic=True,
             )
 
             self.assertFalse(result.requested)
@@ -232,6 +233,7 @@ class AnalysisStageTests(unittest.TestCase):
                 ),
                 madanalysis_executable=None,
                 analysis_directory=temporary,
+                unsupported_nonhermetic=True,
             )
 
             self.assertFalse(result.success)
@@ -257,6 +259,7 @@ class AnalysisStageTests(unittest.TestCase):
                 ),
                 madanalysis_executable=None,
                 analysis_directory=root / "analysis",
+                unsupported_nonhermetic=True,
             )
 
             self.assertFalse(result.success)
@@ -284,6 +287,7 @@ class AnalysisStageTests(unittest.TestCase):
                     make_fake_ma5(root)
                 ),
                 analysis_directory=root / "analysis",
+                unsupported_nonhermetic=True,
             )
 
             self.assertTrue(result.requested)

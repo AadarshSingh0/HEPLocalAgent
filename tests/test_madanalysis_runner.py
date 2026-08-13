@@ -175,6 +175,7 @@ class MadAnalysisRunnerTests(unittest.TestCase):
 
             result = run_madanalysis_artifact(
                 make_artifact(root),
+                unsupported_nonhermetic=True,
                 madanalysis_executable=(
                     make_executable(
                         root,
@@ -208,6 +209,7 @@ class MadAnalysisRunnerTests(unittest.TestCase):
             with mock.patch.dict("os.environ", conflicting, clear=False):
                 result = run_madanalysis_artifact(
                     make_artifact(root),
+                    unsupported_nonhermetic=True,
                     madanalysis_executable=make_executable(
                         root,
                         mode="environment",
@@ -243,6 +245,7 @@ class MadAnalysisRunnerTests(unittest.TestCase):
 
             result = run_madanalysis_artifact(
                 make_artifact(root),
+                unsupported_nonhermetic=True,
                 madanalysis_executable=(
                     make_executable(
                         root,
@@ -273,6 +276,7 @@ class MadAnalysisRunnerTests(unittest.TestCase):
 
             result = run_madanalysis_artifact(
                 make_artifact(root),
+                unsupported_nonhermetic=True,
                 madanalysis_executable=(
                     make_executable(
                         root,
@@ -299,6 +303,7 @@ class MadAnalysisRunnerTests(unittest.TestCase):
 
             result = run_madanalysis_artifact(
                 make_artifact(root),
+                unsupported_nonhermetic=True,
                 madanalysis_executable=(
                     make_executable(
                         root,
@@ -324,6 +329,7 @@ class MadAnalysisRunnerTests(unittest.TestCase):
 
             result = run_madanalysis_artifact(
                 make_artifact(root),
+                unsupported_nonhermetic=True,
                 madanalysis_executable=(
                     make_executable(
                         root,
@@ -351,6 +357,7 @@ class MadAnalysisRunnerTests(unittest.TestCase):
 
             result = run_madanalysis_artifact(
                 make_artifact(root),
+                unsupported_nonhermetic=True,
                 madanalysis_executable=(
                     make_executable(
                         root,
@@ -375,6 +382,7 @@ class MadAnalysisRunnerTests(unittest.TestCase):
 
             result = run_madanalysis_artifact(
                 make_artifact(root),
+                unsupported_nonhermetic=True,
                 madanalysis_executable=(
                     root / "missing_ma5"
                 ),

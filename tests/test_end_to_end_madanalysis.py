@@ -193,6 +193,7 @@ class EndToEndMadAnalysisTests(unittest.TestCase):
                 executions_directory=root / "executions",
                 analyses_directory=root / "analyses",
                 project_root=root,
+                unsupported_nonhermetic=True,
             )
 
             record = result.final_record
@@ -246,6 +247,7 @@ class EndToEndMadAnalysisTests(unittest.TestCase):
                 executions_directory=root / "executions",
                 analyses_directory=root / "analyses",
                 project_root=root,
+                unsupported_nonhermetic=True,
             )
 
             record = result.final_record
@@ -287,6 +289,7 @@ class EndToEndMadAnalysisTests(unittest.TestCase):
                 executions_directory=root / "executions",
                 analyses_directory=root / "analyses",
                 project_root=root,
+                unsupported_nonhermetic=True,
             )
 
             record = result.final_record

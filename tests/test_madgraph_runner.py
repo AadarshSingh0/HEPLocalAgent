@@ -52,6 +52,23 @@ def make_executable(
 
 
 class MadGraphRunnerTests(unittest.TestCase):
+    def test_manifest_free_execution_is_rejected_by_default(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            executable = make_executable(root, "fake_mg5.py", "print(\"ran\")\n")
+            result = run_madgraph_workflow(
+                fake_artifact(),
+                mg5_executable=executable,
+                run_directory=root / "run",
+                timeout_seconds=5,
+            )
+            self.assertFalse(result.success)
+            self.assertEqual(
+                result.failure_category,
+                ExecutionFailureCategory.CONFIGURATION,
+            )
+            self.assertIn("explicit unsupported_nonhermetic", result.failure_message)
+
     def test_successful_execution(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -70,6 +87,7 @@ class MadGraphRunnerTests(unittest.TestCase):
 
             result = run_madgraph_workflow(
                 fake_artifact(),
+                unsupported_nonhermetic=True,
                 mg5_executable=executable,
                 run_directory=root / "run",
                 timeout_seconds=5,
@@ -101,6 +119,7 @@ class MadGraphRunnerTests(unittest.TestCase):
 
             result = run_madgraph_workflow(
                 fake_artifact(),
+                unsupported_nonhermetic=True,
                 mg5_executable=executable,
                 run_directory=root / "run",
                 timeout_seconds=5,
@@ -129,6 +148,7 @@ class MadGraphRunnerTests(unittest.TestCase):
 
             result = run_madgraph_workflow(
                 fake_artifact(),
+                unsupported_nonhermetic=True,
                 mg5_executable=executable,
                 run_directory=root / "run",
                 timeout_seconds=0.05,
@@ -148,6 +168,7 @@ class MadGraphRunnerTests(unittest.TestCase):
 
             result = run_madgraph_workflow(
                 fake_artifact(),
+                unsupported_nonhermetic=True,
                 mg5_executable=root / "missing_mg5",
                 run_directory=root / "run",
                 timeout_seconds=5,

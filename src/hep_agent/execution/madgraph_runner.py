@@ -69,6 +69,7 @@ def run_madgraph_workflow(
     run_directory: str | Path,
     timeout_seconds: float = 1800,
     stack_manifest: str | Path | None = None,
+    unsupported_nonhermetic: bool = False,
 ) -> MadGraphExecutionResult:
     """Execute one validated MG5 command file safely.
 
@@ -121,6 +122,20 @@ def run_madgraph_workflow(
         )
 
     process_environment = None
+    if stack_manifest is None and not unsupported_nonhermetic:
+        return MadGraphExecutionResult(
+            success=False,
+            command_script_path=command_script,
+            stdout_path=None,
+            stderr_path=None,
+            returncode=None,
+            wall_time_seconds=0.0,
+            failure_category=ExecutionFailureCategory.CONFIGURATION,
+            failure_message=(
+                "Managed stack manifest is required. Unmanaged execution "
+                "requires the explicit unsupported_nonhermetic opt-in."
+            ),
+        )
     if stack_manifest is not None:
         try:
             manifest_root = (

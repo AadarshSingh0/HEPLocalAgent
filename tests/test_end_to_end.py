@@ -183,6 +183,7 @@ class EndToEndTests(unittest.TestCase):
                 records_directory=root / "records",
                 executions_directory=root / "executions",
                 project_root=root,
+                unsupported_nonhermetic=True,
             )
 
             self.assertTrue(result.success)
@@ -223,6 +224,7 @@ class EndToEndTests(unittest.TestCase):
                 records_directory=root / "records",
                 executions_directory=root / "executions",
                 project_root=root,
+                unsupported_nonhermetic=True,
             )
 
             self.assertEqual(
@@ -254,6 +256,7 @@ class EndToEndTests(unittest.TestCase):
                 records_directory=root / "records",
                 executions_directory=root / "executions",
                 project_root=root,
+                unsupported_nonhermetic=True,
             )
 
             self.assertEqual(
@@ -288,6 +291,7 @@ class EndToEndTests(unittest.TestCase):
                 records_directory=root / "records",
                 executions_directory=root / "executions",
                 project_root=root,
+                unsupported_nonhermetic=True,
             )
 
             self.assertEqual(
@@ -319,6 +323,7 @@ class EndToEndTests(unittest.TestCase):
                 records_directory=root / "records",
                 executions_directory=root / "executions",
                 project_root=root,
+                unsupported_nonhermetic=True,
             )
 
             self.assertEqual(
@@ -352,6 +357,7 @@ class EndToEndTests(unittest.TestCase):
                 records_directory=root / "records",
                 executions_directory=root / "executions",
                 project_root=root,
+                unsupported_nonhermetic=True,
             )
 
             self.assertEqual(
@@ -386,6 +392,7 @@ class EndToEndTests(unittest.TestCase):
                 records_directory=root / "records",
                 executions_directory=root / "executions",
                 project_root=root,
+                unsupported_nonhermetic=True,
             )
 
             self.assertEqual(

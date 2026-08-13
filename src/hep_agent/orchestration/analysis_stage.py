@@ -100,6 +100,7 @@ def run_madanalysis_stage(
     analysis_directory: str | Path,
     timeout_seconds: float = 300,
     stack_manifest: str | Path | None = None,
+    unsupported_nonhermetic: bool = False,
 ) -> AnalysisStageResult:
     """Build and execute a separate deterministic MA5 quick-look."""
 
@@ -201,6 +202,7 @@ def run_madanalysis_stage(
         analysis_directory=analysis_dir,
         timeout_seconds=timeout_seconds,
         stack_manifest=stack_manifest,
+        unsupported_nonhermetic=unsupported_nonhermetic,
     )
 
     if not execution.success:

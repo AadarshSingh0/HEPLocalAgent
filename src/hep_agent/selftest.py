@@ -275,6 +275,7 @@ def run_installation_selftest(
     delphes: str = "auto",
     madanalysis: str = "auto",
     stack_manifest: str | Path | None = None,
+    unsupported_nonhermetic: bool = False,
 ) -> SelfTestResult:
     """Run the fixed trial workflow and report per-tool installation health.
 
@@ -314,6 +315,7 @@ def run_installation_selftest(
         run_directory=run_dir,
         timeout_seconds=timeout_seconds,
         stack_manifest=stack_manifest,
+        unsupported_nonhermetic=unsupported_nonhermetic,
     )
 
     physics = None
@@ -449,6 +451,7 @@ def run_installation_selftest(
             analysis_directory=run_dir / "analysis",
             timeout_seconds=analysis_timeout_seconds,
             stack_manifest=stack_manifest,
+            unsupported_nonhermetic=unsupported_nonhermetic,
         )
         if analysis is not None and analysis.success:
             stages.append(

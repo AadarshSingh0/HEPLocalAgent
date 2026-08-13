@@ -184,6 +184,7 @@ class PreparedEndToEndTests(unittest.TestCase):
                 executions_directory=root / "executions",
                 analyses_directory=root / "analyses",
                 project_root=root,
+                unsupported_nonhermetic=True,
             )
 
             self.assertEqual(client.calls, 1)
@@ -219,6 +220,7 @@ class PreparedEndToEndTests(unittest.TestCase):
                 executions_directory=root / "executions",
                 analyses_directory=root / "analyses",
                 project_root=root,
+                unsupported_nonhermetic=True,
             )
 
             self.assertEqual(client.calls, 1)
