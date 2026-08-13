@@ -226,13 +226,14 @@ def conda_packages() -> list[dict[str, object]]:
         return records
     for path in sorted(metadata.glob("*.json")):
         payload = json.loads(path.read_text(encoding="utf-8"))
-        records.append(
-            {
+        record = {
                 key: payload[key]
                 for key in ("name", "version", "build", "build_number", "channel", "url", "sha256")
                 if key in payload
             }
-        )
+        if record.get("name") == "root_base" and "sha256" not in record:
+            record["sha256"] = root_source()[2]
+        records.append(record)
     return records
 
 
@@ -284,7 +285,14 @@ def main() -> int:
 
     root_config_output = run([str(native["root"]), "--version"], "root-config-smoke.log")
     root_output = run(
-        [str(root_prefix() / "bin/root"), "-l", "-b", "-q", "-e", "gROOT->GetVersion();"],
+        [
+            str(root_prefix() / "bin/root"),
+            "-l",
+            "-b",
+            "-q",
+            "-e",
+            "std::cout << gROOT->GetVersion() << std::endl; 0;",
+        ],
         "root-smoke.log",
     )
     pythia_output = run([str(native["pythia8"]), "--version"], "pythia8-smoke.log")
@@ -311,6 +319,13 @@ def main() -> int:
         if result.get("passed") is not True:
             raise RuntimeError(f"Unsafe linkage for {target}: {result.get('failures')}")
         linkages[name] = result
+
+    if is_darwin() and platform.machine() == "arm64":
+        native_marker = STACK_ROOT / "pythia8/.heptoolbench-apple-clang"
+        native_marker.write_text(
+            "Pythia8; Apple Clang; native libc++; arm64; linkage audit passed\n",
+            encoding="utf-8",
+        )
 
     launcher_records = {
         name: write_launcher(name) for name in ("madgraph", "madanalysis5")

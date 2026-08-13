@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 import platform
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -21,6 +23,12 @@ from hep_agent.runtime import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+
+from validate_macos_root_package import (  # noqa: E402
+    ROOT_PACKAGE_PLANS,
+    validate_root_package,
+)
 
 
 def executable(path: Path) -> Path:
@@ -55,6 +63,7 @@ def darwin_manifest(repository: Path, architecture: str) -> Path:
         "madanalysis5": (stack / "madanalysis5", executable(stack / "madanalysis5/bin/ma5")),
     }
     linkage_target = executable(stack / "delphes/DelphesHepMC2")
+    root_plan = ROOT_PACKAGE_PLANS[architecture]
     payload: dict[str, object] = {
         "schema_version": STACK_MANIFEST_SCHEMA,
         "installation_id": f"darwin-{architecture}",
@@ -76,9 +85,9 @@ def darwin_manifest(repository: Path, architecture: str) -> Path:
                 "packages": [
                     {
                         "name": "root_base",
-                        "version": "6.40.02",
-                        "build": "test",
-                        "sha256": "c" * 64,
+                        "version": root_plan.version,
+                        "build": root_plan.build,
+                        "sha256": root_plan.sha256,
                     }
                 ],
                 "external_discovery": False,
@@ -124,6 +133,199 @@ def darwin_manifest(repository: Path, architecture: str) -> Path:
 
 
 class ManagedDarwinStackTests(unittest.TestCase):
+    def test_conda_create_uses_named_specs_only(self) -> None:
+        source = (ROOT / "scripts/install_managed_hep_stack_macos.sh").read_text(
+            encoding="utf-8"
+        )
+        create_start = source.index("run_logged runtime-create.log isolated_conda create")
+        create_end = source.index("run_logged root-package-validation.log", create_start)
+        transaction = source[create_start:create_end]
+        self.assertIn('"${ROOT_MATCH}"', transaction)
+        self.assertIn("python=3.11", transaction)
+        self.assertNotIn('"${DOWNLOADS}/${ROOT_ARCHIVE}"', transaction)
+        self.assertNotIn(".conda", transaction)
+
+    def test_exact_root_match_specs_for_both_darwin_architectures(self) -> None:
+        source = (ROOT / "scripts/install_managed_hep_stack_macos.sh").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("ROOT_MATCH=root_base=6.40.02=cxx20_h17fc236_2", source)
+        self.assertIn("ROOT_MATCH=root_base=6.40.02=cxx23_h36fdf7c_2", source)
+        self.assertEqual(
+            ROOT_PACKAGE_PLANS["arm64"].match_spec,
+            "root_base=6.40.02=cxx20_h17fc236_2",
+        )
+        self.assertEqual(
+            ROOT_PACKAGE_PLANS["x86_64"].match_spec,
+            "root_base=6.40.02=cxx23_h36fdf7c_2",
+        )
+
+    def test_installed_root_metadata_build_and_checksum_validation(self) -> None:
+        for architecture, plan in ROOT_PACKAGE_PLANS.items():
+            with self.subTest(architecture=architecture), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                runtime = root / "runtime"
+                downloads = root / "downloads"
+                cache = root / "cache"
+                (runtime / "conda-meta").mkdir(parents=True)
+                downloads.mkdir()
+                cache.mkdir()
+                archive = downloads / plan.archive
+                archive.write_bytes(b"verified root fixture")
+                checksum = hashlib.sha256(archive.read_bytes()).hexdigest()
+                (cache / plan.archive).write_bytes(archive.read_bytes())
+                replacement = type(plan)(
+                    architecture=plan.architecture,
+                    version=plan.version,
+                    build=plan.build,
+                    archive=plan.archive,
+                    sha256=checksum,
+                    subdir=plan.subdir,
+                )
+                metadata = {
+                    "name": "root_base",
+                    "version": plan.version,
+                    "build": plan.build,
+                    "subdir": plan.subdir,
+                    "fn": plan.archive,
+                }
+                if architecture == "arm64":
+                    metadata["sha256"] = checksum
+                (runtime / "conda-meta" / f"root_base-{plan.version}-{plan.build}.json").write_text(
+                    json.dumps(metadata), encoding="utf-8"
+                )
+                with patch.dict(ROOT_PACKAGE_PLANS, {architecture: replacement}):
+                    result = validate_root_package(
+                        architecture=architecture,
+                        runtime_root=runtime,
+                        downloads=downloads,
+                        package_cache=cache,
+                    )
+                self.assertEqual(result["build"], plan.build)
+                self.assertEqual(result["sha256"], checksum)
+
+    def test_root_checksum_mismatch_fails_closed(self) -> None:
+        plan = ROOT_PACKAGE_PLANS["arm64"]
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            runtime = root / "runtime"
+            downloads = root / "downloads"
+            (runtime / "conda-meta").mkdir(parents=True)
+            downloads.mkdir()
+            (downloads / plan.archive).write_bytes(b"tampered")
+            with self.assertRaisesRegex(ValueError, "checksum mismatch"):
+                validate_root_package(
+                    architecture="arm64",
+                    runtime_root=runtime,
+                    downloads=downloads,
+                    package_cache=root / "cache",
+                )
+
+    def test_interrupted_owned_install_recovers_and_preserves_downloads(self) -> None:
+        ownership = ROOT / "scripts/managed_stack_ownership.sh"
+        with tempfile.TemporaryDirectory() as temporary:
+            repository = Path(temporary).resolve() / "clone"
+            repository.mkdir()
+            stack = repository / ".hep-stack"
+            command = f'''set -Eeuo pipefail
+source "{ownership}"
+initialize_managed_stack_ownership "{repository}" "{stack}"
+mkdir -p "{stack}/downloads" "{stack}/runtime/bin" "{stack}/build"
+printf verified >"{stack}/downloads/archive.tgz"
+recover_incomplete_managed_stack "{repository}" "{stack}"
+test -f "{stack}/downloads/archive.tgz"
+test ! -e "{stack}/runtime"
+test ! -e "{stack}/build"
+test -f "{stack}/.installer-ownership"
+'''
+            completed = subprocess.run(
+                ["bash", "-c", command], capture_output=True, text=True, check=False
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            self.assertIn("downloads were preserved", completed.stdout)
+
+    def test_recovery_refuses_outside_or_unowned_stack(self) -> None:
+        ownership = ROOT / "scripts/managed_stack_ownership.sh"
+        with tempfile.TemporaryDirectory() as temporary:
+            repository = Path(temporary).resolve() / "clone"
+            repository.mkdir()
+            outside = Path(temporary).resolve() / "outside"
+            outside.mkdir()
+            boundary = subprocess.run(
+                [
+                    "bash",
+                    "-c",
+                    f'source "{ownership}"; recover_incomplete_managed_stack "{repository}" "{outside}"',
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertNotEqual(boundary.returncode, 0)
+            self.assertIn("outside the current clone", boundary.stderr)
+
+            unowned = repository / ".hep-stack"
+            unowned.mkdir()
+            (unowned / "runtime").mkdir()
+            ownership_result = subprocess.run(
+                [
+                    "bash",
+                    "-c",
+                    f'source "{ownership}"; recover_incomplete_managed_stack "{repository}" "{unowned}"',
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertNotEqual(ownership_result.returncode, 0)
+            self.assertIn("unowned or ambiguous", ownership_result.stderr)
+
+    def test_failure_report_names_stage_status_log_and_retry(self) -> None:
+        source = (ROOT / "scripts/install_managed_hep_stack_macos.sh").read_text(
+            encoding="utf-8"
+        )
+        for message in (
+            "Failed stage: ${CURRENT_STAGE}",
+            "Exit status: ${status}",
+            "Relevant log: ${CURRENT_LOG}",
+            "Verified downloads preserved: yes",
+            "Safe retry: cd",
+        ):
+            self.assertIn(message, source)
+
+    def test_root_smoke_ends_with_success_expression(self) -> None:
+        source = (ROOT / "scripts/finalize_managed_stack.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            "std::cout << gROOT->GetVersion() << std::endl; 0;",
+            source,
+        )
+
+    def test_apple_clang_marker_is_written_only_after_linkage_audit(self) -> None:
+        source = (ROOT / "scripts/finalize_managed_stack.py").read_text(
+            encoding="utf-8"
+        )
+        audit = source.index("for name, target in linkage_targets().items()")
+        marker = source.index('native_marker = STACK_ROOT / "pythia8/.heptoolbench-apple-clang"')
+        launchers = source.index("launcher_records =", audit)
+        self.assertLess(audit, marker)
+        self.assertLess(marker, launchers)
+        self.assertIn("linkage audit passed", source[marker:launchers])
+
+    def test_conda_transaction_discards_external_hep_and_conda_environment(self) -> None:
+        source = (ROOT / "scripts/install_managed_hep_stack_macos.sh").read_text(
+            encoding="utf-8"
+        )
+        start = source.index("isolated_conda()")
+        end = source.index("stage \"[1/8]", start)
+        function = source[start:end]
+        self.assertIn("env -i", function)
+        self.assertIn('PATH="${MINIFORGE_ROOT}/bin:/usr/bin:/bin:/usr/sbin:/sbin"', function)
+        self.assertIn("CONDA_SOLVER=libmamba", function)
+        for variable in ("ROOTSYS", "PYTHIA8DATA", "DYLD_LIBRARY_PATH", "PYTHONPATH", "VIRTUAL_ENV"):
+            self.assertNotIn(variable, function)
+
     def test_independent_bootstrap_has_both_pinned_darwin_plans(self) -> None:
         script = ROOT / "scripts/bootstrap_independent_hep_agent.sh"
         cases = {
@@ -179,8 +381,10 @@ class ManagedDarwinStackTests(unittest.TestCase):
             "unset CFLAGS CXXFLAGS CPPFLAGS LDFLAGS",
             "export AR=/usr/bin/ar",
             "-D_LIBCPP_DISABLE_AVAILABILITY",
+            "Pythia example link-order stanza was not found exactly once",
+            "-lpythia8 -ldl $(GZIP_LIB)",
             '--with-hepmc2="${STACK_ROOT}/hepmc2"',
-            '--with-gzip="${RUNTIME_ROOT}"',
+            "--with-gzip",
         ):
             self.assertIn(required, source)
         for forbidden in (
@@ -190,6 +394,7 @@ class ManagedDarwinStackTests(unittest.TestCase):
             "command -v root",
             "command -v root-config",
             "~/.local/share/hep-agent-tools",
+            '--with-gzip="${RUNTIME_ROOT}"',
         ):
             self.assertNotIn(forbidden, source)
 
@@ -267,7 +472,7 @@ class ManagedDarwinStackTests(unittest.TestCase):
             self.assertTrue(report["passed"], report)
             self.assertEqual(
                 report["resolved_paths"],
-                [str(managed_root / "libCore.6.40.so")],
+                [str((managed_root / "libCore.6.40.so").resolve())],
             )
 
             external = libraries.replace(
@@ -286,6 +491,8 @@ class ManagedDarwinStackTests(unittest.TestCase):
             target.touch()
             output = (
                 f"{target}:\n"
+                "\t@rpath/libpythia8.dylib "
+                "(compatibility version 0.0.0, current version 0.0.0)\n"
                 f"\t{stack}/runtime/lib/libc++.1.dylib "
                 "(compatibility version 1.0.0, current version 1.0.0)\n"
             )
@@ -298,6 +505,40 @@ class ManagedDarwinStackTests(unittest.TestCase):
             )
             self.assertFalse(report["passed"])
             self.assertIn("operating-system libc++", "\n".join(report["failures"]))
+
+            system = output.replace(
+                f"{stack}/runtime/lib/libc++.1.dylib",
+                "/usr/lib/libc++.1.dylib",
+            )
+            report = validate_macho_linkage(
+                target,
+                stack,
+                system,
+                "",
+                enforce_system_libcpp=True,
+            )
+            self.assertTrue(report["passed"], report)
+            self.assertNotIn("@rpath/libpythia8.dylib", report["resolved_paths"])
+
+    def test_otool_relative_library_resolves_from_target_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            stack = Path(temporary) / "clone/.hep-stack"
+            target = stack / "madanalysis5/tools/SampleAnalyzer/Bin/TestRoot"
+            library = stack / "madanalysis5/tools/SampleAnalyzer/Lib/libroot_for_ma5.so"
+            target.parent.mkdir(parents=True)
+            library.parent.mkdir(parents=True)
+            target.touch()
+            library.touch()
+            output = (
+                f"{target}:\n"
+                "\t../Lib/libroot_for_ma5.so "
+                "(compatibility version 0.0.0, current version 0.0.0)\n"
+                "\t/usr/lib/libc++.1.dylib "
+                "(compatibility version 1.0.0, current version 1.0.0)\n"
+            )
+            report = validate_macho_linkage(target, stack, output, "")
+            self.assertTrue(report["passed"], report)
+            self.assertEqual(report["resolved_paths"], [str(library.resolve())])
 
     def test_darwin_manifest_requires_clone_miniforge_and_pinned_root(self) -> None:
         for architecture in ("arm64", "x86_64"):

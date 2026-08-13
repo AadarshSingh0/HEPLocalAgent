@@ -755,6 +755,7 @@ def _mg5_deep_smoke(
                 timeout=timeout_seconds,
                 check=False,
                 env=environment,
+                cwd=root,
             )
         except subprocess.TimeoutExpired:
             return (

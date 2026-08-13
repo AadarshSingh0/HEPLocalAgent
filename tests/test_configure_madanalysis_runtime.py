@@ -68,9 +68,9 @@ class ConfigureMadAnalysisRuntimeTests(unittest.TestCase):
             self.assertIn("Updated", first.stdout)
             self.assertIn("Verified", second.stdout)
             configured = options.read_text(encoding="utf-8")
-            self.assertIn(f"root_bin_path = {root_bindir}", configured)
-            self.assertIn(f"delphes_includes = {delphes}", configured)
-            self.assertIn(f"delphes_libs = {delphes}", configured)
+            self.assertIn(f"root_bin_path = {root_bindir.resolve()}", configured)
+            self.assertIn(f"delphes_includes = {delphes.resolve()}", configured)
+            self.assertIn(f"delphes_libs = {delphes.resolve()}", configured)
             self.assertNotIn("/old/clone", configured)
             self.assertNotIn("/usr/bin", configured)
             self.assertTrue(

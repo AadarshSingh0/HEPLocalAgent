@@ -4,6 +4,7 @@ set -Eeuo pipefail
 PROJECT_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 STACK_ROOT="${PROJECT_ROOT}/.hep-stack"
 DOWNLOADS="${STACK_ROOT}/downloads"
+source "${PROJECT_ROOT}/scripts/managed_stack_ownership.sh"
 PYTHON_COMMAND=""
 DRY_RUN=0
 PLATFORM="$(uname -s)"
@@ -104,6 +105,10 @@ if [[ -e "${STACK_ROOT}/manifest.json" ]]; then
     echo "A managed stack already belongs to this clone: ${STACK_ROOT}/manifest.json" >&2
     echo "Refusing to overwrite it. Use doctor/self-test, or uninstall it explicitly first." >&2
     exit 2
+fi
+
+if [[ "${PLATFORM}" == "Darwin" ]]; then
+    initialize_managed_stack_ownership "${PROJECT_ROOT}" "${STACK_ROOT}"
 fi
 
 if [[ "${PLATFORM}" == "Linux" ]]; then

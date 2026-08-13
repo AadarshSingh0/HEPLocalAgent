@@ -66,6 +66,8 @@ def _resolve_macho_dependency(
             if candidate.exists():
                 return candidate
         return candidates[0] if len(candidates) == 1 else None
+    if not dependency.startswith("@"):
+        return (target.parent / dependency).resolve(strict=False)
     return None
 
 
@@ -85,6 +87,11 @@ def validate_macho_linkage(
         if not stripped:
             continue
         dependencies.append(stripped.split(" (compatibility", 1)[0])
+
+    # For Mach-O shared libraries, the first entry emitted by ``otool -L`` is
+    # LC_ID_DYLIB (the library's own install name), not a loaded dependency.
+    if target.suffix in {".dylib", ".so"} and dependencies:
+        dependencies = dependencies[1:]
 
     rpaths = _macho_rpaths(load_commands_output, target)
     failures: list[str] = []

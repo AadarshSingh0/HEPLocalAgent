@@ -10,6 +10,7 @@ import hashlib
 import json
 import os
 import platform
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -26,6 +27,7 @@ _CONFLICTING_VARIABLES = {
     "CPLUS_INCLUDE_PATH",
     "DYLD_FALLBACK_LIBRARY_PATH",
     "DYLD_LIBRARY_PATH",
+    "DEVELOPER_DIR",
     "LD_LIBRARY_PATH",
     "LIBRARY_PATH",
     "PKG_CONFIG_PATH",
@@ -34,6 +36,8 @@ _CONFLICTING_VARIABLES = {
     "PYTHIA8DATA",
     "ROOT_INCLUDE_PATH",
     "ROOTSYS",
+    "SDKROOT",
+    "MACOSX_DEPLOYMENT_TARGET",
     "VIRTUAL_ENV",
 }
 
@@ -43,6 +47,25 @@ _MINIMAL_OS_PATH = (
     "/sbin",
     "/bin",
 )
+
+_DARWIN_AUXILIARY_PATHS = (
+    # MA5's validated-report contract requires PDF output. MacTeX is a
+    # non-HEP system auxiliary; keep this fixed path behind every managed bin.
+    "/Library/TeX/texbin",
+)
+
+_DARWIN_ROOT_PACKAGES = {
+    "arm64": {
+        "version": "6.40.02",
+        "build": "cxx20_h17fc236_2",
+        "sha256": "051cd5227127a5042837c56f64ae98652febf54b06bba1f7cac9dcf2850be497",
+    },
+    "x86_64": {
+        "version": "6.40.02",
+        "build": "cxx23_h36fdf7c_2",
+        "sha256": "96150f5f313adccf584d46bb26acb73033f7b9ffe30b866a923281464302cf46",
+    },
+}
 
 
 class StackConfigurationError(ValueError):
@@ -215,14 +238,29 @@ def load_stack_manifest(
             if manager_prefix != stack_root / "miniforge":
                 raise StackConfigurationError("Darwin Miniforge prefix is not clone-owned.")
             packages = provider.get("packages")
-            if not isinstance(packages, list) or not any(
-                isinstance(item, dict)
-                and item.get("name") == "root_base"
-                and item.get("version") == "6.40.02"
+            architecture = recorded_platform.get("machine")
+            expected_root = _DARWIN_ROOT_PACKAGES.get(str(architecture))
+            if expected_root is None:
+                raise StackConfigurationError(
+                    f"Unsupported Darwin architecture in stack manifest: {architecture!r}."
+                )
+            if not isinstance(packages, list):
+                raise StackConfigurationError(
+                    "Darwin runtime does not record Conda package metadata."
+                )
+            root_records = [
+                item
                 for item in packages
+                if isinstance(item, dict)
+                and item.get("name") == "root_base"
+            ]
+            if len(root_records) != 1 or any(
+                root_records[0].get(field) != expected
+                for field, expected in expected_root.items()
             ):
                 raise StackConfigurationError(
-                    "Darwin runtime does not record the pinned ROOT base package."
+                    "Darwin runtime does not record the exact pinned ROOT base "
+                    "version, build, and SHA-256."
                 )
 
     runtime = _mapping(payload.get("runtime"), "runtime")
@@ -497,6 +535,35 @@ def _remove_conflicting_variables(environment: dict[str, str]) -> None:
             environment.pop(variable, None)
 
 
+def _darwin_sdk_root() -> Path:
+    """Resolve the active system macOS SDK without trusting caller variables."""
+
+    try:
+        completed = subprocess.run(
+            ["/usr/bin/xcrun", "--sdk", "macosx", "--show-sdk-path"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            env={"PATH": "/usr/bin:/bin:/usr/sbin:/sbin"},
+        )
+    except OSError as exc:
+        raise StackConfigurationError(f"Could not run system xcrun: {exc}.") from exc
+    candidate = Path(completed.stdout.strip()).resolve(strict=False)
+    approved_roots = (Path("/Library/Developer"), Path("/Applications"))
+    if (
+        completed.returncode != 0
+        or not candidate.is_dir()
+        or candidate.suffix != ".sdk"
+        or not any(_inside(candidate, root) for root in approved_roots)
+    ):
+        raise StackConfigurationError(
+            "System xcrun did not return a trusted macOS SDK directory: "
+            f"{completed.stdout.strip()!r}."
+        )
+    return candidate
+
+
 def build_controlled_environment(
     *,
     repository_root: str | Path,
@@ -548,6 +615,11 @@ def build_controlled_environment(
         python / "bin",
         root / "bin",
         *executable_bins,
+        *(
+            Path(item)
+            for item in _DARWIN_AUXILIARY_PATHS
+            if platform.system() == "Darwin" and Path(item).is_dir()
+        ),
         *(Path(item) for item in _MINIMAL_OS_PATH),
     )
     environment["PATH"] = os.pathsep.join(
@@ -560,6 +632,7 @@ def build_controlled_environment(
     library_value = os.pathsep.join(str(item) for item in libraries)
     if platform.system() == "Darwin":
         environment["DYLD_LIBRARY_PATH"] = library_value
+        environment["SDKROOT"] = str(_darwin_sdk_root())
     else:
         environment["LD_LIBRARY_PATH"] = library_value
     pythia_prefix = pythia_data.parents[2]

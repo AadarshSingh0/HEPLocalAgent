@@ -74,12 +74,21 @@ def create_manifest(repository: Path, installation_id: str = "test-install") -> 
             "executables": {"primary": str(primary), "native": str(primary)},
             "smoke_test": {"passed": True, "command": [str(primary)]},
         }
+    linkage_tool = "otool" if platform.system() == "Darwin" else "ldd"
+    linkage_output = (
+        [
+            f"{component_paths['delphes']}:",
+            f"\t{stack}/root/lib/libCore.so (compatibility version 1.0.0, current version 1.0.0)",
+        ]
+        if platform.system() == "Darwin"
+        else [f"libCore.so => {stack}/root/lib/libCore.so"]
+    )
     payload["linkage_validation"] = {
         "delphes": {
             "passed": True,
-            "tool": "ldd",
+            "tool": linkage_tool,
             "target": str(component_paths["delphes"]),
-            "output": [f"libCore.so => {stack}/root/lib/libCore.so"],
+            "output": linkage_output,
         }
     }
     path = stack / "manifest.json"
@@ -113,6 +122,9 @@ class StackRuntimeTests(unittest.TestCase):
                         "LIBRARY_PATH": "/external/lib",
                         "CPATH": "/external/include",
                         "PKG_CONFIG_PATH": "/external/pkgconfig",
+                        "SDKROOT": "/tmp/external-sdk.sdk",
+                        "DEVELOPER_DIR": "/tmp/fake-xcode",
+                        "MACOSX_DEPLOYMENT_TARGET": "99.0",
                     },
                 )
             self.assertEqual(environment["HOME"], "/safe/home")
@@ -124,7 +136,20 @@ class StackRuntimeTests(unittest.TestCase):
             for hostile in ("/snap", "/opt/root", "/opt/homebrew", "/old/conda", "/old/clone"):
                 self.assertNotIn(hostile, "\n".join(environment.values()))
             self.assertNotIn("CONDA_PREFIX", environment)
-            self.assertNotIn("DYLD_LIBRARY_PATH", environment)
+            if platform.system() == "Darwin":
+                self.assertNotIn("LD_LIBRARY_PATH", environment)
+                self.assertIn("DYLD_LIBRARY_PATH", environment)
+                self.assertTrue(Path(environment["SDKROOT"]).is_dir())
+                self.assertNotEqual(environment["SDKROOT"], "/tmp/external-sdk.sdk")
+                texbin = Path("/Library/TeX/texbin")
+                if texbin.is_dir():
+                    self.assertIn(str(texbin), environment["PATH"].split(os.pathsep))
+            else:
+                self.assertNotIn("DYLD_LIBRARY_PATH", environment)
+                self.assertIn("LD_LIBRARY_PATH", environment)
+                self.assertNotIn("SDKROOT", environment)
+            self.assertNotIn("DEVELOPER_DIR", environment)
+            self.assertNotIn("MACOSX_DEPLOYMENT_TARGET", environment)
             self.assertTrue(environment["PATH"].startswith(str(repository / ".hep-stack/launchers")))
             layout_environment = build_controlled_environment(
                 repository_root=manifest.repository_root,

@@ -918,6 +918,12 @@ class BootstrapScriptTests(unittest.TestCase):
             environment["PATH"] = (
                 f"{unrelated_bin}:{environment['PATH']}"
             )
+            environment.update(
+                {
+                    "HEP_AGENT_TEST_PLATFORM": "Linux",
+                    "HEP_AGENT_TEST_ARCH": "x86_64",
+                }
+            )
             completed = subprocess.run(
                 [
                     "bash",

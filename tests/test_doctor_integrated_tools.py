@@ -10,6 +10,7 @@ from unittest import mock
 from hep_agent.doctor.checks import (
     _check_integrated_tools,
     _delphes_installation_check,
+    _mg5_deep_smoke,
 )
 from hep_agent.doctor.models import CheckStatus
 
@@ -27,6 +28,19 @@ class IntegratedToolDoctorTests(unittest.TestCase):
         path.chmod(
             path.stat().st_mode | 0o111
         )
+
+    def test_deep_mg5_smoke_uses_its_temporary_working_directory(self) -> None:
+        completed = mock.Mock(returncode=0, stdout="", stderr="")
+        with mock.patch(
+            "hep_agent.doctor.checks.subprocess.run",
+            return_value=completed,
+        ) as run:
+            _mg5_deep_smoke(Path("/managed/mg5_aMC"), timeout_seconds=30)
+
+        working_directory = run.call_args.kwargs["cwd"]
+        self.assertIsInstance(working_directory, Path)
+        self.assertTrue(working_directory.name.startswith("hep_agent_doctor_mg5_"))
+        self.assertNotEqual(working_directory, Path.cwd())
 
     def test_directories_without_executables_warn(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
