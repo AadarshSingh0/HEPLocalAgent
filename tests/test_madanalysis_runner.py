@@ -1,7 +1,9 @@
 """Tests for the safe MadAnalysis subprocess runner."""
 
 import tempfile
+import sys
 import unittest
+from unittest import mock
 from pathlib import Path
 
 from hep_agent.analysis import (
@@ -73,6 +75,7 @@ def make_executable(
 
     body = f'''#!/usr/bin/env python3
 from pathlib import Path
+import os
 import sys
 import time
 
@@ -85,6 +88,18 @@ submit_line = next(
     if line.startswith("submit ")
 )
 job = Path(submit_line.removeprefix("submit "))
+
+if mode == "environment":
+    for key in (
+        "ROOTSYS",
+        "LD_LIBRARY_PATH",
+        "PYTHONPATH",
+        "CONDA_PREFIX",
+        "VIRTUAL_ENV",
+        "PATH",
+    ):
+        print(f"ENV {{key}}={{os.environ.get(key, '<unset>')}}")
+
 
 if mode == "timeout":
     time.sleep(2)
@@ -178,6 +193,47 @@ class MadAnalysisRunnerTests(unittest.TestCase):
                 len(result.plot_files),
                 6,
             )
+
+    def test_subprocess_receives_sanitized_environment(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            conflicting = {
+                "ROOTSYS": "/opt/unrelated-root",
+                "LD_LIBRARY_PATH": "/opt/unrelated-root/lib:/conda/lib",
+                "PYTHONPATH": "/old/clone/.venv/lib",
+                "CONDA_PREFIX": "/conda/base",
+                "VIRTUAL_ENV": "/old/clone/.venv",
+                "PATH": "/snap/bin:/opt/unrelated-root/bin",
+            }
+            with mock.patch.dict("os.environ", conflicting, clear=False):
+                result = run_madanalysis_artifact(
+                    make_artifact(root),
+                    madanalysis_executable=make_executable(
+                        root,
+                        mode="environment",
+                    ),
+                    analysis_directory=root / "analysis",
+                    timeout_seconds=5,
+                )
+
+            self.assertTrue(result.success)
+            self.assertIsNotNone(result.stdout_path)
+            output = result.stdout_path.read_text(encoding="utf-8")
+            for variable in (
+                "ROOTSYS",
+                "LD_LIBRARY_PATH",
+                "PYTHONPATH",
+                "CONDA_PREFIX",
+            ):
+                self.assertIn(f"ENV {variable}=<unset>", output)
+            self.assertIn(
+                "ENV VIRTUAL_ENV="
+                f"{Path(sys.executable).resolve().parent.parent}",
+                output,
+            )
+            self.assertNotIn("/snap/bin", output)
+            self.assertNotIn("/opt/unrelated-root", output)
+            self.assertNotIn("/old/clone", output)
 
     def test_internal_error_fails_with_exit_zero(
         self,

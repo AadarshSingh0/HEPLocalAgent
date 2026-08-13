@@ -119,6 +119,7 @@ class BootstrapScriptTests(unittest.TestCase):
         self.assertIn("--full", completed.stdout)
         self.assertIn("--ollama-host", completed.stdout)
         self.assertIn("--python", completed.stdout)
+        self.assertIn("--root", completed.stdout)
         self.assertIn("--validate-full-stack", completed.stdout)
 
     def test_uninstall_help_is_available(self) -> None:
@@ -829,17 +830,114 @@ class BootstrapScriptTests(unittest.TestCase):
             completed.stderr,
         )
         self.assertIn(
-            "Ignoring unsupported Snap ROOT",
+            "Ignoring unconfigured inherited ROOT",
             completed.stdout,
         )
         self.assertIn(
-            "installing a managed ROOT copy",
+            "Installing ROOT runtime dependencies",
             completed.stdout,
         )
         self.assertNotIn(
             "ROOT 6.40.02 is available.",
             completed.stdout,
         )
+
+    def test_linux_ma5_reuse_is_runtime_validated(self) -> None:
+        script = (
+            ROOT
+            / "scripts"
+            / "bootstrap_local_hep_agent.sh"
+        )
+        source = script.read_text(encoding="utf-8")
+
+        self.assertIn('MA5_LAUNCHER="${MG5_LINK}/bin/hep-agent-ma5"', source)
+        self.assertIn('MA5_RUNTIME_METADATA="${MA5_LAUNCHER}.runtime.json"', source)
+        self.assertIn("prepare_existing_ma5_runtime", source)
+        self.assertIn('run_ma5_smoke_test "reuse"', source)
+        self.assertIn('run_ma5_smoke_test "repair"', source)
+        self.assertIn("validate_madanalysis_runtime.py", source)
+        self.assertIn("configure_madanalysis_runtime.py", source)
+        self.assertIn("--reinstall-incompatible-ma5", source)
+        self.assertIn("validating it for this clone", source)
+        self.assertIn("madanalysis5_native_executable", source)
+        self.assertIn("root_config", source)
+        self.assertNotIn("/opt/root/bin/thisroot.sh", source)
+
+    def test_linux_explicit_root_beats_inherited_root(self) -> None:
+        script = (
+            ROOT
+            / "scripts"
+            / "bootstrap_local_hep_agent.sh"
+        )
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary = Path(temporary_directory)
+            selected_root = temporary / "selected-root"
+            unrelated_bin = temporary / "unrelated-bin"
+            selected_bin = selected_root / "bin"
+            selected_lib = selected_root / "lib"
+            selected_bin.mkdir(parents=True)
+            selected_lib.mkdir()
+            unrelated_bin.mkdir()
+
+            selected_config = selected_bin / "root-config"
+            selected_config.write_text(
+                "#!/bin/sh\n"
+                "case \"$1\" in\n"
+                f"  --prefix) echo '{selected_root}' ;;\n"
+                f"  --bindir) echo '{selected_bin}' ;;\n"
+                f"  --libdir) echo '{selected_lib}' ;;\n"
+                "  --version) echo '6.40.02' ;;\n"
+                "  *) exit 1 ;;\n"
+                "esac\n",
+                encoding="utf-8",
+            )
+            selected_config.chmod(0o755)
+            rootcint = selected_bin / "rootcint"
+            rootcint.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            rootcint.chmod(0o755)
+
+            unrelated_config = unrelated_bin / "root-config"
+            unrelated_config.write_text(
+                "#!/bin/sh\n"
+                "case \"$1\" in\n"
+                "  --prefix) echo '/opt/unrelated-root' ;;\n"
+                "  *) exit 1 ;;\n"
+                "esac\n",
+                encoding="utf-8",
+            )
+            unrelated_config.chmod(0o755)
+
+            environment = _clean_environ()
+            environment["PATH"] = (
+                f"{unrelated_bin}:{environment['PATH']}"
+            )
+            completed = subprocess.run(
+                [
+                    "bash",
+                    str(script),
+                    "--dry-run",
+                    "--yes",
+                    "--with-madanalysis5",
+                    "--root",
+                    str(selected_root),
+                    "--python",
+                    sys.executable,
+                    "--tools-root",
+                    str(temporary / "tools"),
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+                env=environment,
+            )
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertIn("Using explicitly configured ROOT", completed.stdout)
+        self.assertIn(str(selected_config), completed.stdout)
+        self.assertNotIn("/opt/unrelated-root", completed.stdout)
+        self.assertIn("regenerate", completed.stdout)
+        self.assertIn("noninteractive MA5 smoke test", completed.stdout)
 
     def test_old_macos_rejects_local_ollama_install(self) -> None:
         script = (

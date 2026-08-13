@@ -13,6 +13,12 @@ from hep_agent.analysis.madanalysis import (
     MadAnalysisArtifact,
     validate_madanalysis_artifact,
 )
+from hep_agent.analysis.runtime import (
+    MadAnalysisRuntimeConfigurationError,
+    build_madanalysis_environment,
+    load_madanalysis_runtime,
+    verify_root_metadata,
+)
 
 
 class MadAnalysisFailureCategory(str, Enum):
@@ -252,6 +258,29 @@ def run_madanalysis_artifact(
             ),
         )
 
+    try:
+        runtime = load_madanalysis_runtime(executable)
+        if runtime is not None:
+            verify_root_metadata(runtime)
+        process_environment = build_madanalysis_environment(
+            executable
+        )
+    except MadAnalysisRuntimeConfigurationError as exc:
+        _write_text(stdout_path, "")
+        _write_text(stderr_path, str(exc))
+        return MadAnalysisExecutionResult(
+            success=False,
+            script_path=script_path,
+            stdout_path=stdout_path,
+            stderr_path=stderr_path,
+            returncode=None,
+            wall_time_seconds=0.0,
+            failure_category=(
+                MadAnalysisFailureCategory.CONFIGURATION
+            ),
+            failure_message=str(exc),
+        )
+
     start = time.perf_counter()
 
     try:
@@ -268,6 +297,7 @@ def run_madanalysis_artifact(
             text=True,
             timeout=timeout_seconds,
             check=False,
+            env=process_environment,
         )
 
     except subprocess.TimeoutExpired as exc:
