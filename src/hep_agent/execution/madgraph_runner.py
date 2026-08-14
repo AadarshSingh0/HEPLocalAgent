@@ -15,6 +15,11 @@ from enum import Enum
 from pathlib import Path
 
 from hep_agent.builders import MadGraphWorkflowArtifact
+from hep_agent.runtime import (
+    StackConfigurationError,
+    build_stack_environment,
+    load_stack_manifest,
+)
 
 
 class ExecutionFailureCategory(str, Enum):
@@ -63,6 +68,8 @@ def run_madgraph_workflow(
     mg5_executable: str | Path,
     run_directory: str | Path,
     timeout_seconds: float = 1800,
+    stack_manifest: str | Path | None = None,
+    unsupported_nonhermetic: bool = False,
 ) -> MadGraphExecutionResult:
     """Execute one validated MG5 command file safely.
 
@@ -114,6 +121,49 @@ def run_madgraph_workflow(
             ),
         )
 
+    process_environment = None
+    if stack_manifest is None and not unsupported_nonhermetic:
+        return MadGraphExecutionResult(
+            success=False,
+            command_script_path=command_script,
+            stdout_path=None,
+            stderr_path=None,
+            returncode=None,
+            wall_time_seconds=0.0,
+            failure_category=ExecutionFailureCategory.CONFIGURATION,
+            failure_message=(
+                "Managed stack manifest is required. Unmanaged execution "
+                "requires the explicit unsupported_nonhermetic opt-in."
+            ),
+        )
+    if stack_manifest is not None:
+        try:
+            manifest_root = (
+                Path(stack_manifest).expanduser().absolute().parent.parent
+            )
+            manifest = load_stack_manifest(
+                stack_manifest,
+                expected_repository_root=manifest_root,
+            )
+            expected = manifest.executable("madgraph").resolve()
+            if executable.resolve() != expected:
+                raise StackConfigurationError(
+                    "Configured MadGraph executable disagrees with the "
+                    f"managed stack manifest: {executable}; expected {expected}."
+                )
+            process_environment = build_stack_environment(manifest)
+        except StackConfigurationError as exc:
+            return MadGraphExecutionResult(
+                success=False,
+                command_script_path=command_script,
+                stdout_path=None,
+                stderr_path=None,
+                returncode=None,
+                wall_time_seconds=0.0,
+                failure_category=ExecutionFailureCategory.CONFIGURATION,
+                failure_message=str(exc),
+            )
+
     start = time.perf_counter()
 
     try:
@@ -124,6 +174,7 @@ def run_madgraph_workflow(
             text=True,
             timeout=timeout_seconds,
             check=False,
+            env=process_environment,
         )
 
     except subprocess.TimeoutExpired as exc:

@@ -18,7 +18,8 @@ if str(SOURCE_ROOT) not in sys.path:
     sys.path.insert(0, str(SOURCE_ROOT))
 
 from hep_agent.models import AgentProfile, ModelResponse  # noqa: E402
-from hep_agent.orchestration import run_end_to_end  # noqa: E402
+from hep_agent.orchestration import run_end_to_end
+from hep_agent.runtime import load_configured_stack, load_stack_manifest  # noqa: E402
 
 
 def positive_integer(value: str) -> int:
@@ -205,14 +206,12 @@ def main(argv: list[str] | None = None) -> int:
         )
         if not isinstance(configuration, dict):
             raise ValueError("Tool-path configuration must be an object.")
-        mg5_executable = load_executable(
-            configuration,
-            "mg5_executable",
+        manifest = load_configured_stack(
+            configuration_path, expected_repository_root=PROJECT_ROOT
         )
-        madanalysis_executable = load_executable(
-            configuration,
-            "madanalysis5_executable",
-        )
+        stack_manifest = manifest.path
+        mg5_executable = manifest.executable("madgraph")
+        madanalysis_executable = manifest.executable("madanalysis5")
     except (OSError, json.JSONDecodeError, ValueError) as error:
         print(f"Configuration error: {error}", file=sys.stderr)
         return 2
@@ -259,6 +258,7 @@ def main(argv: list[str] | None = None) -> int:
         analysis_timeout_seconds=(
             arguments.analysis_timeout_seconds
         ),
+        stack_manifest=stack_manifest,
     )
 
     physics = result.physics
@@ -333,8 +333,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"MA5 PDF:        {pdf_report}")
     print(f"MA5 plot count: {len(plot_files)}")
     print(
-        "MA5 input:      HepMC when available; the Delphes ROOT file is "
-        "validated separately."
+        "MA5 input:      managed Delphes ROOT output (reconstructed level)."
     )
 
     success = result.success and all(checks.values())

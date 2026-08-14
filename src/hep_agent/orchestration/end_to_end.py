@@ -154,6 +154,8 @@ def execute_prepared(
     analyses_directory: str | Path = "results/analyses",
     project_root: str | Path = ".",
     analysis_timeout_seconds: float = 300,
+    stack_manifest: str | Path | None = None,
+    unsupported_nonhermetic: bool = False,
 ) -> EndToEndResult:
     """Execute an already prepared deterministic workflow.
 
@@ -214,6 +216,8 @@ def execute_prepared(
         mg5_executable=mg5_executable,
         run_directory=execution_directory,
         timeout_seconds=workflow.run.timeout_seconds,
+        stack_manifest=stack_manifest,
+        unsupported_nonhermetic=unsupported_nonhermetic,
     )
 
     physics: MadGraphPhysicsResult | None = None
@@ -258,6 +262,8 @@ def execute_prepared(
                 timeout_seconds=(
                     analysis_timeout_seconds
                 ),
+                stack_manifest=stack_manifest,
+                unsupported_nonhermetic=unsupported_nonhermetic,
             )
 
         elif workflow.pipeline.madanalysis:
@@ -342,6 +348,8 @@ def run_end_to_end(
     analyses_directory: str | Path = "results/analyses",
     project_root: str | Path = ".",
     analysis_timeout_seconds: float = 300,
+    stack_manifest: str | Path | None = None,
+    unsupported_nonhermetic: bool = False,
 ) -> EndToEndResult:
     """Run the existing one-command CLI-compatible workflow."""
 
@@ -387,4 +395,6 @@ def run_end_to_end(
         analysis_timeout_seconds=(
             analysis_timeout_seconds
         ),
+        stack_manifest=stack_manifest,
+        unsupported_nonhermetic=unsupported_nonhermetic,
     )

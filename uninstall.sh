@@ -3,4 +3,4 @@ set -Eeuo pipefail
 
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
-exec "${ROOT}/scripts/uninstall_local_hep_agent.sh" "$@"
+exec "${ROOT}/scripts/uninstall_independent_hep_agent.sh" "$@"

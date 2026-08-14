@@ -13,6 +13,17 @@ from hep_agent.analysis.madanalysis import (
     MadAnalysisArtifact,
     validate_madanalysis_artifact,
 )
+from hep_agent.analysis.runtime import (
+    MadAnalysisRuntimeConfigurationError,
+    build_madanalysis_environment,
+    load_madanalysis_runtime,
+    verify_root_metadata,
+)
+from hep_agent.runtime import (
+    StackConfigurationError,
+    build_stack_environment,
+    load_stack_manifest,
+)
 
 
 class MadAnalysisFailureCategory(str, Enum):
@@ -141,6 +152,8 @@ def run_madanalysis_artifact(
     madanalysis_executable: str | Path,
     analysis_directory: str | Path,
     timeout_seconds: float = 300,
+    stack_manifest: str | Path | None = None,
+    unsupported_nonhermetic: bool = False,
 ) -> MadAnalysisExecutionResult:
     """Execute one validated MA5 artifact without using a shell."""
 
@@ -252,6 +265,61 @@ def run_madanalysis_artifact(
             ),
         )
 
+    if stack_manifest is None and not unsupported_nonhermetic:
+        message = (
+            "Managed stack manifest is required. Unmanaged execution requires "
+            "the explicit unsupported_nonhermetic opt-in."
+        )
+        _write_text(stdout_path, "")
+        _write_text(stderr_path, message)
+        return MadAnalysisExecutionResult(
+            success=False,
+            script_path=script_path,
+            stdout_path=stdout_path,
+            stderr_path=stderr_path,
+            returncode=None,
+            wall_time_seconds=0.0,
+            failure_category=MadAnalysisFailureCategory.CONFIGURATION,
+            failure_message=message,
+        )
+
+    try:
+        if stack_manifest is not None:
+            manifest_root = (
+                Path(stack_manifest).expanduser().absolute().parent.parent
+            )
+            manifest = load_stack_manifest(
+                stack_manifest,
+                expected_repository_root=manifest_root,
+            )
+            expected = manifest.executable("madanalysis5").resolve()
+            if executable.resolve() != expected:
+                raise StackConfigurationError(
+                    "Configured MadAnalysis executable disagrees with the "
+                    f"managed stack manifest: {executable}; expected {expected}."
+                )
+            process_environment = build_stack_environment(manifest)
+        else:
+            runtime = load_madanalysis_runtime(executable)
+            if runtime is not None:
+                verify_root_metadata(runtime)
+            process_environment = build_madanalysis_environment(executable)
+    except (MadAnalysisRuntimeConfigurationError, StackConfigurationError) as exc:
+        _write_text(stdout_path, "")
+        _write_text(stderr_path, str(exc))
+        return MadAnalysisExecutionResult(
+            success=False,
+            script_path=script_path,
+            stdout_path=stdout_path,
+            stderr_path=stderr_path,
+            returncode=None,
+            wall_time_seconds=0.0,
+            failure_category=(
+                MadAnalysisFailureCategory.CONFIGURATION
+            ),
+            failure_message=str(exc),
+        )
+
     start = time.perf_counter()
 
     try:
@@ -268,6 +336,7 @@ def run_madanalysis_artifact(
             text=True,
             timeout=timeout_seconds,
             check=False,
+            env=process_environment,
         )
 
     except subprocess.TimeoutExpired as exc:

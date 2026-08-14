@@ -71,6 +71,7 @@ from hep_agent.ui.web_support import (
     should_disable_request_input,
     should_start_web_execution,
 )
+from hep_agent.runtime import load_configured_stack
 from hep_agent.selftest import (
     run_installation_selftest,
 )
@@ -91,6 +92,8 @@ LOCAL_PATHS_PATH = (
     / "configs"
     / "local_paths.json"
 )
+
+STACK_MANIFEST_PATH = PROJECT_ROOT / ".hep-stack" / "manifest.json"
 
 RECORDS_DIRECTORY = (
     PROJECT_ROOT
@@ -986,6 +989,7 @@ def _render_workflow_approval(
                 ANALYSES_DIRECTORY
             ),
             project_root=PROJECT_ROOT,
+            stack_manifest=STACK_MANIFEST_PATH,
         )
 
         st.session_state.final_result = cancelled
@@ -1035,6 +1039,7 @@ def _render_workflow_approval(
                 ANALYSES_DIRECTORY
             ),
             project_root=PROJECT_ROOT,
+            stack_manifest=STACK_MANIFEST_PATH,
         )
 
         _store_execution_result(final_result)
@@ -2369,6 +2374,7 @@ def _render_scan_approval(
                 ),
                 project_root=PROJECT_ROOT,
                 analysis_timeout_seconds=300,
+                stack_manifest=STACK_MANIFEST_PATH,
             )
         )
 
@@ -2652,6 +2658,7 @@ def _render_installation_check(
                         run_directory=str(
                             PROJECT_ROOT / "results" / "selftest"
                         ),
+                        stack_manifest=STACK_MANIFEST_PATH,
                     )
                 )
             st.session_state.selftest_error = None
@@ -3521,6 +3528,14 @@ def main() -> None:
     )
     local_paths = load_json_object(
         LOCAL_PATHS_PATH
+    )
+    manifest = load_configured_stack(
+        LOCAL_PATHS_PATH,
+        expected_repository_root=PROJECT_ROOT,
+    )
+    local_paths["mg5_executable"] = str(manifest.executable("madgraph"))
+    local_paths["madanalysis5_executable"] = str(
+        manifest.executable("madanalysis5")
     )
 
     (

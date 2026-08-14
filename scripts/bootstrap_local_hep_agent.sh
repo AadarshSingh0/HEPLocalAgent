@@ -1,4 +1,13 @@
 #!/usr/bin/env bash
+
+if [[ "${1:-}" == "--unsupported-nonhermetic-external-stack" ]]; then
+    shift
+elif [[ -z "${HEP_AGENT_TEST_LINUX_ID:-}" ]]; then
+    echo "This legacy mixed-stack installer is unsupported and non-hermetic." >&2
+    echo "Use ./install.sh. Experts may opt in with --unsupported-nonhermetic-external-stack." >&2
+    exit 2
+fi
+
 # Beginner-friendly installer for the local HEP agent.
 # Supports Ubuntu/Debian Linux on x86_64 and macOS.
 
@@ -29,6 +38,11 @@ MINIFORGE_DIR=""
 CONDA_EXECUTABLE=""
 
 TOOLS_ROOT="${HOME}/.local/share/hep-agent-tools"
+ROOT_REQUESTED="${HEP_AGENT_ROOT:-}"
+ROOT_RECORD_FILE="${TOOLS_ROOT}/.root-config-path"
+RECORDED_ROOT_CONFIG=""
+IGNORE_ROOT_RECORD=0
+SELECTED_ROOT_CONFIG=""
 DOWNLOADS_DIR="${TOOLS_ROOT}/downloads"
 TOOLS_MARKER_NAME=".heptoolbench-managed"
 VENV_DIR="${HEP_AGENT_TEST_VENV_DIR:-${PROJECT_ROOT}/.venv}"
@@ -48,6 +62,7 @@ PULL_MODEL=0
 WITH_PYTHIA8=0
 WITH_DELPHES=0
 WITH_MADANALYSIS5=0
+REINSTALL_INCOMPATIBLE_MA5=0
 RUN_DEEP_DOCTOR=0
 RUN_FULL_STACK_VALIDATION=0
 
@@ -82,9 +97,11 @@ Options:
   --python PATH          Python executable to use for the isolated environment.
   --ollama-host URL      Local or remote Ollama URL; saved for future launches.
   --tools-root PATH      HEP software directory.
+  --root PATH            Explicit ROOT prefix or root-config executable.
   --with-pythia8         Ask MG5 to install Pythia8.
   --with-delphes         Ask MG5 to install Delphes.
   --with-madanalysis5    Ask MG5 to install MadAnalysis5.
+  --reinstall-incompatible-ma5  Permit replacement after smoke/repair failure.
   --full                 Enable system deps, local Ollama, model, and all HEP tools.
   --deep-doctor          Run deep doctor after installation.
   --validate-full-stack  Generate real events through MG5, Pythia8, Delphes, and MA5.
@@ -265,6 +282,12 @@ while (($#)); do
             [[ $# -gt 0 ]] || die "--tools-root requires a value."
             TOOLS_ROOT="$(absolute_path "$1")"
             DOWNLOADS_DIR="${TOOLS_ROOT}/downloads"
+            ROOT_RECORD_FILE="${TOOLS_ROOT}/.root-config-path"
+            ;;
+        --root)
+            shift
+            [[ $# -gt 0 ]] || die "--root requires a value."
+            ROOT_REQUESTED="$(absolute_path "$1")"
             ;;
         --with-pythia8)
             WITH_PYTHIA8=1
@@ -274,6 +297,9 @@ while (($#)); do
             ;;
         --with-madanalysis5)
             WITH_MADANALYSIS5=1
+            ;;
+        --reinstall-incompatible-ma5)
+            REINSTALL_INCOMPATIBLE_MA5=1
             ;;
         --deep-doctor)
             RUN_DEEP_DOCTOR=1
@@ -550,6 +576,13 @@ done
 
 run_cmd mkdir -p "${TOOLS_ROOT}" "${DOWNLOADS_DIR}" "${PROJECT_ROOT}/results"
 
+if [[ -z "${ROOT_REQUESTED}" && -r "${ROOT_RECORD_FILE}" ]]; then
+    IFS= read -r RECORDED_ROOT_CONFIG < "${ROOT_RECORD_FILE}"
+    if [[ -n "${RECORDED_ROOT_CONFIG}" ]]; then
+        log "Recorded ROOT runtime: ${RECORDED_ROOT_CONFIG}"
+    fi
+fi
+
 if (( DRY_RUN )); then
     log "+ create ${TOOLS_ROOT}/${TOOLS_MARKER_NAME}"
 else
@@ -672,6 +705,8 @@ MG5_LINK="${TOOLS_ROOT}/MG5_aMC"
 MG5_NATIVE_EXECUTABLE="${MG5_LINK}/bin/mg5_aMC"
 MG5_EXECUTABLE="${MG5_LINK}/bin/hep-agent-mg5"
 
+MA5_LAUNCHER="${MG5_LINK}/bin/hep-agent-ma5"
+MA5_RUNTIME_METADATA="${MA5_LAUNCHER}.runtime.json"
 find_managed_pythia_data() {
     local pythia_config
     local pythia_prefix
@@ -1056,7 +1091,7 @@ find_delphes_install() {
     return 0
 }
 
-find_ma5_install() {
+find_ma5_native_install() {
     local candidate
 
     while IFS= read -r candidate; do
@@ -1073,6 +1108,24 @@ find_ma5_install() {
     )
 }
 
+resolve_root_config_path() {
+    local requested_path="${1:-}"
+
+    [[ -n "${requested_path}" ]] || return 0
+
+    if [[ -x "${requested_path}" &&
+        "${requested_path##*/}" == "root-config" ]]; then
+        printf '%s\n' "${requested_path}"
+        return 0
+    fi
+
+    if [[ -x "${requested_path}/bin/root-config" ]]; then
+        printf '%s\n' "${requested_path}/bin/root-config"
+        return 0
+    fi
+
+    return 0
+}
 root_config_is_supported() {
     local root_config="${1:-}"
     local root_prefix
@@ -1105,8 +1158,6 @@ activate_root() {
     local root_config
     local root_libdir
     local root_prefix
-    local root_setup_candidate=""
-    local source_status
 
     if [[ "${PLATFORM}" == "Linux" &&
         -f "${ROOT_DIR}/bin/thisroot.sh" &&
@@ -1114,30 +1165,20 @@ activate_root() {
         ln -sfn "${ROOT_DIR}" "${ROOT_LINK}"
     fi
 
-    if [[ "${PLATFORM}" == "Linux" && -f "${ROOT_SETUP}" ]]; then
-        root_setup_candidate="${ROOT_SETUP}"
-    elif [[ "${PLATFORM}" == "Linux" &&
-        -f "/opt/root/bin/thisroot.sh" ]]; then
-        # Prefer the conventional unpacked ROOT installation over Snap ROOT.
-        # Snap's relocated rootcint cannot reliably build Delphes/MA5 using
-        # their relative LinkDef header paths.
-        root_setup_candidate="/opt/root/bin/thisroot.sh"
-    fi
-
-    if [[ -n "${root_setup_candidate}" ]]; then
-        set +u
-        # shellcheck disable=SC1090
-        source "${root_setup_candidate}"
-        source_status=$?
-        set -u
-
-        (( source_status == 0 )) || return 1
-    fi
-
     if [[ "${PLATFORM}" == "Darwin" ]]; then
         root_config="${VENV_DIR}/bin/root-config"
+    elif [[ "${PLATFORM}" == "Linux" &&
+        -n "${ROOT_REQUESTED}" ]]; then
+        root_config="$(resolve_root_config_path "${ROOT_REQUESTED}")"
+    elif [[ "${PLATFORM}" == "Linux" &&
+        ! ${IGNORE_ROOT_RECORD} -eq 1 &&
+        -n "${RECORDED_ROOT_CONFIG}" ]]; then
+        root_config="${RECORDED_ROOT_CONFIG}"
+    elif [[ "${PLATFORM}" == "Linux" &&
+        -x "${ROOT_LINK}/bin/root-config" ]]; then
+        root_config="${ROOT_LINK}/bin/root-config"
     else
-        root_config="$(command -v root-config 2>/dev/null || true)"
+        root_config=""
     fi
     root_config_is_supported "${root_config}" || return 1
 
@@ -1154,10 +1195,11 @@ activate_root() {
         # load Conda's unrelated libpythia8, so keep it out of the runtime.
         unset DYLD_LIBRARY_PATH
     else
-        export LD_LIBRARY_PATH="${root_libdir}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+        export LD_LIBRARY_PATH="${root_libdir}"
     fi
 
-    command -v rootcint >/dev/null 2>&1 || return 1
+    SELECTED_ROOT_CONFIG="${root_config}"
+    [[ -x "$(dirname -- "${root_config}")/rootcint" ]] || return 1
 }
 
 verify_root_runtime() {
@@ -1168,7 +1210,7 @@ verify_root_runtime() {
 
     if [[ "${PLATFORM}" == "Linux" ]]; then
         missing_libraries="$(
-            ldd "$(command -v rootcint)" 2>/dev/null |
+            ldd "$(dirname -- "${SELECTED_ROOT_CONFIG}")/rootcint" 2>/dev/null |
                 awk '/not found/ {print $1}' ||
                 true
         )"
@@ -1206,6 +1248,21 @@ verify_root_runtime() {
         rmdir "${smoke_directory}" 2>/dev/null || true
     fi
 
+    return 0
+}
+
+record_selected_root() {
+    [[ "${PLATFORM}" == "Linux" ]] || return 0
+    [[ -n "${SELECTED_ROOT_CONFIG}" ]] || return 1
+
+    if (( DRY_RUN )); then
+        log "+ record selected ROOT in ${ROOT_RECORD_FILE}"
+        return 0
+    fi
+
+    printf '%s\n' "${SELECTED_ROOT_CONFIG}" > "${ROOT_RECORD_FILE}"
+    RECORDED_ROOT_CONFIG="${SELECTED_ROOT_CONFIG}"
+    log "Recorded ROOT runtime: ${SELECTED_ROOT_CONFIG}"
     return 0
 }
 
@@ -1249,15 +1306,40 @@ install_root_dependency() {
         return 0
     fi
 
-    if command -v root-config >/dev/null 2>&1 &&
-        ! root_config_is_supported "$(command -v root-config)"; then
-        warn "Ignoring unsupported Snap ROOT: $(command -v root-config)"
-        warn "Using /opt/root when available, otherwise installing a managed ROOT copy."
+
+    if [[ -n "${ROOT_REQUESTED}" ]]; then
+        if verify_root_runtime; then
+            log "Using explicitly configured ROOT $(root-config --version): ${SELECTED_ROOT_CONFIG}"
+            record_selected_root
+            return 0
+        fi
+        warn "The explicitly configured ROOT runtime failed validation: ${ROOT_REQUESTED}"
+        warn "Refusing to replace it with an inherited or unrelated ROOT."
+        return 1
+    fi
+
+    if [[ -n "${RECORDED_ROOT_CONFIG}" &&
+        ! ${IGNORE_ROOT_RECORD} -eq 1 ]]; then
+        if verify_root_runtime; then
+            log "Reusing recorded ROOT $(root-config --version): ${SELECTED_ROOT_CONFIG}"
+            record_selected_root
+            return 0
+        fi
+        warn "The recorded ROOT runtime failed validation: ${RECORDED_ROOT_CONFIG}"
+        IGNORE_ROOT_RECORD=1
+        SELECTED_ROOT_CONFIG=""
     fi
 
     if verify_root_runtime; then
-        log "ROOT $(root-config --version) is available."
+        log "Using managed ROOT $(root-config --version): ${SELECTED_ROOT_CONFIG}"
+        record_selected_root
         return 0
+    fi
+
+    local inherited_root_config
+    inherited_root_config="$(command -v root-config 2>/dev/null || true)"
+    if [[ -n "${inherited_root_config}" ]]; then
+        warn "Ignoring unconfigured inherited ROOT: ${inherited_root_config}"
     fi
 
     log "Installing ROOT runtime dependencies."
@@ -1372,6 +1454,7 @@ install_root_dependency() {
         return 1
     fi
 
+    record_selected_root
     log "ROOT $(root-config --version) installed at ${ROOT_DIR}."
     return 0
 }
@@ -1405,6 +1488,168 @@ except subprocess.TimeoutExpired:
         process.wait()
     raise SystemExit(124)
 PY
+}
+
+write_ma5_launcher() {
+    local native_executable="$1"
+    local root_prefix
+    local root_bindir
+    local root_libdir
+
+    if (( DRY_RUN )); then
+        log "+ regenerate ${MA5_LAUNCHER} for ${VENV_PYTHON} and the selected ROOT"
+        return 0
+    fi
+
+    activate_root || return 1
+    root_prefix="$("${SELECTED_ROOT_CONFIG}" --prefix)" || return 1
+    root_bindir="$("${SELECTED_ROOT_CONFIG}" --bindir)" || return 1
+    root_libdir="$("${SELECTED_ROOT_CONFIG}" --libdir)" || return 1
+
+    {
+        printf '%s\n' '#!/usr/bin/env bash'
+        printf '%s\n' 'set -euo pipefail'
+        printf '%s\n' 'unset CONDA_PREFIX CONDA_DEFAULT_ENV CONDA_PROMPT_MODIFIER CONDA_PYTHON_EXE'
+        printf '%s\n' 'unset _CE_CONDA _CE_M PYTHONHOME PYTHONPATH PYTHIA8DATA ROOT_INCLUDE_PATH'
+        printf '%s\n' 'unset ROOTSYS LD_LIBRARY_PATH DYLD_LIBRARY_PATH DYLD_FALLBACK_LIBRARY_PATH'
+        printf 'export VIRTUAL_ENV=%q\n' "${VENV_DIR}"
+        printf 'export ROOTSYS=%q\n' "${root_prefix}"
+        printf 'export PATH=%q\n' "${root_bindir}:${VENV_DIR}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        printf '%s\n' 'export PYTHONNOUSERSITE=1'
+        if [[ "${PLATFORM}" == "Linux" ]]; then
+            printf 'export LD_LIBRARY_PATH=%q\n' "${root_libdir}"
+        fi
+        printf 'exec %q %q "$@"\n' "${VENV_PYTHON}" "${native_executable}"
+    } > "${MA5_LAUNCHER}"
+    chmod +x "${MA5_LAUNCHER}"
+
+    "${VENV_PYTHON}" - \
+        "${MA5_RUNTIME_METADATA}" \
+        "${PLATFORM}" \
+        "${VENV_PYTHON}" \
+        "${native_executable}" \
+        "${SELECTED_ROOT_CONFIG}" \
+        "${root_prefix}" \
+        "${root_bindir}" \
+        "${root_libdir}" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+(
+    metadata_path,
+    platform,
+    python_executable,
+    native_executable,
+    root_config,
+    root_prefix,
+    root_bindir,
+    root_libdir,
+) = sys.argv[1:]
+
+payload = {
+    "platform": platform,
+    "python_executable": python_executable,
+    "native_executable": native_executable,
+    "root_config": root_config,
+    "root_prefix": root_prefix,
+    "root_bindir": root_bindir,
+    "root_libdir": root_libdir,
+}
+Path(metadata_path).write_text(
+    json.dumps(payload, indent=2) + "\n",
+    encoding="utf-8",
+)
+PY
+}
+
+configure_ma5_managed_dependencies() {
+    local native_executable="$1"
+    local root_bindir
+    local delphes_executable
+    local delphes_root
+    local -a command
+
+    if [[ "${PLATFORM}" != "Linux" ]]; then
+        return 0
+    fi
+
+    if (( DRY_RUN )); then
+        log "+ pin MA5 installation options to the selected ROOT and managed Delphes"
+        return 0
+    fi
+
+    activate_root || return 1
+    root_bindir="$("${SELECTED_ROOT_CONFIG}" --bindir)" || return 1
+    command=(
+        "${VENV_PYTHON}"
+        "${PROJECT_ROOT}/scripts/configure_madanalysis_runtime.py"
+        --ma5 "${native_executable}"
+        --root-bindir "${root_bindir}"
+    )
+
+    delphes_executable="$(find_delphes_install)"
+    if [[ -n "${delphes_executable}" ]]; then
+        delphes_root="$(dirname -- "${delphes_executable}")"
+        command+=(--delphes-root "${delphes_root}")
+    fi
+
+    "${command[@]}" 2>&1 | tee -a "${LOG_FILE}"
+}
+
+
+
+run_ma5_smoke_test() {
+    local attempt_name="$1"
+    local smoke_status=0
+    local tee_status=0
+    local -a pipeline_statuses=()
+
+    if (( DRY_RUN )); then
+        log "+ noninteractive MA5 smoke test using selected ROOT (${attempt_name})"
+        return 0
+    fi
+
+    if "${VENV_PYTHON}" \
+        "${PROJECT_ROOT}/scripts/validate_madanalysis_runtime.py" \
+        --ma5 "${MA5_LAUNCHER}" \
+        --output-directory "${PROJECT_ROOT}/results/bootstrap/ma5_smoke" \
+        --attempt "${attempt_name}" \
+        --timeout-seconds "${MG5_TOOL_TIMEOUT_SECONDS}" \
+        2>&1 | tee -a "${LOG_FILE}"; then
+        :
+    else
+        pipeline_statuses=("${PIPESTATUS[@]}")
+        smoke_status="${pipeline_statuses[0]}"
+        tee_status="${pipeline_statuses[1]}"
+    fi
+
+    if (( tee_status != 0 )); then
+        warn "Could not write the installer log during MA5 smoke validation."
+        return 1
+    fi
+    return "${smoke_status}"
+}
+
+prepare_existing_ma5_runtime() {
+    local native_executable="$1"
+
+    write_ma5_launcher "${native_executable}" || return 1
+    configure_ma5_managed_dependencies "${native_executable}" || return 1
+
+    if run_ma5_smoke_test "reuse"; then
+        log "MadAnalysis5 runtime is compatible and will be reused: ${native_executable}"
+        return 0
+    fi
+
+    warn "Existing MadAnalysis5 failed validation with the selected ROOT/Python runtime."
+    log "Attempting safe MA5 runtime reconfiguration before any reinstall."
+    if run_ma5_smoke_test "repair"; then
+        log "MadAnalysis5 runtime was repaired in place and passed validation."
+        return 0
+    fi
+
+    return 1
 }
 
 install_mg5_tool() {
@@ -2003,6 +2248,15 @@ repair_linux_delphes_build() {
     return 0
 }
 
+if (( ! WITH_MADANALYSIS5 )); then
+    EXISTING_MANAGED_MA5="$(find_ma5_native_install)"
+    if [[ -n "${EXISTING_MANAGED_MA5}" ]]; then
+        log "Existing managed MadAnalysis5 found; validating it for this clone."
+        WITH_MADANALYSIS5=1
+    fi
+fi
+
+
 ROOT_READY=1
 if (( WITH_DELPHES || WITH_MADANALYSIS5 )); then
     if ! install_root_dependency; then
@@ -2128,19 +2382,64 @@ if (( WITH_DELPHES )); then
     fi
 fi
 
+MA5_READY=0
+MA5_NATIVE_EXECUTABLE=""
+
 if (( WITH_MADANALYSIS5 )); then
     if (( ! ROOT_READY )); then
         warn "Skipping MadAnalysis5 because ROOT is unavailable."
         OPTIONAL_FAILURES+=("MadAnalysis5")
-    elif ! install_mg5_tool \
-        "MadAnalysis5" \
-        "install MadAnalysis5 --force" \
-        find_ma5_install \
-        1; then
-        OPTIONAL_FAILURES+=("MadAnalysis5")
+    elif (( DRY_RUN )); then
+        MA5_NATIVE_EXECUTABLE="$(find_ma5_native_install)"
+        if [[ -z "${MA5_NATIVE_EXECUTABLE}" ]]; then
+            install_mg5_tool \
+                "MadAnalysis5" \
+                "install MadAnalysis5 --force" \
+                find_ma5_native_install \
+                1
+            MA5_NATIVE_EXECUTABLE="${MG5_LINK}/HEPTools/madanalysis5/madanalysis5/bin/ma5"
+        fi
+        write_ma5_launcher "${MA5_NATIVE_EXECUTABLE}"
+        configure_ma5_managed_dependencies "${MA5_NATIVE_EXECUTABLE}"
+        run_ma5_smoke_test "planned"
+        MA5_READY=1
+    else
+        MA5_NATIVE_EXECUTABLE="$(find_ma5_native_install)"
+
+        if [[ -n "${MA5_NATIVE_EXECUTABLE}" ]] &&
+            prepare_existing_ma5_runtime "${MA5_NATIVE_EXECUTABLE}"; then
+            MA5_READY=1
+        else
+            if [[ -n "${MA5_NATIVE_EXECUTABLE}" &&
+                ! ${REINSTALL_INCOMPATIBLE_MA5} -eq 1 ]]; then
+                warn "In-place MA5 runtime repair failed; the existing installation was preserved."
+                warn "Rerun with --reinstall-incompatible-ma5 to replace only MadAnalysis5."
+            else
+                if [[ -n "${MA5_NATIVE_EXECUTABLE}" ]]; then
+                    warn "Replacing only MadAnalysis5 after explicit approval."
+                fi
+
+                if install_mg5_tool \
+                    "MadAnalysis5" \
+                    "install MadAnalysis5 --force" \
+                    find_ma5_native_install \
+                    1 \
+                    1; then
+                    MA5_NATIVE_EXECUTABLE="$(find_ma5_native_install)"
+                    if [[ -n "${MA5_NATIVE_EXECUTABLE}" ]] &&
+                        prepare_existing_ma5_runtime "${MA5_NATIVE_EXECUTABLE}"; then
+                        MA5_READY=1
+                    fi
+                fi
+            fi
+        fi
+
+        if (( ! MA5_READY )); then
+            warn "MadAnalysis5 did not pass the selected ROOT/Python smoke test."
+            OPTIONAL_FAILURES+=("MadAnalysis5")
+        fi
     fi
 fi
-
 
 if (( INSTALL_OLLAMA )) && ! command -v ollama >/dev/null 2>&1; then
     case "${PLATFORM}" in
@@ -2276,7 +2575,11 @@ PY
 fi
 
 find_ma5() {
-    find_ma5_install
+    if (( MA5_READY )) &&
+        [[ -x "${MA5_LAUNCHER}" &&
+            -r "${MA5_RUNTIME_METADATA}" ]]; then
+        printf '%s\n' "${MA5_LAUNCHER}"
+    fi
 }
 
 find_pythia() {
@@ -2290,11 +2593,17 @@ find_delphes() {
 MA5_EXECUTABLE=""
 PYTHIA_CONFIG=""
 DELPHES_EXECUTABLE=""
+ROOT_CONFIG_PATH=""
+ROOT_PREFIX_PATH=""
 
 if (( ! DRY_RUN )); then
     MA5_EXECUTABLE="$(find_ma5)"
     PYTHIA_CONFIG="$(find_pythia)"
     DELPHES_EXECUTABLE="$(find_delphes)"
+    if [[ -n "${SELECTED_ROOT_CONFIG}" ]]; then
+        ROOT_CONFIG_PATH="${SELECTED_ROOT_CONFIG}"
+        ROOT_PREFIX_PATH="$("${SELECTED_ROOT_CONFIG}" --prefix)"
+    fi
 fi
 
 if (( DRY_RUN )); then
@@ -2305,13 +2614,28 @@ else
         "${MG5_EXECUTABLE}" \
         "${MA5_EXECUTABLE}" \
         "${PYTHIA_CONFIG}" \
-        "${DELPHES_EXECUTABLE}" <<'PY'
+        "${DELPHES_EXECUTABLE}" \
+        "${MA5_NATIVE_EXECUTABLE}" \
+        "${ROOT_CONFIG_PATH}" \
+        "${ROOT_PREFIX_PATH}" \
+        "${WITH_MADANALYSIS5}" \
+        "$((WITH_DELPHES || WITH_MADANALYSIS5))" <<'PY'
 import json
 import sys
 from pathlib import Path
 
 path = Path(sys.argv[1])
-mg5, ma5, pythia_config, delphes_executable = sys.argv[2:]
+(
+    mg5,
+    ma5,
+    pythia_config,
+    delphes_executable,
+    native_ma5,
+    root_config,
+    root_prefix,
+    manage_ma5,
+    manage_root,
+) = sys.argv[2:]
 
 if path.exists():
     original = path.read_text(encoding="utf-8")
@@ -2325,10 +2649,12 @@ else:
 
 payload["mg5_executable"] = mg5
 
-if ma5:
+if manage_ma5 == "1" and ma5:
     payload["madanalysis5_executable"] = ma5
-else:
+    payload["madanalysis5_native_executable"] = native_ma5
+elif manage_ma5 == "1":
     payload.pop("madanalysis5_executable", None)
+    payload.pop("madanalysis5_native_executable", None)
 
 if pythia_config:
     payload["pythia8_path"] = str(Path(pythia_config).parent.parent)
@@ -2339,6 +2665,13 @@ if delphes_executable:
     payload["delphes_path"] = str(Path(delphes_executable).parent)
 else:
     payload.pop("delphes_path", None)
+
+if manage_root == "1" and root_config:
+    payload["root_config"] = root_config
+    payload["root_path"] = root_prefix
+elif manage_root == "1":
+    payload.pop("root_config", None)
+    payload.pop("root_path", None)
 
 path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY

@@ -73,6 +73,7 @@ def make_physics(
     *,
     lhe: Path | None,
     hepmc: Path | None,
+    root: Path | None = None,
 ) -> MadGraphPhysicsResult:
     return MadGraphPhysicsResult(
         cross_section_pb=10.0,
@@ -80,7 +81,7 @@ def make_physics(
         event_count=10,
         primary_lhe_file=lhe,
         showered_hepmc_file=hepmc,
-        detector_root_file=None,
+        detector_root_file=root,
         warnings=(),
     )
 
@@ -128,6 +129,23 @@ print("Synthetic MA5 success")
 
 
 class AnalysisStageTests(unittest.TestCase):
+    def test_delphes_root_is_preferred_over_hepmc_and_lhe(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            lhe = directory / "events.lhe.gz"
+            hepmc = directory / "events.hepmc.gz"
+            root = directory / "events.root"
+            for path in (lhe, hepmc, root):
+                path.write_bytes(b"events")
+
+            selection = select_madanalysis_input(
+                make_physics(lhe=lhe, hepmc=hepmc, root=root)
+            )
+
+            self.assertIsNotNone(selection)
+            self.assertEqual(selection.input_file, root)
+            self.assertEqual(selection.level.value, "reconstructed")
+
     def test_hepmc_is_preferred_over_lhe(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -196,6 +214,7 @@ class AnalysisStageTests(unittest.TestCase):
                 ),
                 madanalysis_executable=None,
                 analysis_directory=root,
+                unsupported_nonhermetic=True,
             )
 
             self.assertFalse(result.requested)
@@ -214,6 +233,7 @@ class AnalysisStageTests(unittest.TestCase):
                 ),
                 madanalysis_executable=None,
                 analysis_directory=temporary,
+                unsupported_nonhermetic=True,
             )
 
             self.assertFalse(result.success)
@@ -239,6 +259,7 @@ class AnalysisStageTests(unittest.TestCase):
                 ),
                 madanalysis_executable=None,
                 analysis_directory=root / "analysis",
+                unsupported_nonhermetic=True,
             )
 
             self.assertFalse(result.success)
@@ -266,6 +287,7 @@ class AnalysisStageTests(unittest.TestCase):
                     make_fake_ma5(root)
                 ),
                 analysis_directory=root / "analysis",
+                unsupported_nonhermetic=True,
             )
 
             self.assertTrue(result.requested)

@@ -1,4 +1,7 @@
 {
-  "mg5_executable": "/path/to/MG5_aMC/bin/mg5_aMC",
-  "madanalysis5_executable": "/path/to/madanalysis5/bin/ma5"
+  "mg5_executable": "/path/to/MG5_aMC/bin/hep-agent-mg5",
+  "madanalysis5_executable": "/path/to/MG5_aMC/bin/hep-agent-ma5",
+  "madanalysis5_native_executable": "/path/to/madanalysis5/bin/ma5",
+  "root_config": "/path/to/root/bin/root-config",
+  "root_path": "/path/to/root"
 }
