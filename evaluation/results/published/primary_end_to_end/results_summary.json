@@ -1,0 +1,1531 @@
+{
+  "n_infrastructure_unavailable": 13,
+  "n_legacy_infrastructure_invalid": 0,
+  "n_rows": 60,
+  "n_semantic": 47,
+  "operational": {
+    "attempts_by_model": {
+      "llama3.3:70b": 42,
+      "qwen3-coder-next:Q4_K_M": 2
+    },
+    "attempts_file": "evaluation/paper_b_end_to_end/results/20260815T110701Z/infrastructure_attempts.jsonl",
+    "evaluated_units": 60,
+    "first_attempt_completion_rate": 0.7167,
+    "first_attempt_ok": 43,
+    "timeout_attempts": 44,
+    "total_infrastructure_attempts": 44
+  },
+  "overall": {
+    "diagnostics": {
+      "full_physics_content_pass": {
+        "count": 36,
+        "denominator": 47,
+        "rate": 0.766,
+        "wilson_95": [
+          0.6278,
+          0.864
+        ]
+      },
+      "initial_physics_content_pass": {
+        "count": 10,
+        "denominator": 47,
+        "rate": 0.2128,
+        "wilson_95": [
+          0.1199,
+          0.349
+        ]
+      }
+    },
+    "primary": {
+      "label": "normalized",
+      "n": 47,
+      "p1_planner_only_pass": {
+        "count": 11,
+        "denominator": 47,
+        "rate": 0.234,
+        "wilson_95": [
+          0.136,
+          0.3722
+        ]
+      },
+      "p2_full_agent_success": {
+        "count": 43,
+        "denominator": 47,
+        "rate": 0.9149,
+        "wilson_95": [
+          0.8007,
+          0.9664
+        ]
+      },
+      "p3_lift_pp": 68.09,
+      "p3_transitions": {
+        "fail_to_fail": 4,
+        "fail_to_pass": 32,
+        "pass_to_fail": 0,
+        "pass_to_pass": 11
+      },
+      "p4_recovery": {
+        "count": 32,
+        "denominator": 36,
+        "rate": 0.8889,
+        "wilson_95": [
+          0.7469,
+          0.9559
+        ]
+      },
+      "p5_gate_leakage": {
+        "count": 4,
+        "denominator": 46,
+        "rate": 0.087,
+        "wilson_95": [
+          0.0343,
+          0.2032
+        ]
+      },
+      "p6_false_rejection": {
+        "count": 1,
+        "denominator": 11,
+        "rate": 0.0909,
+        "wilson_95": [
+          0.0162,
+          0.3774
+        ]
+      },
+      "p6_valid_request_non_ready": {
+        "count": 1,
+        "denominator": 47,
+        "rate": 0.0213,
+        "wilson_95": [
+          0.0038,
+          0.1111
+        ]
+      },
+      "p7_fallback_used": 0,
+      "p7_mean_repair_attempts": 0.0,
+      "p7_repair_used": {
+        "count": 0,
+        "denominator": 47,
+        "rate": 0.0,
+        "wilson_95": [
+          0.0,
+          0.0756
+        ]
+      },
+      "p7_success_after_repair": {
+        "count": 0,
+        "denominator": 0,
+        "rate": null,
+        "wilson_95": null
+      },
+      "p8_mean_full_score": 0.842,
+      "p8_mean_initial_score": 0.639
+    },
+    "secondary_raw": {
+      "label": "raw",
+      "n": 47,
+      "p1_planner_only_pass": {
+        "count": 7,
+        "denominator": 47,
+        "rate": 0.1489,
+        "wilson_95": [
+          0.0741,
+          0.2769
+        ]
+      },
+      "p2_full_agent_success": {
+        "count": 19,
+        "denominator": 47,
+        "rate": 0.4043,
+        "wilson_95": [
+          0.2764,
+          0.5466
+        ]
+      },
+      "p3_lift_pp": 25.54,
+      "p3_transitions": {
+        "fail_to_fail": 28,
+        "fail_to_pass": 12,
+        "pass_to_fail": 0,
+        "pass_to_pass": 7
+      },
+      "p4_recovery": {
+        "count": 12,
+        "denominator": 40,
+        "rate": 0.3,
+        "wilson_95": [
+          0.1807,
+          0.4543
+        ]
+      },
+      "p5_gate_leakage": {
+        "count": 28,
+        "denominator": 46,
+        "rate": 0.6087,
+        "wilson_95": [
+          0.4646,
+          0.7361
+        ]
+      },
+      "p6_false_rejection": {
+        "count": 1,
+        "denominator": 7,
+        "rate": 0.1429,
+        "wilson_95": [
+          0.0257,
+          0.5131
+        ]
+      },
+      "p6_valid_request_non_ready": {
+        "count": 1,
+        "denominator": 47,
+        "rate": 0.0213,
+        "wilson_95": [
+          0.0038,
+          0.1111
+        ]
+      },
+      "p7_fallback_used": 0,
+      "p7_mean_repair_attempts": 0.0,
+      "p7_repair_used": {
+        "count": 0,
+        "denominator": 47,
+        "rate": 0.0,
+        "wilson_95": [
+          0.0,
+          0.0756
+        ]
+      },
+      "p7_success_after_repair": {
+        "count": 0,
+        "denominator": 0,
+        "rate": null,
+        "wilson_95": null
+      },
+      "p8_mean_full_score": 0.727,
+      "p8_mean_initial_score": 0.562
+    }
+  },
+  "per_family": {
+    "drell_yan": {
+      "diagnostics": {
+        "full_physics_content_pass": {
+          "count": 12,
+          "denominator": 12,
+          "rate": 1.0,
+          "wilson_95": [
+            0.7575,
+            1.0
+          ]
+        },
+        "initial_physics_content_pass": {
+          "count": 1,
+          "denominator": 12,
+          "rate": 0.0833,
+          "wilson_95": [
+            0.0149,
+            0.3539
+          ]
+        }
+      },
+      "primary": {
+        "label": "normalized",
+        "n": 12,
+        "p1_planner_only_pass": {
+          "count": 1,
+          "denominator": 12,
+          "rate": 0.0833,
+          "wilson_95": [
+            0.0149,
+            0.3539
+          ]
+        },
+        "p2_full_agent_success": {
+          "count": 12,
+          "denominator": 12,
+          "rate": 1.0,
+          "wilson_95": [
+            0.7575,
+            1.0
+          ]
+        },
+        "p3_lift_pp": 91.67,
+        "p3_transitions": {
+          "fail_to_fail": 0,
+          "fail_to_pass": 11,
+          "pass_to_fail": 0,
+          "pass_to_pass": 1
+        },
+        "p4_recovery": {
+          "count": 11,
+          "denominator": 11,
+          "rate": 1.0,
+          "wilson_95": [
+            0.7412,
+            1.0
+          ]
+        },
+        "p5_gate_leakage": {
+          "count": 0,
+          "denominator": 11,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.2588
+          ]
+        },
+        "p6_false_rejection": {
+          "count": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "wilson_95": [
+            0.2065,
+            1.0
+          ]
+        },
+        "p6_valid_request_non_ready": {
+          "count": 1,
+          "denominator": 12,
+          "rate": 0.0833,
+          "wilson_95": [
+            0.0149,
+            0.3539
+          ]
+        },
+        "p7_fallback_used": 0,
+        "p7_mean_repair_attempts": 0.0,
+        "p7_repair_used": {
+          "count": 0,
+          "denominator": 12,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.2425
+          ]
+        },
+        "p7_success_after_repair": {
+          "count": 0,
+          "denominator": 0,
+          "rate": null,
+          "wilson_95": null
+        },
+        "p8_mean_full_score": 0.85,
+        "p8_mean_initial_score": 0.575
+      },
+      "secondary_raw": {
+        "label": "raw",
+        "n": 12,
+        "p1_planner_only_pass": {
+          "count": 1,
+          "denominator": 12,
+          "rate": 0.0833,
+          "wilson_95": [
+            0.0149,
+            0.3539
+          ]
+        },
+        "p2_full_agent_success": {
+          "count": 12,
+          "denominator": 12,
+          "rate": 1.0,
+          "wilson_95": [
+            0.7575,
+            1.0
+          ]
+        },
+        "p3_lift_pp": 91.67,
+        "p3_transitions": {
+          "fail_to_fail": 0,
+          "fail_to_pass": 11,
+          "pass_to_fail": 0,
+          "pass_to_pass": 1
+        },
+        "p4_recovery": {
+          "count": 11,
+          "denominator": 11,
+          "rate": 1.0,
+          "wilson_95": [
+            0.7412,
+            1.0
+          ]
+        },
+        "p5_gate_leakage": {
+          "count": 0,
+          "denominator": 11,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.2588
+          ]
+        },
+        "p6_false_rejection": {
+          "count": 1,
+          "denominator": 1,
+          "rate": 1.0,
+          "wilson_95": [
+            0.2065,
+            1.0
+          ]
+        },
+        "p6_valid_request_non_ready": {
+          "count": 1,
+          "denominator": 12,
+          "rate": 0.0833,
+          "wilson_95": [
+            0.0149,
+            0.3539
+          ]
+        },
+        "p7_fallback_used": 0,
+        "p7_mean_repair_attempts": 0.0,
+        "p7_repair_used": {
+          "count": 0,
+          "denominator": 12,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.2425
+          ]
+        },
+        "p7_success_after_repair": {
+          "count": 0,
+          "denominator": 0,
+          "rate": null,
+          "wilson_95": null
+        },
+        "p8_mean_full_score": 0.85,
+        "p8_mean_initial_score": 0.575
+      }
+    },
+    "higgs_jet": {
+      "diagnostics": {
+        "full_physics_content_pass": {
+          "count": 11,
+          "denominator": 11,
+          "rate": 1.0,
+          "wilson_95": [
+            0.7412,
+            1.0
+          ]
+        },
+        "initial_physics_content_pass": {
+          "count": 6,
+          "denominator": 11,
+          "rate": 0.5455,
+          "wilson_95": [
+            0.2801,
+            0.7873
+          ]
+        }
+      },
+      "primary": {
+        "label": "normalized",
+        "n": 11,
+        "p1_planner_only_pass": {
+          "count": 6,
+          "denominator": 11,
+          "rate": 0.5455,
+          "wilson_95": [
+            0.2801,
+            0.7873
+          ]
+        },
+        "p2_full_agent_success": {
+          "count": 11,
+          "denominator": 11,
+          "rate": 1.0,
+          "wilson_95": [
+            0.7412,
+            1.0
+          ]
+        },
+        "p3_lift_pp": 45.45,
+        "p3_transitions": {
+          "fail_to_fail": 0,
+          "fail_to_pass": 5,
+          "pass_to_fail": 0,
+          "pass_to_pass": 6
+        },
+        "p4_recovery": {
+          "count": 5,
+          "denominator": 5,
+          "rate": 1.0,
+          "wilson_95": [
+            0.5655,
+            1.0
+          ]
+        },
+        "p5_gate_leakage": {
+          "count": 0,
+          "denominator": 11,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.2588
+          ]
+        },
+        "p6_false_rejection": {
+          "count": 0,
+          "denominator": 6,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.3903
+          ]
+        },
+        "p6_valid_request_non_ready": {
+          "count": 0,
+          "denominator": 11,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.2588
+          ]
+        },
+        "p7_fallback_used": 0,
+        "p7_mean_repair_attempts": 0.0,
+        "p7_repair_used": {
+          "count": 0,
+          "denominator": 11,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.2588
+          ]
+        },
+        "p7_success_after_repair": {
+          "count": 0,
+          "denominator": 0,
+          "rate": null,
+          "wilson_95": null
+        },
+        "p8_mean_full_score": 0.74,
+        "p8_mean_initial_score": 0.613
+      },
+      "secondary_raw": {
+        "label": "raw",
+        "n": 11,
+        "p1_planner_only_pass": {
+          "count": 6,
+          "denominator": 11,
+          "rate": 0.5455,
+          "wilson_95": [
+            0.2801,
+            0.7873
+          ]
+        },
+        "p2_full_agent_success": {
+          "count": 7,
+          "denominator": 11,
+          "rate": 0.6364,
+          "wilson_95": [
+            0.3538,
+            0.8483
+          ]
+        },
+        "p3_lift_pp": 9.09,
+        "p3_transitions": {
+          "fail_to_fail": 4,
+          "fail_to_pass": 1,
+          "pass_to_fail": 0,
+          "pass_to_pass": 6
+        },
+        "p4_recovery": {
+          "count": 1,
+          "denominator": 5,
+          "rate": 0.2,
+          "wilson_95": [
+            0.0362,
+            0.6245
+          ]
+        },
+        "p5_gate_leakage": {
+          "count": 4,
+          "denominator": 11,
+          "rate": 0.3636,
+          "wilson_95": [
+            0.1517,
+            0.6462
+          ]
+        },
+        "p6_false_rejection": {
+          "count": 0,
+          "denominator": 6,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.3903
+          ]
+        },
+        "p6_valid_request_non_ready": {
+          "count": 0,
+          "denominator": 11,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.2588
+          ]
+        },
+        "p7_fallback_used": 0,
+        "p7_mean_repair_attempts": 0.0,
+        "p7_repair_used": {
+          "count": 0,
+          "denominator": 11,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.2588
+          ]
+        },
+        "p7_success_after_repair": {
+          "count": 0,
+          "denominator": 0,
+          "rate": null,
+          "wilson_95": null
+        },
+        "p8_mean_full_score": 0.689,
+        "p8_mean_initial_score": 0.587
+      }
+    },
+    "top_pair": {
+      "diagnostics": {
+        "full_physics_content_pass": {
+          "count": 13,
+          "denominator": 13,
+          "rate": 1.0,
+          "wilson_95": [
+            0.7719,
+            1.0
+          ]
+        },
+        "initial_physics_content_pass": {
+          "count": 3,
+          "denominator": 13,
+          "rate": 0.2308,
+          "wilson_95": [
+            0.0818,
+            0.5026
+          ]
+        }
+      },
+      "primary": {
+        "label": "normalized",
+        "n": 13,
+        "p1_planner_only_pass": {
+          "count": 3,
+          "denominator": 13,
+          "rate": 0.2308,
+          "wilson_95": [
+            0.0818,
+            0.5026
+          ]
+        },
+        "p2_full_agent_success": {
+          "count": 13,
+          "denominator": 13,
+          "rate": 1.0,
+          "wilson_95": [
+            0.7719,
+            1.0
+          ]
+        },
+        "p3_lift_pp": 76.92,
+        "p3_transitions": {
+          "fail_to_fail": 0,
+          "fail_to_pass": 10,
+          "pass_to_fail": 0,
+          "pass_to_pass": 3
+        },
+        "p4_recovery": {
+          "count": 10,
+          "denominator": 10,
+          "rate": 1.0,
+          "wilson_95": [
+            0.7225,
+            1.0
+          ]
+        },
+        "p5_gate_leakage": {
+          "count": 0,
+          "denominator": 13,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.2281
+          ]
+        },
+        "p6_false_rejection": {
+          "count": 0,
+          "denominator": 3,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.5615
+          ]
+        },
+        "p6_valid_request_non_ready": {
+          "count": 0,
+          "denominator": 13,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.2281
+          ]
+        },
+        "p7_fallback_used": 0,
+        "p7_mean_repair_attempts": 0.0,
+        "p7_repair_used": {
+          "count": 0,
+          "denominator": 13,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.2281
+          ]
+        },
+        "p7_success_after_repair": {
+          "count": 0,
+          "denominator": 0,
+          "rate": null,
+          "wilson_95": null
+        },
+        "p8_mean_full_score": 0.825,
+        "p8_mean_initial_score": 0.594
+      },
+      "secondary_raw": {
+        "label": "raw",
+        "n": 13,
+        "p1_planner_only_pass": {
+          "count": 0,
+          "denominator": 13,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.2281
+          ]
+        },
+        "p2_full_agent_success": {
+          "count": 0,
+          "denominator": 13,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.2281
+          ]
+        },
+        "p3_lift_pp": 0.0,
+        "p3_transitions": {
+          "fail_to_fail": 13,
+          "fail_to_pass": 0,
+          "pass_to_fail": 0,
+          "pass_to_pass": 0
+        },
+        "p4_recovery": {
+          "count": 0,
+          "denominator": 13,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.2281
+          ]
+        },
+        "p5_gate_leakage": {
+          "count": 13,
+          "denominator": 13,
+          "rate": 1.0,
+          "wilson_95": [
+            0.7719,
+            1.0
+          ]
+        },
+        "p6_false_rejection": {
+          "count": 0,
+          "denominator": 0,
+          "rate": null,
+          "wilson_95": null
+        },
+        "p6_valid_request_non_ready": {
+          "count": 0,
+          "denominator": 13,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.2281
+          ]
+        },
+        "p7_fallback_used": 0,
+        "p7_mean_repair_attempts": 0.0,
+        "p7_repair_used": {
+          "count": 0,
+          "denominator": 13,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.2281
+          ]
+        },
+        "p7_success_after_repair": {
+          "count": 0,
+          "denominator": 0,
+          "rate": null,
+          "wilson_95": null
+        },
+        "p8_mean_full_score": 0.6,
+        "p8_mean_initial_score": 0.485
+      }
+    },
+    "ttbar_workflow": {
+      "diagnostics": {
+        "full_physics_content_pass": {
+          "count": 0,
+          "denominator": 11,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.2588
+          ]
+        },
+        "initial_physics_content_pass": {
+          "count": 0,
+          "denominator": 11,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.2588
+          ]
+        }
+      },
+      "primary": {
+        "label": "normalized",
+        "n": 11,
+        "p1_planner_only_pass": {
+          "count": 1,
+          "denominator": 11,
+          "rate": 0.0909,
+          "wilson_95": [
+            0.0162,
+            0.3774
+          ]
+        },
+        "p2_full_agent_success": {
+          "count": 7,
+          "denominator": 11,
+          "rate": 0.6364,
+          "wilson_95": [
+            0.3538,
+            0.8483
+          ]
+        },
+        "p3_lift_pp": 54.55,
+        "p3_transitions": {
+          "fail_to_fail": 4,
+          "fail_to_pass": 6,
+          "pass_to_fail": 0,
+          "pass_to_pass": 1
+        },
+        "p4_recovery": {
+          "count": 6,
+          "denominator": 10,
+          "rate": 0.6,
+          "wilson_95": [
+            0.3127,
+            0.8318
+          ]
+        },
+        "p5_gate_leakage": {
+          "count": 4,
+          "denominator": 11,
+          "rate": 0.3636,
+          "wilson_95": [
+            0.1517,
+            0.6462
+          ]
+        },
+        "p6_false_rejection": {
+          "count": 0,
+          "denominator": 1,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.7935
+          ]
+        },
+        "p6_valid_request_non_ready": {
+          "count": 0,
+          "denominator": 11,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.2588
+          ]
+        },
+        "p7_fallback_used": 0,
+        "p7_mean_repair_attempts": 0.0,
+        "p7_repair_used": {
+          "count": 0,
+          "denominator": 11,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.2588
+          ]
+        },
+        "p7_success_after_repair": {
+          "count": 0,
+          "denominator": 0,
+          "rate": null,
+          "wilson_95": null
+        },
+        "p8_mean_full_score": 0.956,
+        "p8_mean_initial_score": 0.789
+      },
+      "secondary_raw": {
+        "label": "raw",
+        "n": 11,
+        "p1_planner_only_pass": {
+          "count": 0,
+          "denominator": 11,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.2588
+          ]
+        },
+        "p2_full_agent_success": {
+          "count": 0,
+          "denominator": 11,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.2588
+          ]
+        },
+        "p3_lift_pp": 0.0,
+        "p3_transitions": {
+          "fail_to_fail": 11,
+          "fail_to_pass": 0,
+          "pass_to_fail": 0,
+          "pass_to_pass": 0
+        },
+        "p4_recovery": {
+          "count": 0,
+          "denominator": 11,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.2588
+          ]
+        },
+        "p5_gate_leakage": {
+          "count": 11,
+          "denominator": 11,
+          "rate": 1.0,
+          "wilson_95": [
+            0.7412,
+            1.0
+          ]
+        },
+        "p6_false_rejection": {
+          "count": 0,
+          "denominator": 0,
+          "rate": null,
+          "wilson_95": null
+        },
+        "p6_valid_request_non_ready": {
+          "count": 0,
+          "denominator": 11,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.2588
+          ]
+        },
+        "p7_fallback_used": 0,
+        "p7_mean_repair_attempts": 0.0,
+        "p7_repair_used": {
+          "count": 0,
+          "denominator": 11,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.2588
+          ]
+        },
+        "p7_success_after_repair": {
+          "count": 0,
+          "denominator": 0,
+          "rate": null,
+          "wilson_95": null
+        },
+        "p8_mean_full_score": 0.783,
+        "p8_mean_initial_score": 0.615
+      }
+    }
+  },
+  "per_model": {
+    "llama3.3:70b": {
+      "diagnostics": {
+        "full_physics_content_pass": {
+          "count": 6,
+          "denominator": 7,
+          "rate": 0.8571,
+          "wilson_95": [
+            0.4869,
+            0.9743
+          ]
+        },
+        "initial_physics_content_pass": {
+          "count": 3,
+          "denominator": 7,
+          "rate": 0.4286,
+          "wilson_95": [
+            0.1582,
+            0.7495
+          ]
+        }
+      },
+      "primary": {
+        "label": "normalized",
+        "n": 7,
+        "p1_planner_only_pass": {
+          "count": 3,
+          "denominator": 7,
+          "rate": 0.4286,
+          "wilson_95": [
+            0.1582,
+            0.7495
+          ]
+        },
+        "p2_full_agent_success": {
+          "count": 7,
+          "denominator": 7,
+          "rate": 1.0,
+          "wilson_95": [
+            0.6457,
+            1.0
+          ]
+        },
+        "p3_lift_pp": 57.14,
+        "p3_transitions": {
+          "fail_to_fail": 0,
+          "fail_to_pass": 4,
+          "pass_to_fail": 0,
+          "pass_to_pass": 3
+        },
+        "p4_recovery": {
+          "count": 4,
+          "denominator": 4,
+          "rate": 1.0,
+          "wilson_95": [
+            0.5101,
+            1.0
+          ]
+        },
+        "p5_gate_leakage": {
+          "count": 0,
+          "denominator": 7,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.3543
+          ]
+        },
+        "p6_false_rejection": {
+          "count": 0,
+          "denominator": 3,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.5615
+          ]
+        },
+        "p6_valid_request_non_ready": {
+          "count": 0,
+          "denominator": 7,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.3543
+          ]
+        },
+        "p7_fallback_used": 0,
+        "p7_mean_repair_attempts": 0.0,
+        "p7_repair_used": {
+          "count": 0,
+          "denominator": 7,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.3543
+          ]
+        },
+        "p7_success_after_repair": {
+          "count": 0,
+          "denominator": 0,
+          "rate": null,
+          "wilson_95": null
+        },
+        "p8_mean_full_score": 0.845,
+        "p8_mean_initial_score": 0.659
+      },
+      "secondary_raw": {
+        "label": "raw",
+        "n": 7,
+        "p1_planner_only_pass": {
+          "count": 1,
+          "denominator": 7,
+          "rate": 0.1429,
+          "wilson_95": [
+            0.0257,
+            0.5131
+          ]
+        },
+        "p2_full_agent_success": {
+          "count": 3,
+          "denominator": 7,
+          "rate": 0.4286,
+          "wilson_95": [
+            0.1582,
+            0.7495
+          ]
+        },
+        "p3_lift_pp": 28.57,
+        "p3_transitions": {
+          "fail_to_fail": 4,
+          "fail_to_pass": 2,
+          "pass_to_fail": 0,
+          "pass_to_pass": 1
+        },
+        "p4_recovery": {
+          "count": 2,
+          "denominator": 6,
+          "rate": 0.3333,
+          "wilson_95": [
+            0.0968,
+            0.7
+          ]
+        },
+        "p5_gate_leakage": {
+          "count": 4,
+          "denominator": 7,
+          "rate": 0.5714,
+          "wilson_95": [
+            0.2505,
+            0.8418
+          ]
+        },
+        "p6_false_rejection": {
+          "count": 0,
+          "denominator": 1,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.7935
+          ]
+        },
+        "p6_valid_request_non_ready": {
+          "count": 0,
+          "denominator": 7,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.3543
+          ]
+        },
+        "p7_fallback_used": 0,
+        "p7_mean_repair_attempts": 0.0,
+        "p7_repair_used": {
+          "count": 0,
+          "denominator": 7,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.3543
+          ]
+        },
+        "p7_success_after_repair": {
+          "count": 0,
+          "denominator": 0,
+          "rate": null,
+          "wilson_95": null
+        },
+        "p8_mean_full_score": 0.713,
+        "p8_mean_initial_score": 0.549
+      }
+    },
+    "qwen2.5-coder:7b": {
+      "diagnostics": {
+        "full_physics_content_pass": {
+          "count": 15,
+          "denominator": 20,
+          "rate": 0.75,
+          "wilson_95": [
+            0.5313,
+            0.8881
+          ]
+        },
+        "initial_physics_content_pass": {
+          "count": 0,
+          "denominator": 20,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.1611
+          ]
+        }
+      },
+      "primary": {
+        "label": "normalized",
+        "n": 20,
+        "p1_planner_only_pass": {
+          "count": 0,
+          "denominator": 20,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.1611
+          ]
+        },
+        "p2_full_agent_success": {
+          "count": 16,
+          "denominator": 20,
+          "rate": 0.8,
+          "wilson_95": [
+            0.584,
+            0.9193
+          ]
+        },
+        "p3_lift_pp": 80.0,
+        "p3_transitions": {
+          "fail_to_fail": 4,
+          "fail_to_pass": 16,
+          "pass_to_fail": 0,
+          "pass_to_pass": 0
+        },
+        "p4_recovery": {
+          "count": 16,
+          "denominator": 20,
+          "rate": 0.8,
+          "wilson_95": [
+            0.584,
+            0.9193
+          ]
+        },
+        "p5_gate_leakage": {
+          "count": 4,
+          "denominator": 20,
+          "rate": 0.2,
+          "wilson_95": [
+            0.0807,
+            0.416
+          ]
+        },
+        "p6_false_rejection": {
+          "count": 0,
+          "denominator": 0,
+          "rate": null,
+          "wilson_95": null
+        },
+        "p6_valid_request_non_ready": {
+          "count": 0,
+          "denominator": 20,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.1611
+          ]
+        },
+        "p7_fallback_used": 0,
+        "p7_mean_repair_attempts": 0.0,
+        "p7_repair_used": {
+          "count": 0,
+          "denominator": 20,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.1611
+          ]
+        },
+        "p7_success_after_repair": {
+          "count": 0,
+          "denominator": 0,
+          "rate": null,
+          "wilson_95": null
+        },
+        "p8_mean_full_score": 0.83,
+        "p8_mean_initial_score": 0.57
+      },
+      "secondary_raw": {
+        "label": "raw",
+        "n": 20,
+        "p1_planner_only_pass": {
+          "count": 0,
+          "denominator": 20,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.1611
+          ]
+        },
+        "p2_full_agent_success": {
+          "count": 6,
+          "denominator": 20,
+          "rate": 0.3,
+          "wilson_95": [
+            0.1455,
+            0.519
+          ]
+        },
+        "p3_lift_pp": 30.0,
+        "p3_transitions": {
+          "fail_to_fail": 14,
+          "fail_to_pass": 6,
+          "pass_to_fail": 0,
+          "pass_to_pass": 0
+        },
+        "p4_recovery": {
+          "count": 6,
+          "denominator": 20,
+          "rate": 0.3,
+          "wilson_95": [
+            0.1455,
+            0.519
+          ]
+        },
+        "p5_gate_leakage": {
+          "count": 14,
+          "denominator": 20,
+          "rate": 0.7,
+          "wilson_95": [
+            0.481,
+            0.8545
+          ]
+        },
+        "p6_false_rejection": {
+          "count": 0,
+          "denominator": 0,
+          "rate": null,
+          "wilson_95": null
+        },
+        "p6_valid_request_non_ready": {
+          "count": 0,
+          "denominator": 20,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.1611
+          ]
+        },
+        "p7_fallback_used": 0,
+        "p7_mean_repair_attempts": 0.0,
+        "p7_repair_used": {
+          "count": 0,
+          "denominator": 20,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.1611
+          ]
+        },
+        "p7_success_after_repair": {
+          "count": 0,
+          "denominator": 0,
+          "rate": null,
+          "wilson_95": null
+        },
+        "p8_mean_full_score": 0.71,
+        "p8_mean_initial_score": 0.502
+      }
+    },
+    "qwen3-coder-next:Q4_K_M": {
+      "diagnostics": {
+        "full_physics_content_pass": {
+          "count": 15,
+          "denominator": 20,
+          "rate": 0.75,
+          "wilson_95": [
+            0.5313,
+            0.8881
+          ]
+        },
+        "initial_physics_content_pass": {
+          "count": 7,
+          "denominator": 20,
+          "rate": 0.35,
+          "wilson_95": [
+            0.1812,
+            0.5671
+          ]
+        }
+      },
+      "primary": {
+        "label": "normalized",
+        "n": 20,
+        "p1_planner_only_pass": {
+          "count": 8,
+          "denominator": 20,
+          "rate": 0.4,
+          "wilson_95": [
+            0.2188,
+            0.6134
+          ]
+        },
+        "p2_full_agent_success": {
+          "count": 20,
+          "denominator": 20,
+          "rate": 1.0,
+          "wilson_95": [
+            0.8389,
+            1.0
+          ]
+        },
+        "p3_lift_pp": 60.0,
+        "p3_transitions": {
+          "fail_to_fail": 0,
+          "fail_to_pass": 12,
+          "pass_to_fail": 0,
+          "pass_to_pass": 8
+        },
+        "p4_recovery": {
+          "count": 12,
+          "denominator": 12,
+          "rate": 1.0,
+          "wilson_95": [
+            0.7575,
+            1.0
+          ]
+        },
+        "p5_gate_leakage": {
+          "count": 0,
+          "denominator": 19,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.1682
+          ]
+        },
+        "p6_false_rejection": {
+          "count": 1,
+          "denominator": 8,
+          "rate": 0.125,
+          "wilson_95": [
+            0.0224,
+            0.4709
+          ]
+        },
+        "p6_valid_request_non_ready": {
+          "count": 1,
+          "denominator": 20,
+          "rate": 0.05,
+          "wilson_95": [
+            0.0089,
+            0.2361
+          ]
+        },
+        "p7_fallback_used": 0,
+        "p7_mean_repair_attempts": 0.0,
+        "p7_repair_used": {
+          "count": 0,
+          "denominator": 20,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.1611
+          ]
+        },
+        "p7_success_after_repair": {
+          "count": 0,
+          "denominator": 0,
+          "rate": null,
+          "wilson_95": null
+        },
+        "p8_mean_full_score": 0.854,
+        "p8_mean_initial_score": 0.702
+      },
+      "secondary_raw": {
+        "label": "raw",
+        "n": 20,
+        "p1_planner_only_pass": {
+          "count": 6,
+          "denominator": 20,
+          "rate": 0.3,
+          "wilson_95": [
+            0.1455,
+            0.519
+          ]
+        },
+        "p2_full_agent_success": {
+          "count": 10,
+          "denominator": 20,
+          "rate": 0.5,
+          "wilson_95": [
+            0.2993,
+            0.7007
+          ]
+        },
+        "p3_lift_pp": 20.0,
+        "p3_transitions": {
+          "fail_to_fail": 10,
+          "fail_to_pass": 4,
+          "pass_to_fail": 0,
+          "pass_to_pass": 6
+        },
+        "p4_recovery": {
+          "count": 4,
+          "denominator": 14,
+          "rate": 0.2857,
+          "wilson_95": [
+            0.1172,
+            0.5465
+          ]
+        },
+        "p5_gate_leakage": {
+          "count": 10,
+          "denominator": 19,
+          "rate": 0.5263,
+          "wilson_95": [
+            0.3171,
+            0.7267
+          ]
+        },
+        "p6_false_rejection": {
+          "count": 1,
+          "denominator": 6,
+          "rate": 0.1667,
+          "wilson_95": [
+            0.0301,
+            0.5635
+          ]
+        },
+        "p6_valid_request_non_ready": {
+          "count": 1,
+          "denominator": 20,
+          "rate": 0.05,
+          "wilson_95": [
+            0.0089,
+            0.2361
+          ]
+        },
+        "p7_fallback_used": 0,
+        "p7_mean_repair_attempts": 0.0,
+        "p7_repair_used": {
+          "count": 0,
+          "denominator": 20,
+          "rate": 0.0,
+          "wilson_95": [
+            0.0,
+            0.1611
+          ]
+        },
+        "p7_success_after_repair": {
+          "count": 0,
+          "denominator": 0,
+          "rate": null,
+          "wilson_95": null
+        },
+        "p8_mean_full_score": 0.75,
+        "p8_mean_initial_score": 0.628
+      }
+    }
+  },
+  "source_rows": "evaluation/paper_b_end_to_end/results/20260815T110701Z/rows.csv"
+}

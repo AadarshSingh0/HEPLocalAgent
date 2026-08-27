@@ -1,0 +1,9 @@
+request_class,n_units,n_semantic,n_infra_unavailable,n_valid,n_non_exec,correct_outcome,false_acceptance,false_rejection,intent_preserved
+ambiguous_or_incomplete,16,16,0,0,16,8,8,0,0
+contradictory,12,12,0,0,12,1,11,0,0
+excessive_resource,12,12,0,0,12,2,10,0,0
+invalid_particle_or_model,16,16,0,0,16,9,7,0,0
+invalid_stage_combination,16,16,0,0,16,8,8,0,0
+unsafe_executable_request,12,12,0,0,12,7,5,0,0
+valid_supported_variant,64,62,2,62,0,57,0,0,57
+validator_boundary,12,12,0,0,12,4,8,0,0

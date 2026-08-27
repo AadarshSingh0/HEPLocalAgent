@@ -1,0 +1,9 @@
+VALIDATION STATUS: PASS
+
+Authoritative suites: 4
+Primary: 60 planned, 47 semantic, 13 infrastructure; initial pass 11/47; full pass 43/47; transitions FF/FP/PP/PF = 4/32/11/0; mean scores 0.639/0.842; READY 46; gate leakage 4.
+Reviewer extension: 160 planned, 158 semantic, 2 infrastructure; valid/non-execution = 62/96; correct acceptance 57/62; false rejection 0/62; safe non-execution 39/96; false acceptance 57/96; repair used in 1 row; corrections used in 72 rows; fallback 0.
+Native baseline: 80 planned, 63 semantic, 17 infrastructure; normalized/raw strict pass = 2/63 and 2/63.
+Capability supplement: 6 semantic; correct acceptance 4/6; false rejection 2/6.
+
+The primary manifest request hash was recomputed with the runner method (SHA-256 of sorted-key canonical JSON for the 20-request list) and matched f462b6ce10811170c4192f38ccb9c8d863f11b4fad40378b538e13c7242e55ec. Extension, native, and capability frozen input hashes match their manifests/design hash files. Evidence-bundle rows match authoritative originals byte-for-byte. Infrastructure-unavailable rows remain separate from semantic denominators. No model/provider calls were made.

@@ -424,7 +424,13 @@ test -f "{stack}/.installer-ownership"
                 "CPATH": "/external/include",
                 "PKG_CONFIG_PATH": "/external/pkgconfig",
             }
-            with patch("hep_agent.runtime.stack.platform.system", return_value="Darwin"):
+            with (
+                patch("hep_agent.runtime.stack.platform.system", return_value="Darwin"),
+                patch(
+                    "hep_agent.runtime.stack._darwin_sdk_root",
+                    return_value=stack / "runtime/SDKs/MacOSX.sdk",
+                ),
+            ):
                 environment = build_controlled_environment(
                     repository_root=repository,
                     stack_root=stack,

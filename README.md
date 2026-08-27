@@ -19,8 +19,10 @@ The repository includes:
 - whitelisted tools;
 - self-contained deterministic validation under `src/hep_agent/validation`;
 - bounded repair logic;
-- held-out agent evaluation scenarios;
-- execution logs and aggregate results.
+- replayable acceptance fixtures and evaluation scenario definitions;
+- curated aggregate and per-trial evaluation evidence in
+  [`evaluation/results/published/`](evaluation/results/published/);
+- locally generated runtime records and logs, which remain ignored.
 
 No API keys, model weights, personal paths, or private environment files
 should be committed.
@@ -31,8 +33,9 @@ should be committed.
   model-routing, command-line, and web-interface source;
 - `configs/` and `prompts/`: portable example configuration, profiles, and
   planner/repair prompt templates;
-- `tests/` and `evaluation/`: model-free regression/acceptance tests and
-  compact evaluation scenarios;
+- `tests/`: model-free regression tests and replayable acceptance fixtures;
+- `evaluation/`: offline scenario definitions, runners, and
+  [curated published results](evaluation/results/published/);
 - `scripts/`, `install.sh`, `run_agent.sh`, and `uninstall.sh`: installation,
   launch, validation, maintenance, and removal commands;
 - `docs/`: installation, architecture, schema, manifest, and release
@@ -66,6 +69,15 @@ Run the complete replay suite without Ollama or HEP software with:
 The harness passes those recorded outputs through the real validation and
 workflow-construction pipeline. These compact JSON fixtures are program test
 data and expected outputs; generated event files are intentionally excluded.
+
+## Published evaluation evidence
+
+[`evaluation/results/published/`](evaluation/results/published/) contains the
+curated Paper B evaluation evidence recovered from frozen runs: per-trial rows,
+aggregate summaries, configurations, provenance, and checksums. It is distinct
+from the acceptance fixtures above. Ordinary offline evaluation output under
+`evaluation/results/` and normal agent run records under root `results/` are
+generated locally and ignored.
 
 
 ## Beginner installation

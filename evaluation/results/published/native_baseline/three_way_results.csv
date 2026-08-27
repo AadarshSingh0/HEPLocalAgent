@@ -1,0 +1,5 @@
+model,matched_n,A_native_pass,B_builder_pass,C_full_pass,A_pass_rate,B_pass_rate,C_pass_rate,A_to_B_improve,B_to_C_improve,A_to_C_improve,A_pass_C_fail,B_pass_C_fail,A_fail_B_fail_C_pass,fail_fail_fail
+qwen2.5-coder:7b,20,0,0,16,0.0%,0.0%,80.0%,0,16,16,0,0,16,4
+qwen3-coder-next:Q4_K_M,7,2,1,7,28.6%,14.3%,100.0%,0,6,5,0,0,5,0
+qwen2.5-coder:14b,20,0,5,15,0.0%,25.0%,75.0%,5,10,15,0,0,10,5
+granite4:32b-a9b-h,14,0,2,14,0.0%,14.3%,100.0%,2,12,14,0,0,12,0

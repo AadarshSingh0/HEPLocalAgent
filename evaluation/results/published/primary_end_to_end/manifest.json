@@ -1,0 +1,149 @@
+{
+  "evaluation_version": "paper_b_end_to_end_v1.0",
+  "fallback_model": null,
+  "generation_settings": {
+    "note": "Recorded from HEPLocalAgent source; no Ollama random seed is set by the agent.",
+    "semantic_planner": {
+      "num_predict": 300,
+      "temperature": 0.0
+    },
+    "structured_planner": {
+      "num_predict": 4096,
+      "temperature": 0.0
+    }
+  },
+  "heplocalagent_git_dirty": true,
+  "heplocalagent_git_sha": "feeccfb10fb424beaac3c6da4530128fc9cff585",
+  "heptoolbench_git_dirty": true,
+  "heptoolbench_git_sha": "509205cd117136662d1ab82488f1ca280c838619",
+  "heptoolbench_root": "<HEPTOOLBENCH_REPOSITORY>",
+  "model_profile_map": {
+    "llama3.3:70b": "llama33_70b",
+    "qwen2.5-coder:7b": "qwen25_7b",
+    "qwen3-coder-next:Q4_K_M": "qwen3_next"
+  },
+  "models": [
+    "qwen2.5-coder:7b",
+    "qwen3-coder-next:Q4_K_M",
+    "llama3.3:70b"
+  ],
+  "ollama_host": "http://PRIVATE_OLLAMA_HOST:11434",
+  "ollama_installed_labels": {
+    "deepseek-r1:70b": "deepseek-r1:70b",
+    "deepseek-r1:8b": "deepseek-r1:8b",
+    "deepseek-v3.2:cloud": "deepseek-v3.2:cloud",
+    "deepseek-v4-flash:cloud": "deepseek-v4-flash:cloud",
+    "deepseek-v4-pro:cloud": "deepseek-v4-pro:cloud",
+    "devstral:24b": "devstral:24b",
+    "falcon3:10b": "falcon3:10b",
+    "gemma3:12b": "gemma3:12b",
+    "gemma3:270m": "gemma3:270m",
+    "gemma3:4b": "gemma3:4b",
+    "gemma4-31b-cpu:repair": "gemma4-31b-cpu:repair",
+    "gemma4:12b": "gemma4:12b",
+    "gemma4:26b": "gemma4:26b",
+    "gemma4:31b": "gemma4:31b",
+    "gemma4:cloud": "gemma4:cloud",
+    "gemma4:e2b": "gemma4:e2b",
+    "gemma4:e4b": "gemma4:e4b",
+    "gemma4:latest": "gemma4:latest",
+    "glm-4.7:cloud": "glm-4.7:cloud",
+    "glm-5.1:cloud": "glm-5.1:cloud",
+    "glm-5.2:cloud": "glm-5.2:cloud",
+    "glm-5:cloud": "glm-5:cloud",
+    "gpt-oss:120b": "gpt-oss:120b",
+    "gpt-oss:120b-cloud": "gpt-oss:120b-cloud",
+    "gpt-oss:20b": "gpt-oss:20b",
+    "granite4:32b-a9b-h": "granite4:32b-a9b-h",
+    "hf.co/Bhuvan3389/Param2-17B-A2.4B-Thinking-GGUF:latest": "hf.co/Bhuvan3389/Param2-17B-A2.4B-Thinking-GGUF:latest",
+    "hf.co/RichardErkhov/ai4bharat_-_hercule-hi-gguf:Q4_K_M": "hf.co/RichardErkhov/ai4bharat_-_hercule-hi-gguf:Q4_K_M",
+    "hf.co/mradermacher/Fathom-R1-14B-V0.4-RS-i1-GGUF:Q4_K_M": "hf.co/mradermacher/Fathom-R1-14B-V0.4-RS-i1-GGUF:Q4_K_M",
+    "igovet/kimi-k2.7-code-opencode:latest": "igovet/kimi-k2.7-code-opencode:latest",
+    "kimi-k2.5:cloud": "kimi-k2.5:cloud",
+    "kimi-k2.6:cloud": "kimi-k2.6:cloud",
+    "kwangsuklee/Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-GGUF:latest": "kwangsuklee/Qwen3.5-27B-Claude-4.6-Opus-Reasoning-Distilled-GGUF:latest",
+    "llama3.1:8b": "llama3.1:8b",
+    "llama3.2-vision:11b": "llama3.2-vision:11b",
+    "llama3.2:1b": "llama3.2:1b",
+    "llama3.3:70b": "llama3.3:70b",
+    "llama3:8b": "llama3:8b",
+    "llama4:scout": "llama4:scout",
+    "minimax-m2.5:cloud": "minimax-m2.5:cloud",
+    "minimax-m2.7:cloud": "minimax-m2.7:cloud",
+    "minimax-m3:cloud": "minimax-m3:cloud",
+    "ministral-3:14b": "ministral-3:14b",
+    "mistral-large-3:675b-cloud": "mistral-large-3:675b-cloud",
+    "mistral-small3.2:24b": "mistral-small3.2:24b",
+    "nemotron-3-super:120b-a12b": "nemotron-3-super:120b-a12b",
+    "nemotron-3-super:cloud": "nemotron-3-super:cloud",
+    "nemotron-3-super:latest": "nemotron-3-super:latest",
+    "phi4-mini:3.8b": "phi4-mini:3.8b",
+    "phi4-reasoning:plus": "phi4-reasoning:plus",
+    "phi4:14b": "phi4:14b",
+    "qwen2.5-coder:14b": "qwen2.5-coder:14b",
+    "qwen2.5-coder:7b": "qwen2.5-coder:7b",
+    "qwen3-coder-next:Q4_K_M": "qwen3-coder-next:Q4_K_M",
+    "qwen3-coder-next:cloud": "qwen3-coder-next:cloud",
+    "qwen3-coder:480b-cloud": "qwen3-coder:480b-cloud",
+    "qwen3-next:80b": "qwen3-next:80b",
+    "qwen3-vl:8b": "qwen3-vl:8b",
+    "qwen3.5:0.8b": "qwen3.5:0.8b",
+    "qwen3.5:27b": "qwen3.5:27b",
+    "qwen3.5:2b": "qwen3.5:2b",
+    "qwen3.5:35b": "qwen3.5:35b",
+    "qwen3.5:397b-cloud": "qwen3.5:397b-cloud",
+    "qwen3.5:4b": "qwen3.5:4b",
+    "qwen3.5:9b": "qwen3.5:9b",
+    "qwen3.5:cloud": "qwen3.5:cloud",
+    "qwen3.8:27b": "qwen3.8:27b",
+    "qwen3:14b": "qwen3:14b",
+    "qwen3:8b": "qwen3:8b",
+    "sarvam-30b:latest": "sarvam-30b:latest",
+    "tinyllama:latest": "tinyllama:latest"
+  },
+  "os": "Linux",
+  "platform": "Linux-6.8.0-137-generic-x86_64-with-glibc2.39",
+  "profiles": {
+    "llama33_70b": {
+      "fallback_model": null,
+      "fallback_timeout_seconds": null,
+      "max_planner_attempts": 2,
+      "max_repairs": 2,
+      "primary_model": "llama3.3:70b",
+      "primary_timeout_seconds": 300
+    },
+    "qwen25_7b": {
+      "fallback_model": null,
+      "fallback_timeout_seconds": null,
+      "max_planner_attempts": 2,
+      "max_repairs": 2,
+      "primary_model": "qwen2.5-coder:7b",
+      "primary_timeout_seconds": 300
+    },
+    "qwen3_next": {
+      "fallback_model": null,
+      "fallback_timeout_seconds": null,
+      "max_planner_attempts": 2,
+      "max_repairs": 2,
+      "primary_model": "qwen3-coder-next:Q4_K_M",
+      "primary_timeout_seconds": 180
+    }
+  },
+  "python_version": "3.12.3",
+  "request_count": 20,
+  "requests_sha256": "f462b6ce10811170c4192f38ccb9c8d863f11b4fad40378b538e13c7242e55ec",
+  "retry_repair_limits": {
+    "max_planner_attempts": 2,
+    "max_repairs": 2
+  },
+  "run_created_utc": "20260815T110701Z",
+  "scorer_sha256": {
+    "mg_basic_001": "6b527b2a386920c0de9be691c8f412e029b33a5547b1c4ef12b9e752f003bc14",
+    "mg_basic_002": "ecad56f8f7aabeda92d576d8225a84a53ca858a710355978c98a28dda8239a49",
+    "mg_basic_003": "0571f62617ec8f4010f81fb5fe73c0af3756e1adf9cd0751da6ba1cb3b707a74",
+    "mg_workflow_005": "7a2d776eabaef9bc262c78cf2e6e9aee7a36ac7d48b2366832bc1934717cb082"
+  },
+  "timeouts_seconds": {
+    "planner_primary": 300
+  }
+}

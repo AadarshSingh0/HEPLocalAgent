@@ -1,0 +1,25 @@
+{
+  "evaluation_version": "paper_b_capability_supplement_v1.0",
+  "frozen_on": "2026-08-17",
+  "note": "Machine-readable provenance map: request_id -> (request_class, expected_outcome, source_file, source_case). Every label is grounded in a pre-existing HEPLocalAgent released test or UI material. No label was invented after observing model output.",
+  "requests": {
+    "cap_energy_scan": {
+      "request_class": "valid_supported_variant",
+      "expected_outcome": "execute_supported_workflow",
+      "source_file": "tests/test_energy_scan_preparation.py",
+      "source_case": "SCAN_REQUEST fixture"
+    },
+    "cap_madanalysis": {
+      "request_class": "valid_supported_variant",
+      "expected_outcome": "execute_supported_workflow",
+      "source_file": "tests/test_end_to_end_madanalysis.py",
+      "source_case": "REQUEST fixture"
+    },
+    "cap_user_ufo": {
+      "request_class": "valid_supported_variant",
+      "expected_outcome": "execute_supported_workflow",
+      "source_file": "tests/test_ufo_domain_validation.py",
+      "source_case": "BSM fixture semantics (x1/xd) + real managed MSSM_SLHA2 model"
+    }
+  }
+}

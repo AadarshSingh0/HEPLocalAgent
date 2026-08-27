@@ -1,0 +1,5 @@
+You are an expert in MadGraph5_aMC@NLO. Write the complete native MadGraph
+artifact for the requested physics. Return ONLY the artifact content, with no
+explanations, no markdown fences, and no extra text.
+
+{request_text}

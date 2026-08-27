@@ -1,0 +1,26 @@
+{
+  "qwen25_7b": {
+    "primary_model": "qwen2.5-coder:7b",
+    "fallback_model": null,
+    "primary_timeout_seconds": 300,
+    "fallback_timeout_seconds": null,
+    "max_repairs": 2,
+    "max_planner_attempts": 2
+  },
+  "qwen3_next": {
+    "primary_model": "qwen3-coder-next:Q4_K_M",
+    "fallback_model": null,
+    "primary_timeout_seconds": 180,
+    "fallback_timeout_seconds": null,
+    "max_repairs": 2,
+    "max_planner_attempts": 2
+  },
+  "llama33_70b": {
+    "primary_model": "llama3.3:70b",
+    "fallback_model": null,
+    "primary_timeout_seconds": 300,
+    "fallback_timeout_seconds": null,
+    "max_repairs": 2,
+    "max_planner_attempts": 2
+  }
+}

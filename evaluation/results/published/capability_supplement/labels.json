@@ -1,0 +1,12 @@
+{
+  "evaluation_version": "paper_b_capability_supplement_v1.0",
+  "frozen_on": "2026-08-17",
+  "note": "Expected-outcome classes frozen BEFORE any live model result. All three requests are valid supported workflows inside the v0.1.1 feature envelope; each label is derived from pre-existing released tests/specification (see source_map.json and DESIGN.md).",
+  "outcome_classes": {
+    "execute_supported_workflow": "The request is within the v0.1.1 feature envelope; the correct outcome is a READY_FOR_APPROVAL workflow (or a prepared-and-ready energy scan) whose intent matches the request (process, particles, energy, event count, model/source/path, requested stages)."
+  },
+  "expected_accept": [
+    "execute_supported_workflow"
+  ],
+  "expected_non_execution": []
+}
