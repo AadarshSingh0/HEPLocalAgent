@@ -1,0 +1,25 @@
+{
+  "design_sha256": "26818a7f5aa673f4b4cbe3f90351ecc213d241824d546f2206f3a1c214462ce4",
+  "evaluation_version": "paper_b_reviewer_extension_v1.0",
+  "extension_requests_sha256": "ac7309860aa7f530b52b4dfa9e8588229ab8df11b533f02af1e94cbf53b59125",
+  "heplocalagent_git_sha": "feeccfb10fb424beaac3c6da4530128fc9cff585",
+  "labels_sha256": "3c3f02826c1f2648e5c9dad7a8c879d9333f58a3ec69e062b8dae2bc2784f782",
+  "model_profiles": {
+    "granite4:32b-a9b-h": "granite4_32b",
+    "qwen2.5-coder:14b": "qwen25_14b",
+    "qwen2.5-coder:7b": "qwen25_7b",
+    "qwen3-coder-next:Q4_K_M": "qwen3_next"
+  },
+  "model_selection_sha256": "518867b4c8804f1fe178717a2477ff49008e07010323cd252181cf51c2b4a9f2",
+  "models": [
+    "granite4:32b-a9b-h",
+    "qwen2.5-coder:14b",
+    "qwen2.5-coder:7b",
+    "qwen3-coder-next:Q4_K_M"
+  ],
+  "ollama_host": "http://PRIVATE_OLLAMA_HOST:11434",
+  "primary_requests_sha256": "48714055f0f8853f1ca55a33f4a9ef54ac6ad7460340750b0c8488543c4bfa96",
+  "profiles_sha256": "93406192c29b46f514e0aa37ba291c1c6a10f7bf5875691847c9d747c676d3d0",
+  "source_map_sha256": "f78b50199c0ca61821d8d2f3afbccaae71fe94f7ac59322d97290a8fe391ae08",
+  "timestamp": "20260816T080835Z"
+}

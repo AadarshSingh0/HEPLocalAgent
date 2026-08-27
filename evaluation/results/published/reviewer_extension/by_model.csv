@@ -1,0 +1,5 @@
+model,n_units,n_semantic,n_infra_unavailable,n_valid,n_non_exec,correct_accept,false_reject,accepted_valid,intent_preserved,correct_reject,false_accept,repair_used,corrections_used,fallback_used
+granite4:32b-a9b-h,50,48,2,24,24,24,0,24,24,11,13,0,26,0
+qwen2.5-coder:14b,50,50,0,26,24,21,0,26,21,7,17,0,27,0
+qwen2.5-coder:7b,30,30,0,6,24,6,0,6,6,9,15,0,10,0
+qwen3-coder-next:Q4_K_M,30,30,0,6,24,6,0,6,6,12,12,1,9,0

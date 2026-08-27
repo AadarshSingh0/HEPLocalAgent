@@ -28,6 +28,9 @@ INCLUDED_SUFFIXES = {
     ".ini",
     ".cfg",
     ".sh",
+    ".csv",
+    ".jsonl",
+    ".sha256",
 }
 
 INCLUDED_NAMES = {
@@ -36,6 +39,7 @@ INCLUDED_NAMES = {
     "LICENSE",
     "LICENSE.md",
     "Makefile",
+    ".gitignore",
 }
 
 IGNORED_DIRECTORY_NAMES = {
@@ -54,7 +58,6 @@ IGNORED_DIRECTORY_NAMES = {
 }
 
 IGNORED_PREFIXES = (
-    "evaluation/results/",
     "results/",
     "logs/",
 )
@@ -80,6 +83,13 @@ DIRECTORY_DESCRIPTIONS = {
     "evaluation": (
         "Offline evaluation scenarios and runners. These files measure "
         "agent behavior but are not required by the production runtime."
+    ),
+    "evaluation/results": (
+        "Offline evaluation outputs; only the README and curated published "
+        "evidence are version controlled."
+    ),
+    "evaluation/results/published": (
+        "Curated Paper B evaluation evidence, provenance, and checksums."
     ),
     "examples": (
         "Example requests, workflows, or usage demonstrations."
@@ -160,6 +170,13 @@ def relative_path(path: Path) -> str:
 
 def is_ignored(path: Path) -> bool:
     relative = relative_path(path)
+
+    curated_results = (
+        relative == "evaluation/results/README.md"
+        or relative.startswith("evaluation/results/published/")
+    )
+    if relative.startswith("evaluation/results/") and not curated_results:
+        return True
 
     if any(
         relative == prefix.rstrip("/")
@@ -462,7 +479,7 @@ def build_manifest(files: list[Path]) -> dict[str, Any]:
             "branch",
             "--show-current",
         ),
-        "git_commit": run_git(
+        "source_git_commit": run_git(
             "rev-parse",
             "HEAD",
         ),
@@ -480,7 +497,8 @@ def build_guide(manifest: dict[str, Any]) -> str:
     lines = [
         "# HEP Agent Repository Guide",
         "",
-        "> This file is generated from the current repository filesystem.",
+        "> This file is generated from the eligible repository working tree.",
+        "> The two generated inventory files are excluded to avoid self-reference.",
         "> Do not edit the generated inventory manually. Update source files",
         "> or module docstrings and rerun `scripts/generate_repository_guide.py`.",
         "",
@@ -488,7 +506,8 @@ def build_guide(manifest: dict[str, Any]) -> str:
         "",
         f"- Generated: `{manifest['generated_at_utc']}`",
         f"- Git branch: `{manifest['git_branch'] or 'unavailable'}`",
-        f"- Git commit: `{manifest['git_commit'] or 'unavailable'}`",
+        "- Base/source commit at generation time: "
+        f"`{manifest['source_git_commit'] or 'unavailable'}`",
         f"- Documented files: `{manifest['file_count']}`",
         "",
         "## Runtime architecture",
@@ -588,9 +607,9 @@ def build_guide(manifest: dict[str, Any]) -> str:
             "- **Production runtime:** `src/hep_agent/`, `configs/`, and `prompts/`.",
             "- **Regression protection:** `tests/`.",
             "- **Offline experiments and measurements:** `evaluation/`.",
-            "- **Generated outputs:** `results/`, `evaluation/results/`, and logs. "
-            "These are not source code and are intentionally omitted from the "
-            "file-by-file inventory.",
+            "- **Generated outputs:** root `results/`, ordinary "
+            "`evaluation/results/` runs, and logs are intentionally omitted. "
+            "The curated `evaluation/results/published/` evidence is included.",
             "- **Maintenance utilities:** `scripts/`.",
             "",
             "## Directory map",
@@ -738,7 +757,10 @@ def build_guide(manifest: dict[str, Any]) -> str:
             "- changing standard launch or test commands.",
             "",
             "The accompanying `docs/REPOSITORY_MANIFEST.json` provides the same",
-            "inventory in machine-readable form for future doctor checks.",
+            "inventory in machine-readable form for future doctor checks. Its",
+            "`source_git_commit` is the base commit visible when generation ran;",
+            "it cannot be the SHA of the later commit containing the generated",
+            "file. Both generated inventory files exclude themselves.",
             "",
         ]
     )

@@ -1,0 +1,10 @@
+[
+  {
+    "model": "qwen3-coder-next:Q4_K_M",
+    "point_count": 9,
+    "request_id": "cap_energy_scan",
+    "status": "completed",
+    "timestamp_utc": "20260817T070503Z",
+    "wall_time_seconds": 48.04
+  }
+]

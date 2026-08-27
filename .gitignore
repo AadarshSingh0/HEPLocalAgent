@@ -40,3 +40,8 @@ tests/acceptance/scenarios.*.json
 !tests/acceptance/scenarios.template.json
 
 /.hep-stack/
+# Generated offline evaluation output; only the curated publication package is tracked.
+/evaluation/results/*
+!/evaluation/results/README.md
+!/evaluation/results/published/
+!/evaluation/results/published/**

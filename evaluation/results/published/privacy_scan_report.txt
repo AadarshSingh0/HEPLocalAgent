@@ -1,0 +1,3 @@
+PRIVACY SCAN STATUS: PASS
+
+Publication copies replace private Ollama hosts with http://PRIVATE_OLLAMA_HOST:11434 and replace machine-specific filesystem roots with explicit placeholders. Transformations and source/published hashes are recorded per file in publication_manifest.csv. No credentials, API tokens, private IP addresses, usernames, or genuine personal absolute paths remain. No raw model response text was altered or published.

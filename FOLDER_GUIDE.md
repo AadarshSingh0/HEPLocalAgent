@@ -35,17 +35,18 @@ benchmark scoring in tests.
 
 ### evaluation
 
-This will contain fixed scenarios and evaluation scripts for:
+This contains fixed scenario definitions, offline evaluation runners, and two
+distinct result areas:
 
-- Agent A: Llama 3 8B baseline
-- Agent B: Qwen3-Coder-Next
-- Agent C: Qwen3-Coder-Next with Llama 3.3 70B fallback
+- `evaluation/results/`: generated offline-evaluation output, ignored by default;
+- `evaluation/results/published/`: intentionally curated, version-controlled
+  evaluation evidence with provenance and checksums.
 
 ### results
 
-This contains run records, logs, and evaluation summaries.
-
-It should not contain source code.
+Root `results/` contains ordinary runtime agent run records and logs generated
+locally. It remains ignored and should not contain source code or curated
+evaluation evidence.
 
 ## Useful terminal commands
 
@@ -56,7 +57,7 @@ Show the folder structure:
 
 Show source and documentation files:
 
-    find . -type f ! -path './results/*' ! -path '*/__pycache__/*' | sort
+    find . -type f ! -path './results/*' ! -path './evaluation/results/*' ! -path '*/__pycache__/*' | sort
 
 Check the frozen original baseline:
 

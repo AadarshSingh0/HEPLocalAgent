@@ -1,0 +1,15 @@
+{
+  "design_sha256": "25960a5a298956e426eeb7092d73c2c379cf8c35579d0f8bba41af2c246fbf0d",
+  "evaluation_version": "paper_b_reviewer_extension_native_baseline_v1.0",
+  "heplocalagent_git_sha": "feeccfb10fb424beaac3c6da4530128fc9cff585",
+  "models": [
+    "granite4:32b-a9b-h",
+    "qwen2.5-coder:14b",
+    "qwen2.5-coder:7b",
+    "qwen3-coder-next:Q4_K_M"
+  ],
+  "ollama_host": "http://PRIVATE_OLLAMA_HOST:11434",
+  "primary_requests_sha256": "48714055f0f8853f1ca55a33f4a9ef54ac6ad7460340750b0c8488543c4bfa96",
+  "prompt_sha256": "f9d9b40e1c9bdc742d1a48b110663e373cfb065fc37b02813a7741f4b40b959c",
+  "timestamp": "20260816T103828Z"
+}

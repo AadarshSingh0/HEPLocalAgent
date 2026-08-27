@@ -1,0 +1,50 @@
+{
+  "description": "Frozen mapping from evaluation workflow family to HEPToolBench task, scorer, artifact name, physics-preserving normalization transforms, and scorer physics-bearing check subsets. See DESIGN.md section 4.",
+  "families": {
+    "drell_yan": {
+      "benchmark_task_id": "mg_basic_001",
+      "scorer_relpath": "tasks/mg_basic/task_001_drell_yan_template/tests/score.py",
+      "artifact_name": "proc_card.dat",
+      "normalization": [],
+      "physics_checks": ["imports_sm", "correct_process", "ebeam1_6500", "ebeam2_6500"],
+      "notes": "No pass-critical format gap: the raw agent artifact can strict-pass with correct physics."
+    },
+    "top_pair": {
+      "benchmark_task_id": "mg_basic_002",
+      "scorer_relpath": "tasks/mg_basic/task_002_top_pair_freeform/tests/score.py",
+      "artifact_name": "proc_card.dat",
+      "normalization": [
+        {"op": "rename_output", "value": "TTbar"}
+      ],
+      "physics_checks": ["imports_sm", "correct_process", "ebeam1_6500", "ebeam2_6500"],
+      "notes": "Only pass-critical format gap is the exact output directory name (scorer requires 'output TTbar'; the benchmark prompt never states it)."
+    },
+    "higgs_jet": {
+      "benchmark_task_id": "mg_basic_003",
+      "scorer_relpath": "tasks/mg_basic/task_003_higgs_jet_freeform/tests/score.py",
+      "artifact_name": "proc_card.dat",
+      "normalization": [
+        {"op": "rename_output", "value": "HJ"}
+      ],
+      "physics_checks": ["imports_sm", "correct_process", "ebeam1_6500", "ebeam2_6500"],
+      "notes": "Only pass-critical format gap is the exact output directory name (stated in the benchmark prompt)."
+    },
+    "ttbar_workflow": {
+      "benchmark_task_id": "mg_workflow_005",
+      "scorer_relpath": "tasks/mg_workflow/task_005_ttbar_pythia_delphes_direct/tests/score.py",
+      "artifact_name": "mg5_script.txt",
+      "normalization": [
+        {"op": "insert_after", "anchor": "import model sm", "line": "define p = g u c d s u~ c~ d~ s~"},
+        {"op": "bare_launch"},
+        {"op": "insert_after", "anchor": "analysis=OFF", "line": "madspin=OFF"},
+        {"op": "rename_output", "value": "TTbar_P8_Delphes"}
+      ],
+      "physics_checks": [
+        "imports_sm", "correct_process", "ebeam1_6500", "ebeam2_6500",
+        "shower_pythia8", "detector_delphes", "analysis_off", "madspin_off",
+        "nevents_10000", "iseed_42"
+      ],
+      "notes": "Pass-critical format gaps: missing define-p line, launch-with-argument, missing madspin=OFF, output name. All four are non-physics and normalized."
+    }
+  }
+}

@@ -1,10 +1,17 @@
 {
-  "generated_at_utc": "2026-08-12T07:10:56.664633+00:00",
+  "generated_at_utc": "2026-08-27T09:11:32.088528+00:00",
   "repository_root": ".",
-  "git_branch": "main",
-  "git_commit": "8122408fc08067cec5059130aa8ff748428717b2",
-  "file_count": 190,
+  "git_branch": "publish-evaluation-results",
+  "source_git_commit": "feeccfb10fb424beaac3c6da4530128fc9cff585",
+  "file_count": 267,
   "files": [
+    {
+      "path": ".gitignore",
+      "directory": ".",
+      "category": "project support",
+      "description": "# Python caches",
+      "size_bytes": 847
+    },
     {
       "path": ".streamlit/config.toml",
       "directory": ".streamlit",
@@ -30,8 +37,8 @@
       "path": "configs/local_paths.example.json",
       "directory": "configs",
       "category": "configuration",
-      "description": "JSON object with top-level keys: mg5_executable, madanalysis5_executable.",
-      "size_bytes": 117
+      "description": "JSON object with top-level keys: mg5_executable, madanalysis5_executable, madanalysis5_native_executable, root_config, root_path.",
+      "size_bytes": 279
     },
     {
       "path": "docs/CHANGES_v0.1.0.md",
@@ -44,8 +51,15 @@
       "path": "docs/INSTALL_FOR_EVERYONE.md",
       "directory": "docs",
       "category": "documentation",
-      "description": "Markdown documentation: Beginner installation.",
-      "size_bytes": 8056
+      "description": "Markdown documentation: Independent HEPLocalAgent installation.",
+      "size_bytes": 4289
+    },
+    {
+      "path": "docs/MACOS_VALIDATION_HANDOFF.md",
+      "directory": "docs",
+      "category": "documentation",
+      "description": "Markdown documentation: Apple Silicon fresh-stack validation handoff.",
+      "size_bytes": 5371
     },
     {
       "path": "evaluation/preexecution_scenarios_v1.json",
@@ -60,6 +74,377 @@
       "category": "evaluation",
       "description": "Evaluation scenario definition containing 24 scenarios.",
       "size_bytes": 10724
+    },
+    {
+      "path": "evaluation/results/published/capability_supplement/DESIGN.md",
+      "directory": "evaluation/results/published/capability_supplement",
+      "category": "evaluation",
+      "description": "Markdown documentation: Paper B \u2014 Capability Supplement: Frozen Design.",
+      "size_bytes": 9556
+    },
+    {
+      "path": "evaluation/results/published/capability_supplement/labels.json",
+      "directory": "evaluation/results/published/capability_supplement",
+      "category": "evaluation",
+      "description": "JSON object with top-level keys: evaluation_version, frozen_on, note, outcome_classes, expected_accept, expected_non_execution.",
+      "size_bytes": 772
+    },
+    {
+      "path": "evaluation/results/published/capability_supplement/README.md",
+      "directory": "evaluation/results/published/capability_supplement",
+      "category": "evaluation",
+      "description": "Markdown documentation: Capability supplement.",
+      "size_bytes": 657
+    },
+    {
+      "path": "evaluation/results/published/capability_supplement/requests.json",
+      "directory": "evaluation/results/published/capability_supplement",
+      "category": "evaluation",
+      "description": "JSON object with top-level keys: evaluation_version, frozen_on, scope_note, requests.",
+      "size_bytes": 3475
+    },
+    {
+      "path": "evaluation/results/published/capability_supplement/results.csv",
+      "directory": "evaluation/results/published/capability_supplement",
+      "category": "evaluation",
+      "description": "model,request_id,request_class,expected_outcome,outcome_class,correct_outcome,full_ready,intent_preserved,intent_differences,planner_route,llm_call_count,repair_attempts,infrastructure_attempts,runtime_status,runtime_verified,runtime_detail",
+      "size_bytes": 1312
+    },
+    {
+      "path": "evaluation/results/published/capability_supplement/rows.jsonl",
+      "directory": "evaluation/results/published/capability_supplement",
+      "category": "evaluation",
+      "description": "{\"approval_decision\": \"explicit_confirmation_required\", \"case_dir\": \"evaluation/paper_b_capability_supplement/results/20260817T071500Z/cases/qwen2.5-coder_7b/cap_energy_scan\", \"correct_outcome\": true, \"corrections_count\": 0, \"evaluation_ver",
+      "size_bytes": 9017
+    },
+    {
+      "path": "evaluation/results/published/capability_supplement/runtime_summary.json",
+      "directory": "evaluation/results/published/capability_supplement",
+      "category": "evaluation",
+      "description": "JSON list containing 1 entries.",
+      "size_bytes": 209
+    },
+    {
+      "path": "evaluation/results/published/capability_supplement/source_hashes.sha256",
+      "directory": "evaluation/results/published/capability_supplement",
+      "category": "evaluation",
+      "description": "72d30440ae5d363e5db01db6bc4bb98baa9c8259f59b7b3cd25f4ed885f8059b evaluation/paper_b_capability_supplement/DESIGN.md",
+      "size_bytes": 480
+    },
+    {
+      "path": "evaluation/results/published/capability_supplement/source_map.json",
+      "directory": "evaluation/results/published/capability_supplement",
+      "category": "evaluation",
+      "description": "JSON object with top-level keys: evaluation_version, frozen_on, note, requests.",
+      "size_bytes": 1135
+    },
+    {
+      "path": "evaluation/results/published/capability_supplement/summary.md",
+      "directory": "evaluation/results/published/capability_supplement",
+      "category": "evaluation",
+      "description": "Markdown documentation: Capability Supplement Results \u2014 Paper B.",
+      "size_bytes": 6612
+    },
+    {
+      "path": "evaluation/results/published/CHECKSUMS.sha256",
+      "directory": "evaluation/results/published",
+      "category": "evaluation",
+      "description": "9d5d39d92d10fad6121be052b1cb9e43638e15f07f5fb934c9392072a54dad17 README.md",
+      "size_bytes": 5015
+    },
+    {
+      "path": "evaluation/results/published/native_baseline/DESIGN.md",
+      "directory": "evaluation/results/published/native_baseline",
+      "category": "evaluation",
+      "description": "Markdown documentation: NATIVE_BASELINE_DESIGN \u2014 Baseline A: LLM \u2192 native HEP commands.",
+      "size_bytes": 4117
+    },
+    {
+      "path": "evaluation/results/published/native_baseline/infrastructure_attempts.jsonl",
+      "directory": "evaluation/results/published/native_baseline",
+      "category": "evaluation",
+      "description": "{\"attempt\": 1, \"error\": \"OllamaClientError: The Ollama request timed out.\", \"model\": \"qwen3-coder-next:Q4_K_M\", \"outcome\": \"timeout\", \"raw_path\": \"<HEPLOCALAGENT_EVIDENCE_ROOT>/evaluation/paper_b_reviewer_extension/results/20260816T080835Z/",
+      "size_bytes": 18687
+    },
+    {
+      "path": "evaluation/results/published/native_baseline/manifest.json",
+      "directory": "evaluation/results/published/native_baseline",
+      "category": "evaluation",
+      "description": "JSON object with top-level keys: design_sha256, evaluation_version, heplocalagent_git_sha, models, ollama_host, primary_requests_sha256, \u2026.",
+      "size_bytes": 632
+    },
+    {
+      "path": "evaluation/results/published/native_baseline/prompt.txt",
+      "directory": "evaluation/results/published/native_baseline",
+      "category": "evaluation",
+      "description": "You are an expert in MadGraph5_aMC@NLO. Write the complete native MadGraph",
+      "size_bytes": 222
+    },
+    {
+      "path": "evaluation/results/published/native_baseline/README.md",
+      "directory": "evaluation/results/published/native_baseline",
+      "category": "evaluation",
+      "description": "Markdown documentation: Native baseline.",
+      "size_bytes": 339
+    },
+    {
+      "path": "evaluation/results/published/native_baseline/rows.csv",
+      "directory": "evaluation/results/published/native_baseline",
+      "category": "evaluation",
+      "description": "evaluation_version,timestamp,model,ollama_host,request_id,workflow_family,benchmark_task_id,request_text,row_kind,infrastructure_attempts,first_call_error,raw_output_path,task_pass,task_pass_raw,normalized_score,raw_score,normalized_artifac",
+      "size_bytes": 91224
+    },
+    {
+      "path": "evaluation/results/published/native_baseline/rows.jsonl",
+      "directory": "evaluation/results/published/native_baseline",
+      "category": "evaluation",
+      "description": "{\"benchmark_task_id\": \"mg_basic_001\", \"evaluation_version\": \"paper_b_reviewer_extension_native_baseline_v1.0\", \"first_call_error\": null, \"infrastructure_attempts\": 1, \"model\": \"qwen2.5-coder:7b\", \"normalized_artifact_path\": \"<HEPLOCALAGENT_",
+      "size_bytes": 125179
+    },
+    {
+      "path": "evaluation/results/published/native_baseline/three_way_results.csv",
+      "directory": "evaluation/results/published/native_baseline",
+      "category": "evaluation",
+      "description": "model,matched_n,A_native_pass,B_builder_pass,C_full_pass,A_pass_rate,B_pass_rate,C_pass_rate,A_to_B_improve,B_to_C_improve,A_to_C_improve,A_pass_C_fail,B_pass_C_fail,A_fail_B_fail_C_pass,fail_fail_fail",
+      "size_bytes": 458
+    },
+    {
+      "path": "evaluation/results/published/native_baseline/three_way_summary.md",
+      "directory": "evaluation/results/published/native_baseline",
+      "category": "evaluation",
+      "description": "Markdown documentation: Three-way baseline comparison (Paper B).",
+      "size_bytes": 1242
+    },
+    {
+      "path": "evaluation/results/published/primary_end_to_end/DESIGN.md",
+      "directory": "evaluation/results/published/primary_end_to_end",
+      "category": "evaluation",
+      "description": "Markdown documentation: Paper B \u2014 End-to-End Guarded-Agent Evaluation: Frozen Design.",
+      "size_bytes": 28865
+    },
+    {
+      "path": "evaluation/results/published/primary_end_to_end/infrastructure_attempts.jsonl",
+      "directory": "evaluation/results/published/primary_end_to_end",
+      "category": "evaluation",
+      "description": "{\"attempt\": 1, \"case_root\": \"<HEPLOCALAGENT_EVIDENCE_ROOT>/evaluation/paper_b_end_to_end/results/20260815T110701Z/cases\", \"error\": \"OllamaClientError: The Ollama request timed out.\", \"model\": \"qwen3-coder-next:Q4_K_M\", \"outcome\": \"timeout\",",
+      "size_bytes": 37680
+    },
+    {
+      "path": "evaluation/results/published/primary_end_to_end/manifest.json",
+      "directory": "evaluation/results/published/primary_end_to_end",
+      "category": "evaluation",
+      "description": "JSON object with top-level keys: evaluation_version, fallback_model, generation_settings, heplocalagent_git_dirty, heplocalagent_git_sha, heptoolbench_git_dirty, \u2026.",
+      "size_bytes": 5787
+    },
+    {
+      "path": "evaluation/results/published/primary_end_to_end/profiles.json",
+      "directory": "evaluation/results/published/primary_end_to_end",
+      "category": "evaluation",
+      "description": "JSON object with top-level keys: qwen25_7b, qwen3_next, llama33_70b.",
+      "size_bytes": 660
+    },
+    {
+      "path": "evaluation/results/published/primary_end_to_end/README.md",
+      "directory": "evaluation/results/published/primary_end_to_end",
+      "category": "evaluation",
+      "description": "Markdown documentation: Primary end-to-end evaluation.",
+      "size_bytes": 449
+    },
+    {
+      "path": "evaluation/results/published/primary_end_to_end/requests.json",
+      "directory": "evaluation/results/published/primary_end_to_end",
+      "category": "evaluation",
+      "description": "JSON object with top-level keys: evaluation_version, frozen_on, scope_note, requests.",
+      "size_bytes": 23418
+    },
+    {
+      "path": "evaluation/results/published/primary_end_to_end/results_summary.json",
+      "directory": "evaluation/results/published/primary_end_to_end",
+      "category": "evaluation",
+      "description": "JSON object with top-level keys: n_infrastructure_unavailable, n_legacy_infrastructure_invalid, n_rows, n_semantic, operational, overall, \u2026.",
+      "size_bytes": 34150
+    },
+    {
+      "path": "evaluation/results/published/primary_end_to_end/results_summary.md",
+      "directory": "evaluation/results/published/primary_end_to_end",
+      "category": "evaluation",
+      "description": "Markdown documentation: Paper B end-to-end results summary.",
+      "size_bytes": 5430
+    },
+    {
+      "path": "evaluation/results/published/primary_end_to_end/rows.csv",
+      "directory": "evaluation/results/published/primary_end_to_end",
+      "category": "evaluation",
+      "description": "evaluation_version,timestamp,heplocalagent_git_sha,heptoolbench_git_sha,model,ollama_host,model_metadata_path,request_id,workflow_family,paraphrase_index,request_text,benchmark_task_id,scorer_path,planner_route,initial_model_raw_path,initia",
+      "size_bytes": 95410
+    },
+    {
+      "path": "evaluation/results/published/primary_end_to_end/rows.jsonl",
+      "directory": "evaluation/results/published/primary_end_to_end",
+      "category": "evaluation",
+      "description": "{\"evaluation_version\": \"paper_b_end_to_end_v1.0\", \"timestamp\": \"20260815T110756Z\", \"heplocalagent_git_sha\": \"feeccfb10fb424beaac3c6da4530128fc9cff585\", \"heptoolbench_git_sha\": \"509205cd117136662d1ab82488f1ca280c838619\", \"model\": \"qwen2.5-co",
+      "size_bytes": 196170
+    },
+    {
+      "path": "evaluation/results/published/primary_end_to_end/task_map.json",
+      "directory": "evaluation/results/published/primary_end_to_end",
+      "category": "evaluation",
+      "description": "JSON object with top-level keys: description, families.",
+      "size_bytes": 2573
+    },
+    {
+      "path": "evaluation/results/published/privacy_scan_report.txt",
+      "directory": "evaluation/results/published",
+      "category": "evaluation",
+      "description": "PRIVACY SCAN STATUS: PASS",
+      "size_bytes": 439
+    },
+    {
+      "path": "evaluation/results/published/publication_manifest.csv",
+      "directory": "evaluation/results/published",
+      "category": "evaluation",
+      "description": "suite,published_file,source_file,source_sha256,published_sha256,transformation,bytes",
+      "size_bytes": 14411
+    },
+    {
+      "path": "evaluation/results/published/README.md",
+      "directory": "evaluation/results/published",
+      "category": "evaluation",
+      "description": "Markdown documentation: HEPLocalAgent curated evaluation-results review package.",
+      "size_bytes": 1538
+    },
+    {
+      "path": "evaluation/results/published/reviewer_extension/by_class.csv",
+      "directory": "evaluation/results/published/reviewer_extension",
+      "category": "evaluation",
+      "description": "request_class,n_units,n_semantic,n_infra_unavailable,n_valid,n_non_exec,correct_outcome,false_acceptance,false_rejection,intent_preserved",
+      "size_bytes": 497
+    },
+    {
+      "path": "evaluation/results/published/reviewer_extension/by_model.csv",
+      "directory": "evaluation/results/published/reviewer_extension",
+      "category": "evaluation",
+      "description": "model,n_units,n_semantic,n_infra_unavailable,n_valid,n_non_exec,correct_accept,false_reject,accepted_valid,intent_preserved,correct_reject,false_accept,repair_used,corrections_used,fallback_used",
+      "size_bytes": 419
+    },
+    {
+      "path": "evaluation/results/published/reviewer_extension/DESIGN.md",
+      "directory": "evaluation/results/published/reviewer_extension",
+      "category": "evaluation",
+      "description": "Markdown documentation: Paper B \u2014 Reviewer-Extension (50-request containment + baseline) Frozen Design.",
+      "size_bytes": 8043
+    },
+    {
+      "path": "evaluation/results/published/reviewer_extension/infrastructure_attempts.jsonl",
+      "directory": "evaluation/results/published/reviewer_extension",
+      "category": "evaluation",
+      "description": "{\"attempt\": 1, \"error\": \"OllamaClientError: The Ollama request timed out.\", \"model\": \"granite4:32b-a9b-h\", \"outcome\": \"timeout\", \"raw_path\": \"<HEPLOCALAGENT_EVIDENCE_ROOT>/evaluation/paper_b_reviewer_extension/results/20260816T075420Z/cases",
+      "size_bytes": 2190
+    },
+    {
+      "path": "evaluation/results/published/reviewer_extension/LABEL_PROVENANCE.md",
+      "directory": "evaluation/results/published/reviewer_extension",
+      "category": "evaluation",
+      "description": "Markdown documentation: LABEL_PROVENANCE \u2014 Reviewer-Extension Requests and Labels.",
+      "size_bytes": 8650
+    },
+    {
+      "path": "evaluation/results/published/reviewer_extension/labels.json",
+      "directory": "evaluation/results/published/reviewer_extension",
+      "category": "evaluation",
+      "description": "JSON object with top-level keys: evaluation_version, frozen_on, note, outcome_classes, expected_accept, expected_non_execution.",
+      "size_bytes": 2370
+    },
+    {
+      "path": "evaluation/results/published/reviewer_extension/manifest.json",
+      "directory": "evaluation/results/published/reviewer_extension",
+      "category": "evaluation",
+      "description": "JSON object with top-level keys: design_sha256, evaluation_version, extension_requests_sha256, heplocalagent_git_sha, labels_sha256, model_profiles, \u2026.",
+      "size_bytes": 1180
+    },
+    {
+      "path": "evaluation/results/published/reviewer_extension/MODEL_SELECTION.md",
+      "directory": "evaluation/results/published/reviewer_extension",
+      "category": "evaluation",
+      "description": "Markdown documentation: MODEL_SELECTION \u2014 Reviewer-Extension Model Set (frozen 2026-08-16).",
+      "size_bytes": 6703
+    },
+    {
+      "path": "evaluation/results/published/reviewer_extension/profiles.json",
+      "directory": "evaluation/results/published/reviewer_extension",
+      "category": "evaluation",
+      "description": "JSON object with top-level keys: qwen25_7b, qwen3_next, qwen25_14b, granite4_32b.",
+      "size_bytes": 886
+    },
+    {
+      "path": "evaluation/results/published/reviewer_extension/README.md",
+      "directory": "evaluation/results/published/reviewer_extension",
+      "category": "evaluation",
+      "description": "Markdown documentation: Reviewer extension.",
+      "size_bytes": 309
+    },
+    {
+      "path": "evaluation/results/published/reviewer_extension/requests.json",
+      "directory": "evaluation/results/published/reviewer_extension",
+      "category": "evaluation",
+      "description": "JSON object with top-level keys: evaluation_version, frozen_on, scope_note, requests.",
+      "size_bytes": 15828
+    },
+    {
+      "path": "evaluation/results/published/reviewer_extension/results.csv",
+      "directory": "evaluation/results/published/reviewer_extension",
+      "category": "evaluation",
+      "description": "model,request_id,request_class,expected_outcome,is_extension,row_kind,full_status,full_ready,correct_outcome,false_acceptance,false_rejection,intent_preserved,repair_attempts,corrections_count,fallback_used,llm_call_count,infrastructure_att",
+      "size_bytes": 27883
+    },
+    {
+      "path": "evaluation/results/published/reviewer_extension/rows.csv",
+      "directory": "evaluation/results/published/reviewer_extension",
+      "category": "evaluation",
+      "description": "approval_decision,correct_outcome,corrections_count,evaluation_version,expected_outcome,failure_category,fallback_used,false_acceptance,false_rejection,first_call_error,first_response_attempt,full_ready,full_status,infrastructure_attempts,i",
+      "size_bytes": 190877
+    },
+    {
+      "path": "evaluation/results/published/reviewer_extension/rows.jsonl",
+      "directory": "evaluation/results/published/reviewer_extension",
+      "category": "evaluation",
+      "description": "{\"approval_decision\": \"auto_confirm\", \"correct_outcome\": true, \"corrections_count\": 2, \"evaluation_version\": \"paper_b_reviewer_extension_v1.0\", \"expected_outcome\": \"execute_supported_workflow\", \"failure_category\": null, \"fallback_used\": fal",
+      "size_bytes": 343470
+    },
+    {
+      "path": "evaluation/results/published/reviewer_extension/source_map.json",
+      "directory": "evaluation/results/published/reviewer_extension",
+      "category": "evaluation",
+      "description": "JSON object with top-level keys: evaluation_version, frozen_on, note, requests.",
+      "size_bytes": 7565
+    },
+    {
+      "path": "evaluation/results/published/reviewer_extension/summary.md",
+      "directory": "evaluation/results/published/reviewer_extension",
+      "category": "evaluation",
+      "description": "Markdown documentation: Reviewer-extension results (Paper-B reviewer response).",
+      "size_bytes": 2453
+    },
+    {
+      "path": "evaluation/results/published/source_inventory.csv",
+      "directory": "evaluation/results/published",
+      "category": "evaluation",
+      "description": "candidate_path,suite,run_timestamp,runner_commit,scenario_hash,models_profiles,number_of_trials,completeness,paper_relevance,privacy_findings,authority_decision",
+      "size_bytes": 7190
+    },
+    {
+      "path": "evaluation/results/published/validation_report.txt",
+      "directory": "evaluation/results/published",
+      "category": "evaluation",
+      "description": "VALIDATION STATUS: PASS",
+      "size_bytes": 1153
+    },
+    {
+      "path": "evaluation/results/README.md",
+      "directory": "evaluation/results",
+      "category": "evaluation",
+      "description": "Markdown documentation: Evaluation results.",
+      "size_bytes": 560
     },
     {
       "path": "evaluation/run_model_structure_comparison.py",
@@ -101,14 +486,14 @@
       "directory": ".",
       "category": "project support",
       "description": "Markdown documentation: HEPLocalAgent \u2014 Practical Folder Guide.",
-      "size_bytes": 2097
+      "size_bytes": 2345
     },
     {
       "path": "install.sh",
       "directory": ".",
       "category": "project support",
       "description": "Shell utility script.",
-      "size_bytes": 116
+      "size_bytes": 164
     },
     {
       "path": "legacy_baseline/app.py",
@@ -269,7 +654,7 @@
       "directory": ".",
       "category": "project support",
       "description": "Markdown documentation: HEPLocalAgent.",
-      "size_bytes": 5782
+      "size_bytes": 6030
     },
     {
       "path": "requirements-web.txt",
@@ -290,21 +675,77 @@
       "directory": ".",
       "category": "project support",
       "description": "Shell utility script.",
-      "size_bytes": 2414
+      "size_bytes": 150
+    },
+    {
+      "path": "scripts/audit_managed_stack.py",
+      "directory": "scripts",
+      "category": "maintenance",
+      "description": "Audit manifest ownership and native HEP linkage without external discovery.",
+      "size_bytes": 2877
+    },
+    {
+      "path": "scripts/bootstrap_independent_hep_agent.sh",
+      "directory": "scripts",
+      "category": "maintenance",
+      "description": "Shell utility script.",
+      "size_bytes": 7931
     },
     {
       "path": "scripts/bootstrap_local_hep_agent.sh",
       "directory": "scripts",
       "category": "maintenance",
       "description": "Shell utility script.",
-      "size_bytes": 69934
+      "size_bytes": 88485
+    },
+    {
+      "path": "scripts/configure_madanalysis_runtime.py",
+      "directory": "scripts",
+      "category": "maintenance",
+      "description": "Pin an existing MadAnalysis 5 installation to managed dependencies.",
+      "size_bytes": 4244
+    },
+    {
+      "path": "scripts/finalize_managed_stack.py",
+      "directory": "scripts",
+      "category": "maintenance",
+      "description": "Configure, smoke-test, audit, and record one clone-owned HEP stack.",
+      "size_bytes": 16756
     },
     {
       "path": "scripts/generate_repository_guide.py",
       "directory": "scripts",
       "category": "maintenance",
       "description": "Generate an accurate repository guide and machine-readable manifest.",
-      "size_bytes": 22454
+      "size_bytes": 23403
+    },
+    {
+      "path": "scripts/install_managed_hep_stack.sh",
+      "directory": "scripts",
+      "category": "maintenance",
+      "description": "Shell utility script.",
+      "size_bytes": 5644
+    },
+    {
+      "path": "scripts/install_managed_hep_stack_macos.sh",
+      "directory": "scripts",
+      "category": "maintenance",
+      "description": "Shell utility script.",
+      "size_bytes": 11908
+    },
+    {
+      "path": "scripts/managed_stack_launcher.py",
+      "directory": "scripts",
+      "category": "maintenance",
+      "description": "Clone-local launcher that cannot inherit or discover external HEP tools.",
+      "size_bytes": 964
+    },
+    {
+      "path": "scripts/managed_stack_ownership.sh",
+      "directory": "scripts",
+      "category": "maintenance",
+      "description": "Shell utility script.",
+      "size_bytes": 4521
     },
     {
       "path": "scripts/record_acceptance.py",
@@ -314,18 +755,39 @@
       "size_bytes": 3833
     },
     {
-      "path": "scripts/uninstall_local_hep_agent.sh",
+      "path": "scripts/run_managed_agent.sh",
       "directory": "scripts",
       "category": "maintenance",
       "description": "Shell utility script.",
-      "size_bytes": 9825
+      "size_bytes": 1082
+    },
+    {
+      "path": "scripts/uninstall_independent_hep_agent.sh",
+      "directory": "scripts",
+      "category": "maintenance",
+      "description": "Shell utility script.",
+      "size_bytes": 4061
     },
     {
       "path": "scripts/validate_full_stack.py",
       "directory": "scripts",
       "category": "maintenance",
       "description": "Validate MadGraph, Pythia8, Delphes, and MadAnalysis without Ollama.",
-      "size_bytes": 11443
+      "size_bytes": 11578
+    },
+    {
+      "path": "scripts/validate_macos_root_package.py",
+      "directory": "scripts",
+      "category": "maintenance",
+      "description": "Fail-closed validation of the exact ROOT package selected by Conda.",
+      "size_bytes": 5485
+    },
+    {
+      "path": "scripts/validate_madanalysis_runtime.py",
+      "directory": "scripts",
+      "category": "maintenance",
+      "description": "Noninteractive startup smoke test for one configured MA5 runtime.",
+      "size_bytes": 4275
     },
     {
       "path": "src/hep_agent/__init__.py",
@@ -360,7 +822,14 @@
       "directory": "src/hep_agent/analysis",
       "category": "production",
       "description": "Safe subprocess execution for deterministic MadAnalysis artifacts.",
-      "size_bytes": 10950
+      "size_bytes": 13557
+    },
+    {
+      "path": "src/hep_agent/analysis/runtime.py",
+      "directory": "src/hep_agent/analysis",
+      "category": "production",
+      "description": "Runtime isolation for managed MadAnalysis 5 executions.",
+      "size_bytes": 7956
     },
     {
       "path": "src/hep_agent/builders/__init__.py",
@@ -409,7 +878,7 @@
       "directory": "src/hep_agent/doctor",
       "category": "production",
       "description": "Environment and installation checks for the HEP agent.",
-      "size_bytes": 37287
+      "size_bytes": 38326
     },
     {
       "path": "src/hep_agent/doctor/cli.py",
@@ -417,6 +886,13 @@
       "category": "production",
       "description": "Command-line interface for the HEP-agent doctor.",
       "size_bytes": 3483
+    },
+    {
+      "path": "src/hep_agent/doctor/managed_stack.py",
+      "directory": "src/hep_agent/doctor",
+      "category": "production",
+      "description": "Doctor checks for the authoritative clone-owned HEP stack.",
+      "size_bytes": 4195
     },
     {
       "path": "src/hep_agent/doctor/models.py",
@@ -465,7 +941,7 @@
       "directory": "src/hep_agent/execution",
       "category": "production",
       "description": "Safe subprocess runner for validated MadGraph workflows.",
-      "size_bytes": 5586
+      "size_bytes": 7592
     },
     {
       "path": "src/hep_agent/execution/outcome.py",
@@ -549,7 +1025,7 @@
       "directory": "src/hep_agent/orchestration",
       "category": "production",
       "description": "Orchestration for separate MadAnalysis post-processing.",
-      "size_bytes": 6079
+      "size_bytes": 6525
     },
     {
       "path": "src/hep_agent/orchestration/approval.py",
@@ -563,7 +1039,7 @@
       "directory": "src/hep_agent/orchestration",
       "category": "production",
       "description": "Complete local-agent preparation and external execution.",
-      "size_bytes": 10700
+      "size_bytes": 11182
     },
     {
       "path": "src/hep_agent/orchestration/FOLDER_GUIDE.md",
@@ -608,6 +1084,34 @@
       "size_bytes": 3544
     },
     {
+      "path": "src/hep_agent/runtime/__init__.py",
+      "directory": "src/hep_agent/runtime",
+      "category": "production",
+      "description": "Authoritative managed HEP stack manifest and process environment.",
+      "size_bytes": 815
+    },
+    {
+      "path": "src/hep_agent/runtime/audit.py",
+      "directory": "src/hep_agent/runtime",
+      "category": "production",
+      "description": "Live native-linkage audit derived only from a validated stack manifest.",
+      "size_bytes": 4067
+    },
+    {
+      "path": "src/hep_agent/runtime/linkage.py",
+      "directory": "src/hep_agent/runtime",
+      "category": "production",
+      "description": "Platform-neutral native linkage inspection for the managed HEP stack.",
+      "size_bytes": 8648
+    },
+    {
+      "path": "src/hep_agent/runtime/stack.py",
+      "directory": "src/hep_agent/runtime",
+      "category": "production",
+      "description": "One clone-owned contract for every HEP subprocess.",
+      "size_bytes": 27348
+    },
+    {
       "path": "src/hep_agent/scans/__init__.py",
       "directory": "src/hep_agent/scans",
       "category": "production",
@@ -640,7 +1144,7 @@
       "directory": "src/hep_agent/scans",
       "category": "production",
       "description": "Adapter from deterministic scan points to the existing HEP pipeline.",
-      "size_bytes": 9882
+      "size_bytes": 10083
     },
     {
       "path": "src/hep_agent/scans/preparation.py",
@@ -703,7 +1207,7 @@
       "directory": "src/hep_agent",
       "category": "production",
       "description": "Deterministic, tool-aware installation self-test.",
-      "size_bytes": 16781
+      "size_bytes": 19550
     },
     {
       "path": "src/hep_agent/ui/__init__.py",
@@ -717,7 +1221,7 @@
       "directory": "src/hep_agent/ui",
       "category": "production",
       "description": "Command-line interface for the local HEP agent.",
-      "size_bytes": 12862
+      "size_bytes": 12925
     },
     {
       "path": "src/hep_agent/ui/FOLDER_GUIDE.md",
@@ -731,7 +1235,7 @@
       "directory": "src/hep_agent/ui",
       "category": "production",
       "description": "Streamlit research console for the local HEP agent.",
-      "size_bytes": 114907
+      "size_bytes": 115526
     },
     {
       "path": "src/hep_agent/ui/web_launcher.py",
@@ -857,7 +1361,7 @@
       "directory": "tests",
       "category": "test",
       "description": "Tests for separate MadAnalysis post-processing orchestration.",
-      "size_bytes": 7360
+      "size_bytes": 8272
     },
     {
       "path": "tests/test_approval.py",
@@ -871,14 +1375,21 @@
       "directory": "tests",
       "category": "test",
       "description": "Static tests for beginner installation shell scripts.",
-      "size_bytes": 28311
+      "size_bytes": 34791
     },
     {
       "path": "tests/test_cli.py",
       "directory": "tests",
       "category": "test",
       "description": "Tests for the local HEP-agent command parser.",
-      "size_bytes": 1949
+      "size_bytes": 1959
+    },
+    {
+      "path": "tests/test_configure_madanalysis_runtime.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for persistent MadAnalysis runtime configuration.",
+      "size_bytes": 2890
     },
     {
       "path": "tests/test_conversation.py",
@@ -899,7 +1410,7 @@
       "directory": "tests",
       "category": "test",
       "description": "Doctor checks for integrated HEP-tool installations.",
-      "size_bytes": 7042
+      "size_bytes": 8132
     },
     {
       "path": "tests/test_domain_repair.py",
@@ -913,14 +1424,14 @@
       "directory": "tests",
       "category": "test",
       "description": "Tests for the full agent through external execution.",
-      "size_bytes": 11720
+      "size_bytes": 12042
     },
     {
       "path": "tests/test_end_to_end_madanalysis.py",
       "directory": "tests",
       "category": "test",
       "description": "End-to-end tests including separate MA5 post-processing.",
-      "size_bytes": 8244
+      "size_bytes": 8382
     },
     {
       "path": "tests/test_energy_scan.py",
@@ -1021,6 +1532,13 @@
       "size_bytes": 5168
     },
     {
+      "path": "tests/test_macos_managed_stack.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Hermetic Darwin coverage for the clone-owned managed HEP stack.",
+      "size_bytes": 24796
+    },
+    {
       "path": "tests/test_madanalysis_builder.py",
       "directory": "tests",
       "category": "test",
@@ -1053,7 +1571,14 @@
       "directory": "tests",
       "category": "test",
       "description": "Tests for the safe MadAnalysis subprocess runner.",
-      "size_bytes": 8989
+      "size_bytes": 11363
+    },
+    {
+      "path": "tests/test_madanalysis_runtime.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for deterministic MadAnalysis runtime isolation.",
+      "size_bytes": 7816
     },
     {
       "path": "tests/test_madgraph_builder.py",
@@ -1067,7 +1592,7 @@
       "directory": "tests",
       "category": "test",
       "description": "Tests for the safe MadGraph subprocess runner.",
-      "size_bytes": 4641
+      "size_bytes": 5560
     },
     {
       "path": "tests/test_madgraph_workflow.py",
@@ -1158,7 +1683,7 @@
       "directory": "tests",
       "category": "test",
       "description": "Tests for separately preparing and executing one workflow.",
-      "size_bytes": 6157
+      "size_bytes": 6249
     },
     {
       "path": "tests/test_process_constraint_grounding.py",
@@ -1192,8 +1717,8 @@
       "path": "tests/test_repository_guide.py",
       "directory": "tests",
       "category": "test",
-      "description": "Regression tests for portable generated repository documentation.",
-      "size_bytes": 1284
+      "description": "Regression tests for portable, fresh generated repository documentation.",
+      "size_bytes": 2394
     },
     {
       "path": "tests/test_request_normalization.py",
@@ -1221,7 +1746,7 @@
       "directory": "tests",
       "category": "test",
       "description": "Tests for the tool-aware installation self-test.",
-      "size_bytes": 10142
+      "size_bytes": 12281
     },
     {
       "path": "tests/test_semantic_pipeline_intent.py",
@@ -1245,6 +1770,13 @@
       "size_bytes": 2707
     },
     {
+      "path": "tests/test_stack_runtime.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Hermetic tests for the authoritative clone-owned HEP stack contract.",
+      "size_bytes": 18810
+    },
+    {
       "path": "tests/test_structured_madanalysis.py",
       "directory": "tests",
       "category": "test",
@@ -1264,6 +1796,13 @@
       "category": "test",
       "description": "Tests for model-aware domain validation of UFO/BSM models.",
       "size_bytes": 4959
+    },
+    {
+      "path": "tests/test_validate_madanalysis_runtime.py",
+      "directory": "tests",
+      "category": "test",
+      "description": "Tests for the installer MA5 smoke-test command.",
+      "size_bytes": 2556
     },
     {
       "path": "tests/test_validation.py",
@@ -1333,7 +1872,7 @@
       "directory": ".",
       "category": "project support",
       "description": "Shell utility script.",
-      "size_bytes": 157
+      "size_bytes": 163
     }
   ]
 }

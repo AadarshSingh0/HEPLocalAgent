@@ -1,0 +1,7 @@
+model,request_id,request_class,expected_outcome,outcome_class,correct_outcome,full_ready,intent_preserved,intent_differences,planner_route,llm_call_count,repair_attempts,infrastructure_attempts,runtime_status,runtime_verified,runtime_details
+qwen2.5-coder:7b,cap_energy_scan,valid_supported_variant,execute_supported_workflow,correct_acceptance,True,True,True,,semantic,1,0,1,not_run,,
+qwen3-coder-next:Q4_K_M,cap_energy_scan,valid_supported_variant,execute_supported_workflow,correct_acceptance,True,True,True,,semantic,1,0,1,completed,True,"9 x LHE (1-5 TeV, 500 GeV steps)"
+qwen2.5-coder:7b,cap_madanalysis,valid_supported_variant,execute_supported_workflow,false_rejection,False,True,False,madanalysis: expected True got False,semantic,1,0,1,not_run,,
+qwen3-coder-next:Q4_K_M,cap_madanalysis,valid_supported_variant,execute_supported_workflow,false_rejection,False,True,False,madanalysis: expected True got False,semantic,1,0,1,not_run,,
+qwen2.5-coder:7b,cap_user_ufo,valid_supported_variant,execute_supported_workflow,correct_acceptance,True,True,True,,full_structured,1,0,1,not_run,,
+qwen3-coder-next:Q4_K_M,cap_user_ufo,valid_supported_variant,execute_supported_workflow,correct_acceptance,True,True,True,,full_structured,1,0,1,completed,True,"unweighted_events.lhe.gz (MSSM_SLHA2, p p > x1+ x1-)"
